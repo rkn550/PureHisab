@@ -6,7 +6,6 @@ class DatabaseHelper {
   static Database? _database;
 
   DatabaseHelper._internal();
-
   factory DatabaseHelper() => instance;
 
   Future<Database> get database async {
@@ -22,26 +21,14 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       version: 1,
-      onCreate: _onCreate,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
+      onCreate: _onCreate,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    /// USER
-    await db.execute('''
-      CREATE TABLE users (
-        id TEXT PRIMARY KEY,
-        phone_number TEXT NOT NULL UNIQUE,
-        active_business_id TEXT,
-        created_at INTEGER,
-        updated_at INTEGER
-      )
-    ''');
-
-    /// BUSINESS
     await db.execute('''
       CREATE TABLE businesses (
         id TEXT PRIMARY KEY,
@@ -53,11 +40,11 @@ class DatabaseHelper {
         created_at INTEGER,
         updated_at INTEGER,
         user_id TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        is_synced INTEGER DEFAULT 0,
+        firebase_updated_at INTEGER
       )
     ''');
 
-    /// PARTY
     await db.execute('''
       CREATE TABLE parties (
         id TEXT PRIMARY KEY,
@@ -65,7 +52,7 @@ class DatabaseHelper {
         phone_number TEXT,
         address TEXT,
         photo_url TEXT,
-        type TEXT,
+        type TEXT CHECK(type IN ('customer','supplier')),
         reminder_date INTEGER,
         reminder_type TEXT,
         sms_setting INTEGER DEFAULT 0,
@@ -74,17 +61,20 @@ class DatabaseHelper {
         created_at INTEGER,
         updated_at INTEGER,
         business_id TEXT NOT NULL,
-        FOREIGN KEY (business_id) REFERENCES businesses(id)
+        is_synced INTEGER DEFAULT 0,
+        firebase_updated_at INTEGER,
+        FOREIGN KEY (business_id)
+          REFERENCES businesses(id)
+          ON DELETE CASCADE
       )
     ''');
 
-    /// TRANSACTION
     await db.execute('''
       CREATE TABLE transactions (
         id TEXT PRIMARY KEY,
         amount REAL NOT NULL,
         date INTEGER NOT NULL,
-        direction TEXT NOT NULL,
+        direction TEXT CHECK(direction IN ('gave','got')),
         description TEXT,
         photo_url TEXT,
         is_deleted INTEGER DEFAULT 0,
@@ -92,13 +82,25 @@ class DatabaseHelper {
         updated_at INTEGER,
         party_id TEXT NOT NULL,
         business_id TEXT NOT NULL,
-        FOREIGN KEY (party_id) REFERENCES parties(id),
-        FOREIGN KEY (business_id) REFERENCES businesses(id)
+        is_synced INTEGER DEFAULT 0,
+        firebase_updated_at INTEGER,
+        FOREIGN KEY (party_id)
+          REFERENCES parties(id)
+          ON DELETE CASCADE,
+        FOREIGN KEY (business_id)
+          REFERENCES businesses(id)
+          ON DELETE CASCADE
       )
     ''');
+
+    await db.execute('CREATE INDEX idx_business_user ON businesses(user_id)');
+    await db.execute('CREATE INDEX idx_party_business ON parties(business_id)');
+    await db.execute('CREATE INDEX idx_tx_party ON transactions(party_id)');
+    await db.execute(
+      'CREATE INDEX idx_tx_business ON transactions(business_id)',
+    );
   }
 
-  /// Close DB
   Future<void> close() async {
     final db = await database;
     await db.close();

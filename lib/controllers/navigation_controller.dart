@@ -1,4 +1,7 @@
 import 'package:get/get.dart';
+import 'business_profile_controller.dart';
+import 'home_controller.dart';
+import 'analytics_controller.dart';
 
 class NavigationController extends GetxController {
   final RxInt currentIndex = 0.obs;
@@ -10,6 +13,16 @@ class NavigationController extends GetxController {
   void onInit() {
     super.onInit();
     _getArguments();
+
+    ever(currentIndex, (index) {
+      if (index == 2) {
+        _loadSelectedBusinessProfile();
+      } else if (index == 0) {
+        if (Get.isRegistered<AnalyticsController>()) {
+          Get.find<AnalyticsController>().refreshAnalytics();
+        }
+      }
+    });
   }
 
   void _getArguments() {
@@ -35,5 +48,31 @@ class NavigationController extends GetxController {
 
   void changeTab(int index) {
     currentIndex.value = index;
+  }
+
+  /// Load selected business profile when profile tab is accessed
+  void _loadSelectedBusinessProfile() {
+    if (Get.isRegistered<HomeController>()) {
+      try {
+        final homeController = Get.find<HomeController>();
+        // Find selected account
+        for (var account in homeController.accountsList) {
+          if (account['isSelected'] == true) {
+            final businessId = account['id']?.toString();
+            if (businessId != null && businessId.isNotEmpty) {
+              // Load business data in BusinessProfileController
+              if (Get.isRegistered<BusinessProfileController>()) {
+                final businessProfileController =
+                    Get.find<BusinessProfileController>();
+                businessProfileController.loadBusinessById(businessId);
+              }
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        // Error loading, ignore
+      }
+    }
   }
 }

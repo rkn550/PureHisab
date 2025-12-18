@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:purehisab/data/services/party_repo.dart';
 import 'home_controller.dart';
 
 class AddPartyController extends GetxController {
+  final PartyRepository _partyRepository = PartyRepository();
+
   final partyNameController = TextEditingController();
   final mobileController = TextEditingController();
   final addressController = TextEditingController();
 
   final formKey = GlobalKey<FormState>();
   final RxBool isLoading = false.obs;
-  final RxString partyType = 'Customer'.obs; // 'Customer' or 'Supplier'
+  final RxString partyType = 'Customer'.obs;
   final RxBool showGstinAddress = false.obs;
 
-  // Party type from navigation (0 = Customer, 1 = Supplier)
   int? initialPartyType;
 
   @override
@@ -68,48 +70,33 @@ class AddPartyController extends GetxController {
       isLoading.value = true;
 
       try {
-        // Simulate API call
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        // Get HomeController and add new party
-        if (Get.isRegistered<HomeController>()) {
-          final homeController = Get.find<HomeController>();
-
-          // Build party data with all collected information
-          final newParty = <String, dynamic>{
-            'name': partyNameController.text.trim(),
-            'mobile': mobileController.text.trim(),
-            'time': 'Just now',
-            'amount': 0.0,
-            'type': partyType.value == 'Customer' ? 'give' : 'get',
-            'hasRequest': false,
-          };
-
-          // Add address if provided
-          final address = addressController.text.trim();
-          if (address.isNotEmpty) {
-            newParty['address'] = address;
-          }
-
-          // Add to appropriate list
-          if (partyType.value == 'Customer') {
-            homeController.customersList.add(newParty);
-          } else {
-            homeController.suppliersList.add(newParty);
-          }
-
-          // Update summary amounts
-          homeController.updateSummaryAmounts();
-
-          // Clear form after successful addition
-          _clearForm();
+        if (!Get.isRegistered<HomeController>()) {
+          throw Exception('HomeController not found');
         }
 
-        // Navigate back to home screen
-        // Pop all routes until we're back at home
+        final homeController = Get.find<HomeController>();
+        if (homeController.selectedBusinessId.value.isEmpty) {
+          throw Exception('No business selected');
+        }
+
+        await _partyRepository.createParty(
+          businessId: homeController.selectedBusinessId.value,
+          partyName: partyNameController.text.trim(),
+          type: partyType.value == 'Customer' ? 'customer' : 'supplier',
+          phoneNumber: mobileController.text.trim().isNotEmpty
+              ? mobileController.text.trim()
+              : null,
+          address: addressController.text.trim().isNotEmpty
+              ? addressController.text.trim()
+              : null,
+        );
+
+        await homeController.loadPartiesFromDatabase();
+
+        _clearForm();
+
         Get.until((route) => route.isFirst);
 
-        // Show success message
         Future.delayed(const Duration(milliseconds: 300), () {
           if (Get.isSnackbarOpen == false) {
             Get.snackbar(
@@ -123,12 +110,16 @@ class AddPartyController extends GetxController {
           }
         });
       } catch (e) {
+        final errorMessage = e.toString().replaceAll('Exception: ', '');
         Get.snackbar(
           'Error',
-          'Failed to add ${partyType.value}. Please try again.',
+          errorMessage.isNotEmpty
+              ? errorMessage
+              : 'Failed to add ${partyType.value}. Please try again.',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade100,
           colorText: Colors.red.shade900,
+          duration: const Duration(seconds: 4),
         );
       } finally {
         isLoading.value = false;

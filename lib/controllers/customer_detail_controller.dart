@@ -1,14 +1,18 @@
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:purehisab/data/services/party_repo.dart';
+import 'package:purehisab/data/services/transaction_repo.dart';
 import 'home_controller.dart';
 import '../app/routes/app_pages.dart';
 
 class CustomerDetailController extends GetxController {
-  // Customer information
+  final PartyRepository _partyRepository = PartyRepository();
+  final TransactionRepository _transactionRepository = TransactionRepository();
+
   final RxString customerName = ''.obs;
   final RxString customerPhone = ''.obs;
   final RxString customerId = ''.obs;
-  final RxBool isCustomer = true.obs; // true for customer, false for supplier
+  final RxBool isCustomer = true.obs;
 
   // Summary amounts
   final RxDouble amountToGive = 0.0.obs; // Amount user will give (green)
@@ -19,7 +23,7 @@ class CustomerDetailController extends GetxController {
   final RxBool hasReminder = false.obs;
 
   // Store name
-  final RxString storeName = 'Kirana Store'.obs;
+  final RxString storeName = ''.obs;
 
   // Transaction list
   final RxList<Map<String, dynamic>> transactions =
@@ -28,110 +32,76 @@ class CustomerDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadCustomerData();
-    _loadTransactions();
-    calculateSummary();
+    _loadCustomerData().then((_) {
+      loadTransactions();
+    });
   }
 
-  void _loadCustomerData() {
+  Future<void> _loadCustomerData() async {
     final args = Get.arguments;
+    String? partyId;
+
     if (args != null && args is Map<String, dynamic>) {
-      customerName.value = args['name']?.toString() ?? 'Unknown';
-      customerPhone.value = args['phone']?.toString() ?? '';
-      customerId.value = args['id']?.toString() ?? '';
-      isCustomer.value = args['isCustomer'] as bool? ?? true;
-      storeName.value = args['storeName']?.toString() ?? 'Kirana Store';
+      partyId = args['id']?.toString();
     }
 
-    // Try to get store name from HomeController if available
+    if (partyId == null || partyId.isEmpty) {
+      return;
+    }
+
+    try {
+      final party = await _partyRepository.getPartyById(partyId);
+      if (party != null) {
+        customerId.value = party.id;
+        customerName.value = party.partyName;
+        customerPhone.value = party.phoneNumber ?? '';
+        isCustomer.value = party.type == 'customer';
+      }
+    } catch (e) {
+      print('Error loading party data: $e');
+    }
+
     if (Get.isRegistered<HomeController>()) {
       try {
         final homeController = Get.find<HomeController>();
         storeName.value = homeController.storeName.value;
       } catch (e) {
-        // HomeController not available, use default
+        print('Error getting store name: $e');
       }
     }
   }
 
-  void _loadTransactions() {
-    // Mock transaction data based on customer name
-    final name = customerName.value.toLowerCase();
+  Future<void> loadTransactions() async {
+    if (customerId.value.isEmpty) return;
 
-    if (name.contains('rajiv')) {
-      transactions.value = [
-        {
-          'id': '1',
-          'date': DateTime(2025, 12, 12, 22, 52),
-          'type': 'give', // You gave
-          'amount': 10000.0,
-          'balance': 4445.0,
-          'note': '',
-        },
-        {
-          'id': '2',
-          'date': DateTime(2025, 12, 2, 7, 21),
-          'type': 'get', // You got
-          'amount': 5555.0,
-          'balance': 5555.0,
-          'note': 'gdbdbdbdbd',
-        },
-      ];
-    } else if (name.contains('suman')) {
-      transactions.value = [
-        {
-          'id': '1',
-          'date': DateTime(2025, 12, 12, 7, 22),
-          'type': 'give', // You gave
-          'amount': 555.0,
-          'balance': 5333.0,
-          'note': 'fgfbdbdb',
-        },
-        {
-          'id': '2',
-          'date': DateTime(2025, 12, 12, 7, 19),
-          'type': 'get', // You got
-          'amount': 5888.0,
-          'balance': 5888.0,
-          'note': '',
-        },
-      ];
-    } else {
-      // Default mock data
-      transactions.value = [
-        {
-          'id': '1',
-          'date': DateTime(2025, 12, 12, 10, 30),
-          'type': 'give',
-          'amount': 5000.0,
-          'balance': 5000.0,
-          'note': 'Payment received',
-        },
-        {
-          'id': '2',
-          'date': DateTime(2025, 12, 10, 14, 15),
-          'type': 'get',
-          'amount': 3000.0,
-          'balance': 8000.0,
-          'note': 'Goods delivered',
-        },
-        {
-          'id': '3',
-          'date': DateTime(2025, 12, 8, 9, 0),
-          'type': 'give',
-          'amount': 2000.0,
-          'balance': 5000.0,
-          'note': '',
-        },
-      ];
+    try {
+      final txList = await _transactionRepository.getTransactionsByParty(
+        customerId.value,
+      );
+
+      transactions.clear();
+
+      for (var tx in txList) {
+        transactions.add({
+          'id': tx.id,
+          'amount': tx.amount,
+          'type': tx.direction == 'gave' ? 'give' : 'get',
+          'date': DateTime.fromMillisecondsSinceEpoch(tx.date),
+          'description': tx.description,
+          'balance': 0.0,
+        });
+      }
+
+      transactions.sort((a, b) {
+        final dateA = a['date'] as DateTime;
+        final dateB = b['date'] as DateTime;
+        return dateB.compareTo(dateA);
+      });
+
+      calculateSummary();
+    } catch (e) {
+      print('Error loading transactions: $e');
     }
-
-    // Sort by date (most recent first)
-    transactions.sort((a, b) {
-      final dateA = a['date'] as DateTime;
-      final dateB = b['date'] as DateTime;
-      return dateB.compareTo(dateA);
-    });
   }
 
   void calculateSummary() {
@@ -512,7 +482,7 @@ class CustomerDetailController extends GetxController {
           result is Map<String, dynamic> &&
           result['success'] == true) {
         // Refresh transaction list
-        _loadTransactions();
+        loadTransactions();
         _calculateSummary();
       }
     });
@@ -531,7 +501,7 @@ class CustomerDetailController extends GetxController {
           result is Map<String, dynamic> &&
           result['success'] == true) {
         // Refresh transaction list
-        _loadTransactions();
+        loadTransactions();
         _calculateSummary();
       }
     });

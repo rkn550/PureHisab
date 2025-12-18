@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/app/routes/app_pages.dart';
@@ -13,6 +15,27 @@ class LoginController extends GetxController {
   final RxString phoneNumber = ''.obs;
 
   static const String countryCode = '+91';
+  StreamSubscription<User?>? _authStateSubscription;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _checkAuthState();
+    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
+      User? user,
+    ) {
+      if (user != null) {
+        Get.offNamed(Routes.home, arguments: {'initialTab': 1});
+      }
+    });
+  }
+
+  void _checkAuthState() {
+    final currentUser = _authService.currentUser;
+    if (currentUser != null) {
+      Get.offNamed(Routes.home, arguments: {'initialTab': 1});
+    }
+  }
 
   void updatePhoneNumber(String value) {
     phoneNumber.value = value;
@@ -24,7 +47,7 @@ class LoginController extends GetxController {
     isLoading.value = true;
 
     try {
-      final verificationId = await _authService.sendOtp(
+      final result = await _authService.sendOtp(
         '$countryCode${phoneNumber.value}',
       );
 
@@ -32,13 +55,21 @@ class LoginController extends GetxController {
         Routes.otp,
         arguments: {
           'phoneNumber': '$countryCode${phoneNumber.value}',
-          'verificationId': verificationId,
+          'verificationId': result['verificationId'],
+          'resendToken': result['resendToken'],
         },
       );
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''));
     } finally {
       isLoading.value = false;
     }
+  }
+
+  @override
+  void onClose() {
+    _authStateSubscription?.cancel();
+    phoneController.dispose();
+    super.onClose();
   }
 }

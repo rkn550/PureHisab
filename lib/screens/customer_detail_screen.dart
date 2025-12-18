@@ -145,98 +145,136 @@ class CustomerDetailScreen extends StatelessWidget {
 
   Widget _buildSummaryCard(CustomerDetailController controller) {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Obx(() {
-        final willGet = controller.amountToGet.value > 0;
-        final amount = willGet
-            ? controller.amountToGet.value
-            : controller.amountToGive.value;
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Obx(() {
+          final willGet = controller.amountToGet.value > 0;
+          final amount = willGet
+              ? controller.amountToGet.value
+              : controller.amountToGive.value;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              willGet ? 'You will get' : 'You will give',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '₹ ${_formatAmount(amount)}',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: willGet ? Colors.red : Colors.green,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Obx(
-              () => Row(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
                   Icon(
-                    Icons.calendar_today,
-                    size: 16,
-                    color: controller.hasReminder.value
-                        ? AppColors.primary
-                        : AppColors.textSecondary,
+                    willGet ? Icons.arrow_downward : Icons.arrow_upward,
+                    color: Colors.white.withOpacity(0.9),
+                    size: 18,
                   ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      controller.hasReminder.value
-                          ? 'Collection reminder set'
-                          : 'Set collection reminder',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: controller.hasReminder.value
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
-                      ),
+                  const SizedBox(width: 6),
+                  Text(
+                    willGet ? 'You will get' : 'You will give',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.9),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  if (controller.hasReminder.value)
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      color: AppColors.textSecondary,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        controller.removeCollectionReminder();
-                      },
-                    )
-                  else
-                    TextButton(
-                      onPressed: () {
-                        _showDatePicker(controller);
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        minimumSize: const Size(0, 28),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text(
-                        'SET DATE',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
                 ],
               ),
-            ),
-          ],
-        );
-      }),
+              const SizedBox(height: 12),
+              Text(
+                '₹ ${_formatAmount(amount)}',
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Obx(
+                () => Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 18,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          controller.hasReminder.value
+                              ? 'Collection reminder set'
+                              : 'Set collection reminder',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      if (controller.hasReminder.value)
+                        IconButton(
+                          icon: Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            controller.removeCollectionReminder();
+                          },
+                        )
+                      else
+                        TextButton(
+                          onPressed: () {
+                            _showDatePicker(controller);
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            minimumSize: const Size(0, 32),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'SET DATE',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
     );
   }
 
@@ -278,24 +316,39 @@ class CustomerDetailScreen extends StatelessWidget {
     required VoidCallback onTap,
     bool isEnabled = true,
   }) {
-    return InkWell(
-      onTap: isEnabled ? onTap : null,
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: isEnabled ? AppColors.primary : Colors.grey.shade300,
-            size: 24,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isEnabled ? onTap : null,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isEnabled
+                ? AppColors.primary.withOpacity(0.1)
+                : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: isEnabled ? AppColors.primary : Colors.grey.shade300,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: isEnabled ? AppColors.primary : Colors.grey.shade400,
+                size: 26,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isEnabled ? AppColors.primary : Colors.grey.shade400,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -416,12 +469,24 @@ class CustomerDetailScreen extends StatelessWidget {
     final time = controller.formatTransactionTime(date);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isGive
+              ? Colors.red.withOpacity(0.2)
+              : Colors.green.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

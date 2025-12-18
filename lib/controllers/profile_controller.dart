@@ -3,16 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:purehisab/data/services/party_repo.dart';
+import 'package:purehisab/controllers/home_controller.dart';
 import '../app/utils/app_colors.dart';
 
 class ProfileController extends GetxController {
-  // Profile information
+  final PartyRepository _partyRepository = PartyRepository();
+
   final RxString customerName = ''.obs;
   final RxString customerPhone = ''.obs;
   final RxString customerId = ''.obs;
-  final RxBool isCustomer = true.obs; // true for customer, false for supplier
+  final RxBool isCustomer = true.obs;
   final RxString address = ''.obs;
   final Rx<File?> profileImageFile = Rx<File?>(null);
+  final RxBool isLoading = false.obs;
 
   // SMS Settings
   final RxBool smsEnabled = true.obs; // SMS will be sent on each entry
@@ -24,59 +28,161 @@ class ProfileController extends GetxController {
     _loadProfileData();
   }
 
-  void _loadProfileData() {
+  Future<void> _loadProfileData() async {
     final args = Get.arguments;
+    String? partyId;
+
     if (args != null && args is Map<String, dynamic>) {
-      customerName.value = args['name']?.toString() ?? 'Unknown';
-      customerPhone.value = args['phone']?.toString() ?? '';
-      customerId.value = args['id']?.toString() ?? '';
-      isCustomer.value = args['isCustomer'] as bool? ?? true;
-      address.value = args['address']?.toString() ?? '';
+      partyId = args['id']?.toString();
+    }
+
+    if (partyId == null || partyId.isEmpty) return;
+
+    try {
+      isLoading.value = true;
+      final party = await _partyRepository.getPartyById(partyId);
+      if (party != null) {
+        customerId.value = party.id;
+        customerName.value = party.partyName;
+        customerPhone.value = party.phoneNumber ?? '';
+        address.value = party.address ?? '';
+        isCustomer.value = party.type == 'customer';
+      }
+    } catch (e) {
+      print('Error loading party profile: $e');
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  void updateName(String name) {
-    customerName.value = name;
-    // TODO: Save to backend/mock data
+  Future<void> updateName(String name) async {
+    if (customerId.value.isEmpty) return;
+
+    try {
+      isLoading.value = true;
+      final party = await _partyRepository.getPartyById(customerId.value);
+      if (party != null) {
+        await _partyRepository.updateParty(party.copyWith(partyName: name));
+        customerName.value = name;
+
+        if (Get.isRegistered<HomeController>()) {
+          await Get.find<HomeController>().loadPartiesFromDatabase();
+        }
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to update name',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  void updatePhone(String phone) {
-    customerPhone.value = phone;
-    // TODO: Save to backend/mock data
+  Future<void> updatePhone(String phone) async {
+    if (customerId.value.isEmpty) return;
+
+    try {
+      isLoading.value = true;
+      final party = await _partyRepository.getPartyById(customerId.value);
+      if (party != null) {
+        await _partyRepository.updateParty(party.copyWith(phoneNumber: phone));
+        customerPhone.value = phone;
+
+        if (Get.isRegistered<HomeController>()) {
+          await Get.find<HomeController>().loadPartiesFromDatabase();
+        }
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to update phone',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  void updateAddress(String newAddress) {
-    address.value = newAddress;
-    // TODO: Save to backend/mock data
+  Future<void> updateAddress(String newAddress) async {
+    if (customerId.value.isEmpty) return;
+
+    try {
+      isLoading.value = true;
+      final party = await _partyRepository.getPartyById(customerId.value);
+      if (party != null) {
+        await _partyRepository.updateParty(party.copyWith(address: newAddress));
+        address.value = newAddress;
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to update address',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void toggleSmsEnabled() {
     smsEnabled.value = !smsEnabled.value;
-    // TODO: Save to backend/mock data
   }
 
   void setSmsLanguage(String language) {
     smsLanguage.value = language;
-    // TODO: Save to backend/mock data
   }
 
-  void changeToCustomerOrSupplier() {
+  Future<void> changeToCustomerOrSupplier() async {
+    if (customerId.value.isEmpty) return;
+
     Get.bottomSheet(
       _ChangeTypeBottomSheet(
         customerName: customerName.value,
         customerPhone: customerPhone.value,
         isCurrentlyCustomer: isCustomer.value,
-        onConfirm: () {
-          isCustomer.value = !isCustomer.value;
-          Get.back(); // Close bottom sheet
-          // TODO: Save to backend/mock data
-          Get.snackbar(
-            'Success',
-            '${customerName.value} has been changed to ${isCustomer.value ? "Customer" : "Supplier"}',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green.shade50,
-            colorText: Colors.green.shade900,
-          );
+        onConfirm: () async {
+          try {
+            isLoading.value = true;
+            final party = await _partyRepository.getPartyById(customerId.value);
+            if (party != null) {
+              final newType = party.type == 'customer'
+                  ? 'supplier'
+                  : 'customer';
+              await _partyRepository.updateParty(party.copyWith(type: newType));
+              isCustomer.value = newType == 'customer';
+
+              if (Get.isRegistered<HomeController>()) {
+                await Get.find<HomeController>().loadPartiesFromDatabase();
+              }
+
+              Get.back();
+              Get.snackbar(
+                'Success',
+                '${customerName.value} has been changed to ${isCustomer.value ? "Customer" : "Supplier"}',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.green.shade100,
+                colorText: Colors.green.shade900,
+              );
+            }
+          } catch (e) {
+            Get.snackbar(
+              'Error',
+              'Failed to change type',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.red.shade100,
+              colorText: Colors.red.shade900,
+            );
+          } finally {
+            isLoading.value = false;
+          }
         },
       ),
       isScrollControlled: true,
@@ -85,7 +191,9 @@ class ProfileController extends GetxController {
     );
   }
 
-  void deleteCustomerOrSupplier() {
+  Future<void> deleteCustomerOrSupplier() async {
+    if (customerId.value.isEmpty) return;
+
     Get.bottomSheet(
       Container(
         decoration: BoxDecoration(
@@ -105,7 +213,6 @@ class ProfileController extends GetxController {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Drag handle
             Center(
               child: Container(
                 width: 40,
@@ -117,7 +224,6 @@ class ProfileController extends GetxController {
                 ),
               ),
             ),
-            // Title
             Text(
               'Delete ${customerName.value}?',
               style: const TextStyle(
@@ -127,7 +233,6 @@ class ProfileController extends GetxController {
               ),
             ),
             const SizedBox(height: 16),
-            // Message
             Text(
               'This will delete the ${isCustomer.value ? 'customer' : 'supplier'} from your book.',
               style: TextStyle(
@@ -137,10 +242,8 @@ class ProfileController extends GetxController {
               ),
             ),
             const SizedBox(height: 32),
-            // Action Buttons
             Row(
               children: [
-                // CANCEL Button
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Get.back(),
@@ -166,23 +269,41 @@ class ProfileController extends GetxController {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // CONFIRM Button
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      Get.back(); // Close bottom sheet
-                      // TODO: Delete from backend/mock data
-                      Get.back(); // Go back to previous screen
-                      Get.snackbar(
-                        isCustomer.value
-                            ? 'Customer Deleted'
-                            : 'Supplier Deleted',
-                        '${customerName.value} has been deleted',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: Colors.green.shade50,
-                        colorText: Colors.green.shade900,
-                        duration: const Duration(seconds: 2),
-                      );
+                    onPressed: () async {
+                      try {
+                        isLoading.value = true;
+                        await _partyRepository.deleteParty(customerId.value);
+
+                        if (Get.isRegistered<HomeController>()) {
+                          await Get.find<HomeController>()
+                              .loadPartiesFromDatabase();
+                        }
+
+                        Get.back();
+                        Get.back();
+                        Get.snackbar(
+                          isCustomer.value
+                              ? 'Customer Deleted'
+                              : 'Supplier Deleted',
+                          '${customerName.value} has been deleted',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.green.shade100,
+                          colorText: Colors.green.shade900,
+                          duration: const Duration(seconds: 2),
+                        );
+                      } catch (e) {
+                        Get.snackbar(
+                          'Error',
+                          'Failed to delete',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.red.shade100,
+                          colorText: Colors.red.shade900,
+                        );
+                      } finally {
+                        isLoading.value = false;
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryDark,

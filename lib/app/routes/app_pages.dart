@@ -58,6 +58,7 @@ class AppPages {
       name: Routes.createAccount,
       page: () => const CreateAccountScreen(),
       binding: CreateAccountBinding(),
+      arguments: {'mode': 'create'},
     ),
     GetPage(
       name: Routes.addParty,

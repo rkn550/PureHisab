@@ -1,13 +1,18 @@
 import 'package:get/get.dart';
+import 'package:purehisab/data/services/party_repo.dart';
+import 'package:purehisab/data/services/transaction_repo.dart';
+import 'package:purehisab/controllers/home_controller.dart';
 
 class AnalyticsController extends GetxController {
-  // Summary stats
+  final PartyRepository _partyRepository = PartyRepository();
+  final TransactionRepository _transactionRepository = TransactionRepository();
+
   final RxDouble totalBalance = 0.0.obs;
-  final RxDouble totalToGive = 10888.0.obs;
+  final RxDouble totalToGive = 0.0.obs;
   final RxDouble totalToGet = 0.0.obs;
   final RxInt totalTransactions = 0.obs;
-  final RxInt totalCustomers = 5.obs;
-  final RxInt totalSuppliers = 3.obs;
+  final RxInt totalCustomers = 0.obs;
+  final RxInt totalSuppliers = 0.obs;
 
   // Monthly stats
   final RxDouble thisMonthIncome = 0.0.obs; // You Got
@@ -32,52 +37,82 @@ class AnalyticsController extends GetxController {
     _loadAnalyticsData();
   }
 
-  void _loadAnalyticsData() {
-    // Calculate total balance
-    totalBalance.value = totalToGet.value - totalToGive.value;
-
-    // Calculate this month's data
-    _calculateThisMonthData();
-
-    // Calculate weekly data
-    _calculateThisWeekData();
-
-    // Mock top customers
-    topCustomers.value = [
-      {'name': 'Suman', 'amount': 5333.0, 'type': 'give'},
-      {'name': 'Rajiv', 'amount': 5555.0, 'type': 'give'},
-      {'name': 'Amit', 'amount': 2500.0, 'type': 'get'},
-    ];
-
-    // Mock top suppliers
-    topSuppliers.value = [
-      {'name': 'Surya', 'amount': 289311.0, 'type': 'get'},
-      {'name': 'Gddh', 'amount': 555.0, 'type': 'give'},
-      {'name': 'Gdhdbd', 'amount': 55.0, 'type': 'get'},
-    ];
+  @override
+  void onReady() {
+    super.onReady();
+    if (Get.isRegistered<HomeController>()) {
+      final homeController = Get.find<HomeController>();
+      ever(homeController.selectedBusinessId, (_) {
+        _loadAnalyticsData();
+      });
+    }
   }
 
-  void _calculateThisMonthData() {
+  Future<void> refreshAnalytics() async {
+    await _loadAnalyticsData();
+  }
+
+  Future<void> _loadAnalyticsData() async {
+    if (!Get.isRegistered<HomeController>()) return;
+
+    try {
+      final homeController = Get.find<HomeController>();
+      if (homeController.selectedBusinessId.value.isEmpty) return;
+
+      final businessId = homeController.selectedBusinessId.value;
+
+      final parties = await _partyRepository.getPartiesByBusiness(businessId);
+      final customers = parties.where((p) => p.type == 'customer').toList();
+      final suppliers = parties.where((p) => p.type == 'supplier').toList();
+
+      totalCustomers.value = customers.length;
+      totalSuppliers.value = suppliers.length;
+
+      final transactions = await _transactionRepository
+          .getTransactionsByBusiness(businessId);
+
+      totalTransactions.value = transactions.length;
+
+      double give = 0.0;
+      double get = 0.0;
+
+      for (var tx in transactions) {
+        if (tx.direction == 'gave') {
+          give += tx.amount;
+        } else {
+          get += tx.amount;
+        }
+      }
+
+      totalToGive.value = give;
+      totalToGet.value = get;
+      totalBalance.value = get - give;
+
+      _calculateThisMonthData(transactions);
+      _calculateThisWeekData(transactions);
+      _calculateTopParties(customers, suppliers, transactions);
+    } catch (e) {
+      print('Error loading analytics data: $e');
+    }
+  }
+
+  void _calculateThisMonthData(List transactions) {
     final now = DateTime.now();
     final currentMonth = now.month;
     final currentYear = now.year;
 
-    // Get all transactions from mock data (this would come from a central store in real app)
-    final allTransactions = _getAllTransactions();
-
-    double income = 0.0; // You Got
-    double expense = 0.0; // You Gave
+    double income = 0.0;
+    double expense = 0.0;
     int transactionCount = 0;
 
-    for (var transaction in allTransactions) {
-      final date = transaction['date'] as DateTime;
+    for (var tx in transactions) {
+      final date = DateTime.fromMillisecondsSinceEpoch(tx.date);
 
-      // Check if transaction is in current month
       if (date.month == currentMonth && date.year == currentYear) {
-        if (transaction['type'] == 'get') {
-          income += (transaction['amount'] as num).toDouble();
-        } else if (transaction['type'] == 'give') {
-          expense += (transaction['amount'] as num).toDouble();
+        if (tx.direction == 'got') {
+          income += tx.amount;
+        } else {
+          expense += tx.amount;
         }
         transactionCount++;
       }
@@ -87,32 +122,26 @@ class AnalyticsController extends GetxController {
     thisMonthExpense.value = expense;
     thisMonthTransactions.value = transactionCount;
 
-    // Calculate net balance for this month
     final netBalance = income - expense;
     if (netBalance > 0) {
-      // User will get money
       thisMonthToGet.value = netBalance;
       thisMonthToGive.value = 0.0;
     } else {
-      // User will give money
       thisMonthToGive.value = netBalance.abs();
       thisMonthToGet.value = 0.0;
     }
   }
 
-  void _calculateThisWeekData() {
+  void _calculateThisWeekData(List transactions) {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-    // Get all transactions from mock data
-    final allTransactions = _getAllTransactions();
+    double income = 0.0;
+    double expense = 0.0;
 
-    double income = 0.0; // You Got
-    double expense = 0.0; // You Gave
-
-    for (var transaction in allTransactions) {
-      final date = transaction['date'] as DateTime;
+    for (var tx in transactions) {
+      final date = DateTime.fromMillisecondsSinceEpoch(tx.date);
       final transactionDate = DateTime(date.year, date.month, date.day);
       final weekStart = DateTime(
         startOfWeek.year,
@@ -121,15 +150,14 @@ class AnalyticsController extends GetxController {
       );
       final weekEnd = DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
 
-      // Check if transaction is in current week
       if (transactionDate.isAfter(
             weekStart.subtract(const Duration(days: 1)),
           ) &&
           transactionDate.isBefore(weekEnd.add(const Duration(days: 1)))) {
-        if (transaction['type'] == 'get') {
-          income += (transaction['amount'] as num).toDouble();
-        } else if (transaction['type'] == 'give') {
-          expense += (transaction['amount'] as num).toDouble();
+        if (tx.direction == 'got') {
+          income += tx.amount;
+        } else {
+          expense += tx.amount;
         }
       }
     }
@@ -138,116 +166,58 @@ class AnalyticsController extends GetxController {
     thisWeekExpense.value = expense;
   }
 
-  // Get all transactions from mock data
-  // In a real app, this would fetch from a central database/service
-  List<Map<String, dynamic>> _getAllTransactions() {
-    final allTransactions = <Map<String, dynamic>>[];
+  void _calculateTopParties(List customers, List suppliers, List transactions) {
+    final customerBalances = <String, double>{};
+    final supplierBalances = <String, double>{};
 
-    // Mock transactions for different customers/suppliers
-    // These would come from a central transaction store in a real app
-    final now = DateTime.now();
+    for (var tx in transactions) {
+      final partyId = tx.partyId;
+      final customer = customers.firstWhere(
+        (c) => c.id == partyId,
+        orElse: () => null,
+      );
+      final supplier = suppliers.firstWhere(
+        (s) => s.id == partyId,
+        orElse: () => null,
+      );
 
-    // Add some mock transactions for current month
-    allTransactions.addAll([
-      {
-        'id': '1',
-        'date': DateTime(now.year, now.month, 1, 10, 30),
-        'type': 'get',
-        'amount': 5000.0,
-        'note': 'Payment received',
-      },
-      {
-        'id': '2',
-        'date': DateTime(now.year, now.month, 5, 14, 15),
-        'type': 'give',
-        'amount': 3000.0,
-        'note': 'Goods delivered',
-      },
-      {
-        'id': '3',
-        'date': DateTime(now.year, now.month, 10, 9, 0),
-        'type': 'get',
-        'amount': 2000.0,
-        'note': '',
-      },
-      {
-        'id': '4',
-        'date': DateTime(now.year, now.month, 15, 11, 20),
-        'type': 'give',
-        'amount': 1500.0,
-        'note': 'Purchase',
-      },
-      {
-        'id': '5',
-        'date': DateTime(now.year, now.month, 20, 16, 45),
-        'type': 'get',
-        'amount': 4000.0,
-        'note': 'Sale',
-      },
-    ]);
-
-    // Add transactions from customer detail mock data if they're in current month
-    final customerTransactions = [
-      {
-        'id': 'c1',
-        'date': DateTime(2025, 12, 12, 22, 52),
-        'type': 'give',
-        'amount': 10000.0,
-        'note': '',
-      },
-      {
-        'id': 'c2',
-        'date': DateTime(2025, 12, 2, 7, 21),
-        'type': 'get',
-        'amount': 5555.0,
-        'note': 'gdbdbdbdbd',
-      },
-      {
-        'id': 'c3',
-        'date': DateTime(2025, 12, 12, 7, 22),
-        'type': 'give',
-        'amount': 555.0,
-        'note': 'fgfbdbdb',
-      },
-      {
-        'id': 'c4',
-        'date': DateTime(2025, 12, 12, 7, 19),
-        'type': 'get',
-        'amount': 5888.0,
-        'note': '',
-      },
-      {
-        'id': 'c5',
-        'date': DateTime(2025, 12, 12, 10, 30),
-        'type': 'give',
-        'amount': 5000.0,
-        'note': 'Payment received',
-      },
-      {
-        'id': 'c6',
-        'date': DateTime(2025, 12, 10, 14, 15),
-        'type': 'get',
-        'amount': 3000.0,
-        'note': 'Goods delivered',
-      },
-      {
-        'id': 'c7',
-        'date': DateTime(2025, 12, 8, 9, 0),
-        'type': 'give',
-        'amount': 2000.0,
-        'note': '',
-      },
-    ];
-
-    // Filter transactions for current month
-    for (var transaction in customerTransactions) {
-      final date = transaction['date'] as DateTime;
-      if (date.month == now.month && date.year == now.year) {
-        allTransactions.add(transaction);
+      if (customer != null) {
+        customerBalances[partyId] =
+            (customerBalances[partyId] ?? 0.0) +
+            (tx.direction == 'gave' ? tx.amount : -tx.amount);
+      } else if (supplier != null) {
+        supplierBalances[partyId] =
+            (supplierBalances[partyId] ?? 0.0) +
+            (tx.direction == 'got' ? -tx.amount : tx.amount);
       }
     }
 
-    return allTransactions;
+    final topCustomersList =
+        customers.map((c) {
+            final balance = customerBalances[c.id]?.abs() ?? 0.0;
+            return {
+              'id': c.id,
+              'name': c.partyName,
+              'amount': balance,
+              'type': balance >= 0 ? 'give' : 'get',
+            };
+          }).toList()
+          ..sort((a, b) => (b['amount'] as num).compareTo(a['amount'] as num));
+
+    final topSuppliersList =
+        suppliers.map((s) {
+            final balance = supplierBalances[s.id]?.abs() ?? 0.0;
+            return {
+              'id': s.id,
+              'name': s.partyName,
+              'amount': balance,
+              'type': balance >= 0 ? 'get' : 'give',
+            };
+          }).toList()
+          ..sort((a, b) => (b['amount'] as num).compareTo(a['amount'] as num));
+
+    topCustomers.value = topCustomersList.take(5).toList();
+    topSuppliers.value = topSuppliersList.take(5).toList();
   }
 
   String formatAmount(double amount) {

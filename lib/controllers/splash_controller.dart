@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../app/routes/app_pages.dart';
+import '../data/services/auth_service.dart';
 
 class SplashController extends GetxController
     with GetSingleTickerProviderStateMixin {
   late AnimationController animationController;
   late Animation<double> fadeAnimation;
   late Animation<double> scaleAnimation;
+  final AuthService _authService = AuthService();
 
   @override
   void onInit() {
     super.onInit();
     _initAnimations();
     _startAnimation();
-    _navigateToLogin();
+    _checkAuthAndNavigate();
   }
 
   void _initAnimations() {
@@ -41,9 +43,14 @@ class SplashController extends GetxController
     animationController.forward();
   }
 
-  void _navigateToLogin() {
+  void _checkAuthAndNavigate() {
     Future.delayed(const Duration(seconds: 3), () {
-      Get.offNamed(Routes.login);
+      final currentUser = _authService.currentUser;
+      if (currentUser != null) {
+        Get.offNamed(Routes.home, arguments: {'initialTab': 1});
+      } else {
+        Get.offNamed(Routes.login);
+      }
     });
   }
 

@@ -3,11 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:purehisab/data/services/business_repo.dart';
 import '../app/utils/app_colors.dart';
+import 'home_controller.dart';
 
 class BusinessProfileController extends GetxController {
+  final BusinessRepository _businessRepository = BusinessRepository();
+  // Mode: 'create' for creating new business, 'edit' for editing existing
+  final RxString mode = 'edit'.obs; // 'create' or 'edit'
+
+  // Form controllers for create account screen
+  final nameController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  final RxBool isLoading = false.obs;
+
   // Business information
-  final RxString businessName = ''.obs; // Owner Name
+  final RxString businessId = ''.obs; // Business ID from database
+  final RxString businessName = ''.obs; // Business Name
+  final RxString ownerName = ''.obs; // Owner Name (editable)
   final RxString businessPhone = ''.obs;
   final Rx<File?> profileImageFile = Rx<File?>(null);
 
@@ -29,23 +42,118 @@ class BusinessProfileController extends GetxController {
     _loadBusinessData();
   }
 
-  void _loadBusinessData() {
+  @override
+  void onClose() {
+    nameController.dispose();
+    super.onClose();
+  }
+
+  void _loadBusinessData() async {
     final args = Get.arguments;
+
     if (args != null && args is Map<String, dynamic>) {
-      businessName.value = args['name']?.toString() ?? 'Unknown';
-      businessPhone.value = args['phone']?.toString() ?? '';
+      if (args['mode'] == 'create') {
+        mode.value = 'create';
+        _resetFormForCreate();
+        return;
+      }
+    }
+
+    mode.value = 'edit';
+
+    String? businessIdToLoad;
+
+    if (args != null && args is Map<String, dynamic>) {
+      businessIdToLoad = args['businessId']?.toString();
+    }
+
+    if (businessIdToLoad == null || businessIdToLoad.isEmpty) {
+      if (Get.isRegistered<HomeController>()) {
+        try {
+          final homeController = Get.find<HomeController>();
+          businessIdToLoad = homeController.selectedBusinessId.value;
+        } catch (e) {
+          print('Error getting business ID from HomeController: $e');
+        }
+      }
+    }
+
+    if (businessIdToLoad != null && businessIdToLoad.isNotEmpty) {
+      await _loadBusinessFromDatabase(businessIdToLoad);
+    } else {
+      _resetFormForCreate();
+    }
+  }
+
+  /// Reset form fields when entering create mode
+  void resetFormForCreate() {
+    nameController.clear();
+    businessName.value = '';
+    ownerName.value = '';
+    businessPhone.value = '';
+    businessId.value = '';
+    profileImageFile.value = null;
+    // Reset form validation state
+    formKey.currentState?.reset();
+  }
+
+  /// Reset form fields when entering create mode (private alias)
+  void _resetFormForCreate() {
+    resetFormForCreate();
+  }
+
+  /// Load business data from database (public method for external calls)
+  Future<void> loadBusinessById(String id) async {
+    if (id.isEmpty) return;
+    await _loadBusinessFromDatabase(id);
+  }
+
+  /// Load business data from database
+  Future<void> _loadBusinessFromDatabase(String id) async {
+    try {
+      isLoading.value = true;
+      final business = await _businessRepository.getBusinessById(id);
+      if (business != null) {
+        businessId.value = business.id;
+        businessName.value = business.businessName;
+        ownerName.value = business.ownerName ?? '';
+        businessPhone.value = business.phoneNumber ?? '';
+        print('Loaded business phone number: ${business.phoneNumber}');
+        print('Set businessPhone.value to: ${businessPhone.value}');
+      } else {
+        // Business not found
+        Get.snackbar(
+          'Error',
+          'Business not found',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to load business data: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
   void updateBusinessName(String name) {
     businessName.value = name;
-    // TODO: Save to backend/mock data
   }
 
-  void updateBusinessPhone(String phone) {
-    businessPhone.value = phone;
-    // TODO: Save to backend/mock data
+  void updateOwnerName(String name) {
+    ownerName.value = name;
   }
+
+  // void updateBusinessPhone(String phone) {
+  //   businessPhone.value = phone;
+  // }
 
   void toggleSettingsExpanded() {
     settingsExpanded.value = !settingsExpanded.value;
@@ -62,6 +170,170 @@ class BusinessProfileController extends GetxController {
 
   void toggleHelpSupportExpanded() {
     helpSupportExpanded.value = !helpSupportExpanded.value;
+  }
+
+  // ==================== CREATE ACCOUNT FUNCTIONALITY ====================
+
+  /// Create a new business account
+  Future<void> createAccount() async {
+    if (formKey.currentState?.validate() ?? false) {
+      final name = nameController.text.trim();
+      if (name.isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Please enter a name',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
+        );
+        return;
+      }
+
+      isLoading.value = true;
+
+      try {
+        // Create business in database using BusinessRepository
+        // Only business name is provided, phone number auto-filled from repo
+        final business = await _businessRepository.createBusiness(
+          businessName: name,
+          ownerName: null, // Owner name will be added later when editing
+          photoUrl: null, // TODO: Upload photo and get URL
+        );
+
+        // Verify business was created
+        if (business.id.isEmpty) {
+          throw Exception('Business creation failed: Invalid business ID');
+        }
+
+        // Reset form after successful creation
+        resetFormForCreate();
+
+        // Navigate back first to avoid widget rebuild conflicts
+        Get.back();
+
+        // Wait for navigation to complete, then update state
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Get HomeController and add new account
+        if (Get.isRegistered<HomeController>()) {
+          final homeController = Get.find<HomeController>();
+          homeController.addNewAccountFromBusiness(business);
+        }
+
+        // Show success message after state update
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (Get.isSnackbarOpen == false) {
+            Get.snackbar(
+              'Success',
+              'Business account created successfully',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.green.shade100,
+              colorText: Colors.green.shade900,
+              duration: const Duration(seconds: 2),
+            );
+          }
+        });
+      } catch (e) {
+        // Log the full error for debugging
+        print('Error creating business: $e');
+        print('Error stack trace: ${StackTrace.current}');
+
+        final errorMessage = e.toString().replaceAll('Exception: ', '');
+        Get.snackbar(
+          'Error',
+          errorMessage.isNotEmpty
+              ? errorMessage
+              : 'Failed to create account. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
+          duration: const Duration(seconds: 4),
+        );
+      } finally {
+        isLoading.value = false;
+      }
+    }
+  }
+
+  /// Update business profile
+  Future<void> updateBusinessProfile() async {
+    if (businessId.value.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Business ID not found',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+      return;
+    }
+
+    isLoading.value = true;
+
+    try {
+      // Get current business from database
+      final business = await _businessRepository.getBusinessById(
+        businessId.value,
+      );
+      if (business == null) {
+        throw Exception('Business not found');
+      }
+
+      print(
+        'Updating owner name from: ${business.ownerName} to: ${ownerName.value}',
+      );
+
+      final updatedBusiness = business.copyWith(
+        ownerName: ownerName.value.isNotEmpty ? ownerName.value : null,
+      );
+
+      print('Updated business data: ${updatedBusiness.toMap()}');
+      await _businessRepository.updateBusiness(updatedBusiness);
+      print('Business updated in database');
+
+      // Reload business data from database to ensure UI is in sync
+      await _loadBusinessFromDatabase(businessId.value);
+
+      // Refresh HomeController accounts list
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        await homeController.refreshBusinesses();
+      }
+
+      Get.snackbar(
+        'Success',
+        'Business profile updated successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade900,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      final errorMessage = e.toString().replaceAll('Exception: ', '');
+      Get.snackbar(
+        'Error',
+        errorMessage.isNotEmpty
+            ? errorMessage
+            : 'Failed to update business profile. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Validate business name
+  String? validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter a name';
+    }
+    if (value.trim().length < 2) {
+      return 'Name must be at least 2 characters';
+    }
+    return null;
   }
 
   Future<void> addPhoto() async {

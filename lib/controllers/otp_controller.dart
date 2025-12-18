@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../app/routes/app_pages.dart';
 import '../app/utils/app_colors.dart';
+import '../data/services/auth_service.dart';
 
 class OtpController extends GetxController {
+  final AuthService _authService = AuthService();
+
   final List<TextEditingController> otpControllers = List.generate(
     6,
     (index) => TextEditingController(),
@@ -15,16 +18,28 @@ class OtpController extends GetxController {
   final RxString otp = ''.obs;
   final RxInt resendTimer = 60.obs;
   final RxBool canResend = false.obs;
+  final RxBool isResending = false.obs;
+
+  final RxString verificationId = ''.obs;
+  final RxInt resendToken = 0.obs;
 
   @override
   void onInit() {
     super.onInit();
     _getPhoneNumber();
+    _getVerificationId();
     _startResendTimer();
-    // Auto focus first field
     Future.delayed(const Duration(milliseconds: 300), () {
       focusNodes[0].requestFocus();
     });
+  }
+
+  void _getVerificationId() {
+    final args = Get.arguments;
+    if (args != null && args is Map<String, dynamic>) {
+      verificationId.value = args['verificationId'] as String? ?? '';
+      resendToken.value = args['resendToken'] as int? ?? 0;
+    }
   }
 
   void _startResendTimer() {
@@ -77,24 +92,34 @@ class OtpController extends GetxController {
       return;
     }
 
+    if (verificationId.value.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Verification ID not found. Please request a new OTP.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
+      );
+      return;
+    }
+
     isLoading.value = true;
 
     try {
-      // Simulate API call - Replace with actual API call
-      // final enteredOtp = otpControllers.map((controller) => controller.text).join();
-      await Future.delayed(const Duration(seconds: 1));
+      final enteredOtp = otpControllers
+          .map((controller) => controller.text)
+          .join();
 
-      // Navigate to home screen with current index
-      Get.offAllNamed(
-        Routes.home,
-        arguments: {
-          'initialTab': 1, // Home tab (Analytics=0, Home=1, Profile=2)
-        },
+      await _authService.verifyOtp(
+        verificationId: verificationId.value,
+        smsCode: enteredOtp,
       );
+
+      Get.offAllNamed(Routes.home, arguments: {'initialTab': 1});
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Something went wrong. Please try again.',
+        e.toString().replaceAll('Exception: ', ''),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Get.theme.colorScheme.errorContainer,
         colorText: Get.theme.colorScheme.onErrorContainer,
@@ -104,28 +129,49 @@ class OtpController extends GetxController {
     }
   }
 
-  void resendOtp() {
-    if (!canResend.value) return;
+  Future<void> resendOtp() async {
+    if (!canResend.value || isResending.value) return;
 
-    // Clear all OTP fields
-    for (var controller in otpControllers) {
-      controller.clear();
+    isResending.value = true;
+
+    try {
+      for (var controller in otpControllers) {
+        controller.clear();
+      }
+      otp.value = '';
+      for (var focusNode in focusNodes) {
+        focusNode.unfocus();
+      }
+
+      final result = await _authService.sendOtp(
+        phoneNumber.value,
+        resendToken: resendToken.value == 0 ? null : resendToken.value,
+      );
+
+      verificationId.value = result['verificationId'] as String? ?? '';
+      resendToken.value = result['resendToken'] as int? ?? 0;
+
+      Get.snackbar(
+        'OTP Resent',
+        'A new OTP has been sent to ${phoneNumber.value}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.successLight,
+        colorText: AppColors.success,
+        icon: const Icon(Icons.check_circle, color: AppColors.success),
+      );
+
+      _startResendTimer();
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        e.toString().replaceAll('Exception: ', ''),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
+      );
+    } finally {
+      isResending.value = false;
     }
-    otp.value = '';
-    focusNodes[0].requestFocus();
-
-    // Show success message
-    Get.snackbar(
-      'OTP Resent',
-      'A new OTP has been sent to ${phoneNumber.value}',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.successLight,
-      colorText: AppColors.success,
-      icon: const Icon(Icons.check_circle, color: AppColors.success),
-    );
-
-    // Restart timer
-    _startResendTimer();
   }
 
   @override

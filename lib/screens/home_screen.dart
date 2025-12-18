@@ -62,7 +62,16 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildTabs(HomeController controller) {
     return Container(
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Expanded(child: _buildTab(controller, 'CUSTOMERS', 0)),
@@ -75,27 +84,35 @@ class HomeScreen extends StatelessWidget {
   Widget _buildTab(HomeController controller, String label, int index) {
     return Obx(() {
       final isSelected = controller.selectedTab.value == index;
-      return InkWell(
-        onTap: () {
-          controller.changeTab(index);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isSelected ? AppColors.primary : Colors.transparent,
-                width: 2,
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            controller.changeTab(index);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primary.withOpacity(0.1)
+                  : Colors.transparent,
+              border: Border(
+                bottom: BorderSide(
+                  color: isSelected ? AppColors.primary : Colors.transparent,
+                  width: 3,
+                ),
               ),
             ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ),
@@ -105,71 +122,118 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildSummaryCard(HomeController controller) {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'You will give',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Obx(
-                  () => Text(
-                    '₹ ${_formatAmount(controller.amountToGive.value)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 1,
-            height: 40,
-            child: CustomPaint(painter: _DottedLinePainter()),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'You will get',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Obx(
-                  () => Text(
-                    '₹ ${_formatAmount(controller.amountToGet.value)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.arrow_upward,
+                        color: Colors.white.withOpacity(0.9),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'You will give',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () => Text(
+                      '₹ ${_formatAmount(controller.amountToGive.value)}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 50,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.white.withOpacity(0.3),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.arrow_downward,
+                        color: Colors.white.withOpacity(0.9),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'You will get',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () => Text(
+                      '₹ ${_formatAmount(controller.amountToGet.value)}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -295,107 +359,176 @@ class HomeScreen extends StatelessWidget {
           final hasRequest = item['hasRequest'] as bool? ?? false;
           final isGive = type == 'give';
 
-          return InkWell(
-            onTap: () {
-              Get.toNamed(
-                Routes.customerDetail,
-                arguments: {
-                  'name': name,
-                  'phone': item['phone']?.toString() ?? '',
-                  'id': item['id']?.toString() ?? name,
-                  'isCustomer': controller.selectedTab.value == 0,
-                  'storeName': controller.storeName.value,
-                },
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 300 + (index * 50)),
+            curve: Curves.easeOut,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, 20 * (1 - value)),
+                child: Opacity(opacity: value, child: child),
               );
             },
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          time,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '₹ ${_formatAmount(amount)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isGive ? Colors.green : Colors.red,
-                        ),
-                      ),
-                      if (hasRequest) ...[
-                        const SizedBox(height: 4),
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            minimumSize: const Size(0, 24),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            'REQUEST',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Get.toNamed(
+                      Routes.customerDetail,
+                      arguments: {
+                        'name': name,
+                        'phone': item['phone']?.toString() ?? '',
+                        'id': item['id']?.toString() ?? name,
+                        'isCustomer': controller.selectedTab.value == 0,
+                        'storeName': controller.storeName.value,
+                      },
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: isGive
+                                  ? [
+                                      Colors.green.shade400,
+                                      Colors.green.shade600,
+                                    ]
+                                  : [Colors.red.shade400, Colors.red.shade600],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: (isGive ? Colors.green : Colors.red)
+                                    .withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    time,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: (isGive ? Colors.green : Colors.red)
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '₹ ${_formatAmount(amount)}',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: isGive
+                                      ? Colors.green.shade700
+                                      : Colors.red.shade700,
+                                ),
+                              ),
+                            ),
+                            if (hasRequest) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      AppColors.primary,
+                                      AppColors.primaryDark,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'REQUEST',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           );
@@ -409,19 +542,40 @@ class HomeScreen extends StatelessWidget {
       final isCustomerTab = controller.selectedTab.value == 0;
       return Container(
         margin: const EdgeInsets.only(bottom: 16, right: 16),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            _handleAddParty(controller);
-          },
-          backgroundColor: isCustomerTab
-              ? const Color(0xFFE91E63) // Magenta for customers
-              : Colors.green, // Green for suppliers
-          icon: const Icon(Icons.person_add, color: Colors.white),
-          label: Text(
-            isCustomerTab ? 'ADD CUSTOMER' : 'ADD SUPPLIER',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isCustomerTab
+                  ? [const Color(0xFFE91E63), const Color(0xFFC2185B)]
+                  : [Colors.green.shade600, Colors.green.shade800],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: (isCustomerTab ? const Color(0xFFE91E63) : Colors.green)
+                    .withOpacity(0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: () {
+              _handleAddParty(controller);
+            },
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            icon: const Icon(Icons.person_add, color: Colors.white, size: 24),
+            label: Text(
+              isCustomerTab ? 'ADD CUSTOMER' : 'ADD SUPPLIER',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ),
@@ -811,26 +965,4 @@ class HomeScreen extends StatelessWidget {
     // Permission dialog will be shown on the contact list screen
     await Get.toNamed(Routes.contactList, arguments: arguments);
   }
-}
-
-// Custom painter for dotted vertical line
-class _DottedLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.grey.shade300
-      ..strokeWidth = 1;
-
-    const dashHeight = 4.0;
-    const dashSpace = 3.0;
-    double startY = 0;
-
-    while (startY < size.height) {
-      canvas.drawLine(Offset(0, startY), Offset(0, startY + dashHeight), paint);
-      startY += dashHeight + dashSpace;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

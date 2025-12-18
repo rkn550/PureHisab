@@ -92,6 +92,17 @@ class BusinessProfileScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          Obx(
+            () => Text(
+              controller.businessName.value,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -108,24 +119,34 @@ class BusinessProfileScreen extends StatelessWidget {
           _buildDetailItem(
             icon: Icons.person_outlined,
             label: 'Owner Name',
-            value: controller.businessName.value,
+            value: controller.ownerName.value.isEmpty
+                ? 'Not set'
+                : controller.ownerName.value,
             onTap: () => _showEditDialog(
               context,
               'Edit Owner Name',
-              controller.businessName.value,
-              (value) => controller.updateBusinessName(value),
+              controller.ownerName.value,
+              (value) async {
+                controller.updateOwnerName(value);
+                // Save to database if business ID exists
+                if (controller.businessId.value.isNotEmpty) {
+                  await controller.updateBusinessProfile();
+                }
+              },
             ),
           ),
           _buildDetailItem(
             icon: Icons.phone_outlined,
             label: 'Mobile Number',
-            value: controller.businessPhone.value,
-            onTap: () => _showEditDialog(
-              context,
-              'Edit Mobile Number',
-              controller.businessPhone.value,
-              (value) => controller.updateBusinessPhone(value),
-            ),
+            value: controller.businessPhone.value.isEmpty
+                ? 'Not set'
+                : controller.businessPhone.value,
+            // onTap: () => _showEditDialog(
+            //   context,
+            //   'Edit Mobile Number',
+            //   controller.businessPhone.value,
+            //   (value) => controller.updateBusinessPhone(value),
+            // ),
           ),
         ],
       ),
@@ -136,7 +157,7 @@ class BusinessProfileScreen extends StatelessWidget {
     required IconData icon,
     required String label,
     String? value,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,
@@ -177,7 +198,8 @@ class BusinessProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            if (onTap != null)
+              Icon(Icons.chevron_right, color: Colors.grey.shade400),
           ],
         ),
       ),

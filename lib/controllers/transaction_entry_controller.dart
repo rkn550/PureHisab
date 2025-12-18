@@ -1,12 +1,20 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:purehisab/data/services/transaction_repo.dart';
+import 'package:purehisab/controllers/home_controller.dart';
 import 'customer_detail_controller.dart';
 
 class TransactionEntryController extends GetxController {
-  // Transaction type: 'give' for "You Gave", 'get' for "You Got"
+  final TransactionRepository _transactionRepository = TransactionRepository();
+  final ImagePicker _imagePicker = ImagePicker();
+
   final RxString transactionType = 'give'.obs;
   final RxString customerName = ''.obs;
   final RxString customerId = ''.obs;
+  final Rx<File?> billImageFile = Rx<File?>(null);
 
   // Calculator state
   final RxString currentInput = '0'.obs;
@@ -235,7 +243,6 @@ class TransactionEntryController extends GetxController {
     return double.tryParse(amountController.text) ?? 0.0;
   }
 
-  // Save transaction
   Future<void> saveTransaction() async {
     final amount = getCurrentAmount();
     if (amount <= 0) {
@@ -243,53 +250,282 @@ class TransactionEntryController extends GetxController {
       return;
     }
 
-    // Create transaction data
-    final transactionData = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'date': selectedDate.value,
-      'type': transactionType.value,
-      'amount': amount,
-      'balance': 0.0, // Will be calculated by customer detail controller
-      'note': details.value,
-    };
-
-    // Save to customer detail controller if available
-    try {
-      if (Get.isRegistered<CustomerDetailController>()) {
-        final customerController = Get.find<CustomerDetailController>();
-        // Add transaction to the list
-        customerController.transactions.add(transactionData);
-        // Recalculate balance and summary
-        customerController.calculateSummary();
-      }
-    } catch (e) {
-      // CustomerDetailController not available, continue anyway
+    if (customerId.value.isEmpty) {
+      Get.snackbar('Error', 'Customer ID not found');
+      return;
     }
 
-    Get.snackbar(
-      'Success',
-      'Transaction saved successfully',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.shade100,
-      colorText: Colors.green.shade900,
-    );
+    if (!Get.isRegistered<HomeController>()) {
+      Get.snackbar('Error', 'HomeController not found');
+      return;
+    }
 
-    // Navigate back and refresh
-    Get.back(
-      result: {
-        'success': true,
-        'amount': amount,
-        'type': transactionType.value,
-        'details': details.value,
-        'date': selectedDate.value,
-      },
+    try {
+      final homeController = Get.find<HomeController>();
+      if (homeController.selectedBusinessId.value.isEmpty) {
+        Get.snackbar('Error', 'No business selected');
+        return;
+      }
+
+      String? photoUrl;
+      if (billImageFile.value != null) {
+        photoUrl = billImageFile.value!.path;
+      }
+
+      await _transactionRepository.createTransaction(
+        businessId: homeController.selectedBusinessId.value,
+        partyId: customerId.value,
+        amount: amount,
+        direction: transactionType.value == 'give' ? 'gave' : 'got',
+        date: selectedDate.value.millisecondsSinceEpoch,
+        description: details.value.isNotEmpty ? details.value : null,
+        photoUrl: photoUrl,
+      );
+
+      billImageFile.value = null;
+
+      if (Get.isRegistered<CustomerDetailController>()) {
+        final customerController = Get.find<CustomerDetailController>();
+        await customerController.loadTransactions();
+        customerController.calculateSummary();
+      }
+
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        await homeController.loadPartiesFromDatabase();
+      }
+
+      Get.back(result: {'success': true});
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (Get.isSnackbarOpen == false) {
+          Get.snackbar(
+            'Success',
+            'Transaction saved successfully',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green.shade100,
+            colorText: Colors.green.shade900,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      });
+    } catch (e) {
+      final errorMessage = e.toString().replaceAll('Exception: ', '');
+      Get.snackbar(
+        'Error',
+        errorMessage.isNotEmpty
+            ? errorMessage
+            : 'Failed to save transaction. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 4),
+      );
+    }
+  }
+
+  Future<void> onAttachBills() async {
+    Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Text(
+                  'Attach Bill',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Icon(
+                  Icons.camera_alt,
+                  color: transactionType.value == 'give'
+                      ? Colors.red
+                      : Colors.green,
+                ),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Get.back();
+                  await _pickImageFromCamera();
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.photo_library,
+                  color: transactionType.value == 'give'
+                      ? Colors.red
+                      : Colors.green,
+                ),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Get.back();
+                  await _pickImageFromGallery();
+                },
+              ),
+              Obx(
+                () => billImageFile.value != null
+                    ? ListTile(
+                        leading: const Icon(Icons.delete, color: Colors.red),
+                        title: const Text('Remove Bill'),
+                        onTap: () {
+                          Get.back();
+                          billImageFile.value = null;
+                          Get.snackbar(
+                            'Success',
+                            'Bill removed',
+                            snackPosition: SnackPosition.BOTTOM,
+                            duration: const Duration(seconds: 2),
+                          );
+                        },
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
     );
   }
 
-  // Attach bills
-  void onAttachBills() {
-    // TODO: Implement image picker for bills
-    Get.snackbar('Attach Bills', 'Bill attachment - Coming soon');
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final cameraStatus = await Permission.camera.status;
+      if (!cameraStatus.isGranted) {
+        final result = await Permission.camera.request();
+        if (!result.isGranted) {
+          Get.snackbar(
+            'Permission Denied',
+            'Camera permission is required to take photos',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange.shade100,
+            colorText: Colors.orange.shade900,
+            duration: const Duration(seconds: 3),
+          );
+          return;
+        }
+      }
+
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      if (image != null) {
+        billImageFile.value = File(image.path);
+        Get.snackbar(
+          'Success',
+          'Bill photo added',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to take photo. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      PermissionStatus? photoStatus;
+
+      if (Platform.isAndroid) {
+        try {
+          photoStatus = await Permission.photos.status;
+          if (!photoStatus.isGranted) {
+            photoStatus = await Permission.photos.request();
+          }
+        } catch (e) {
+          photoStatus = await Permission.storage.status;
+          if (!photoStatus.isGranted) {
+            photoStatus = await Permission.storage.request();
+          }
+        }
+      } else if (Platform.isIOS) {
+        photoStatus = await Permission.photos.status;
+        if (!photoStatus.isGranted) {
+          photoStatus = await Permission.photos.request();
+        }
+      }
+
+      if (photoStatus != null &&
+          !photoStatus.isGranted &&
+          photoStatus.isPermanentlyDenied) {
+        Get.snackbar(
+          'Permission Denied',
+          'Please enable photo library permission in settings',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade100,
+          colorText: Colors.orange.shade900,
+          duration: const Duration(seconds: 3),
+        );
+        return;
+      }
+
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      if (image != null) {
+        billImageFile.value = File(image.path);
+        Get.snackbar(
+          'Success',
+          'Bill photo added',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to pick photo. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   @override

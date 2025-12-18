@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:purehisab/data/model/business_model.dart';
+import 'package:purehisab/data/model/party_model.dart';
+import 'package:purehisab/data/services/business_repo.dart';
+import 'package:purehisab/data/services/party_repo.dart';
+import 'package:purehisab/data/services/transaction_repo.dart';
+import 'package:purehisab/app/routes/app_pages.dart';
+import 'package:purehisab/app/utils/app_colors.dart';
+import 'business_profile_controller.dart';
 
 class HomeController extends GetxController {
+  final BusinessRepository _businessRepository = BusinessRepository();
+  final PartyRepository _partyRepository = PartyRepository();
+  final TransactionRepository _transactionRepository = TransactionRepository();
+
   final searchFocusNode = FocusNode();
   // Tab selection: 0 for Customers, 1 for Suppliers
   final RxInt selectedTab = 0.obs;
@@ -12,88 +24,212 @@ class HomeController extends GetxController {
   final RxBool showFilterModal = false.obs;
 
   // Summary amounts
-  final RxDouble amountToGive = 10888.0.obs;
+  final RxDouble amountToGive = 0.0.obs;
   final RxDouble amountToGet = 0.0.obs;
 
   // Store name
-  final RxString storeName = 'Kirana Store'.obs;
+  final RxString storeName = ''.obs;
+  final RxString selectedBusinessId = ''.obs;
   final RxBool showAccountModal = false.obs;
 
-  // Mock accounts/stores list
-  final RxList<Map<String, dynamic>> accountsList = <Map<String, dynamic>>[
-    {'name': 'Kirana Store', 'customerCount': 5, 'isSelected': true},
-    {'name': 'Student', 'customerCount': 0, 'isSelected': false},
-    {'name': 'Dggdh', 'customerCount': 0, 'isSelected': false},
-    {'name': 'Dhdhdhd', 'customerCount': 0, 'isSelected': false},
-    {'name': 'Mdkdmf', 'customerCount': 0, 'isSelected': false},
-    {'name': 'Djjfjfjf', 'customerCount': 0, 'isSelected': false},
-  ].obs;
+  final RxList<Map<String, dynamic>> accountsList =
+      <Map<String, dynamic>>[].obs;
 
   // Search query
   final RxString searchQuery = ''.obs;
   final RxBool isSearchFocused = false.obs;
 
-  // Mock data for Customers
-  final RxList<Map<String, dynamic>> customersList = <Map<String, dynamic>>[
-    {
-      'name': 'Suman',
-      'time': '7 minutes ago',
-      'amount': 5333.0,
-      'type': 'give', // green
-      'hasRequest': false,
-      'phone': '9876543210',
-    },
-    {
-      'name': 'Rajiv',
-      'time': '8 minutes ago',
-      'amount': 5555.0,
-      'type': 'give', // green
-      'hasRequest': false,
-      'phone': '9876543211',
-    },
-  ].obs;
+  final RxList<Map<String, dynamic>> customersList =
+      <Map<String, dynamic>>[].obs;
 
-  // Mock data for Suppliers
-  final RxList<Map<String, dynamic>> suppliersList = <Map<String, dynamic>>[
-    {
-      'name': 'Gddh',
-      'time': '6 seconds ago',
-      'amount': 555.0,
-      'type': 'give', // green
-      'hasRequest': false,
-      'phone': '9876543212',
-    },
-    {
-      'name': 'Gdhdbd',
-      'time': '46 seconds ago',
-      'amount': 55.0,
-      'type': 'get', // red
-      'hasRequest': true,
-      'phone': '9876543213',
-    },
-    {
-      'name': 'Surya',
-      'time': '44 seconds ago',
-      'amount': 289311.0,
-      'type': 'get', // red
-      'hasRequest': true,
-      'phone': '9876543214',
-    },
-  ].obs;
+  final RxList<Map<String, dynamic>> suppliersList =
+      <Map<String, dynamic>>[].obs;
 
   // Initialize summary amounts for suppliers tab
   @override
   void onInit() {
     super.onInit();
-    // Set initial amounts for suppliers tab (will be updated when tab changes)
-    amountToGive.value = 10888.0; // Customers tab default
-    amountToGet.value = 0.0;
-    updateSummaryAmounts();
-
-    // Listen to search focus changes
+    _loadBusinessesFromDatabase();
     searchFocusNode.addListener(() {
       isSearchFocused.value = searchFocusNode.hasFocus;
     });
+  }
+
+  Future<int> _getCustomerCount(String businessId) async {
+    try {
+      final parties = await _partyRepository.getPartiesByType(
+        businessId,
+        'customer',
+      );
+      return parties.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<void> _loadBusinessesFromDatabase() async {
+    try {
+      final businesses = await _businessRepository.getBusinesses();
+
+      accountsList.clear();
+
+      for (var business in businesses) {
+        final account = {
+          'id': business.id,
+          'name': business.businessName,
+          'customerCount': await _getCustomerCount(business.id),
+          'isSelected': false,
+          'business': business,
+        };
+        accountsList.add(account);
+      }
+
+      // Select first business if available and none selected
+      if (accountsList.isNotEmpty) {
+        bool hasSelected = false;
+        for (var account in accountsList) {
+          if (account['isSelected'] == true) {
+            hasSelected = true;
+            final businessId = account['id']?.toString();
+            if (businessId != null) {
+              selectedBusinessId.value = businessId;
+              storeName.value = account['name'] as String;
+            }
+            break;
+          }
+        }
+
+        // If no business is selected, select the first one
+        if (!hasSelected) {
+          accountsList[0]['isSelected'] = true;
+          selectedBusinessId.value = accountsList[0]['id'] as String;
+          storeName.value = accountsList[0]['name'] as String;
+
+          _notifyBusinessProfileController(selectedBusinessId.value);
+        }
+      }
+
+      if (accountsList.isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showCreateBusinessBottomSheet();
+        });
+      } else if (selectedBusinessId.value.isNotEmpty) {
+        loadPartiesFromDatabase();
+      }
+    } catch (e) {
+      print('Error loading businesses from database: $e');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (accountsList.isEmpty) {
+          _showCreateBusinessBottomSheet();
+        }
+      });
+    }
+  }
+
+  Future<void> loadPartiesFromDatabase() async {
+    if (selectedBusinessId.value.isEmpty) return;
+
+    try {
+      final parties = await _partyRepository.getPartiesByBusiness(
+        selectedBusinessId.value,
+      );
+
+      customersList.clear();
+      suppliersList.clear();
+
+      for (var party in parties) {
+        final partyData = await _convertPartyToHomeFormat(party);
+        if (party.type == 'customer') {
+          customersList.add(partyData);
+        } else {
+          suppliersList.add(partyData);
+        }
+      }
+
+      updateSummaryAmounts();
+    } catch (e) {
+      print('Error loading parties from database: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> _convertPartyToHomeFormat(
+    PartyModel party,
+  ) async {
+    final transactions = await _transactionRepository.getTransactionsByParty(
+      party.id,
+    );
+
+    double totalAmount = 0.0;
+    String type = 'give';
+    DateTime? lastTransactionDate;
+
+    if (transactions.isNotEmpty) {
+      final lastTransaction = transactions.first;
+      lastTransactionDate = DateTime.fromMillisecondsSinceEpoch(
+        lastTransaction.date,
+      );
+
+      for (var tx in transactions) {
+        if (tx.direction == 'gave') {
+          totalAmount += tx.amount;
+        } else {
+          totalAmount -= tx.amount;
+        }
+      }
+
+      type = totalAmount >= 0 ? 'give' : 'get';
+      totalAmount = totalAmount.abs();
+    }
+
+    String timeText = 'Just now';
+    if (lastTransactionDate != null) {
+      final now = DateTime.now();
+      final difference = now.difference(lastTransactionDate);
+
+      if (difference.inDays == 0) {
+        if (difference.inHours == 0) {
+          if (difference.inMinutes == 0) {
+            timeText = 'Just now';
+          } else {
+            timeText = '${difference.inMinutes}m ago';
+          }
+        } else {
+          timeText = '${difference.inHours}h ago';
+        }
+      } else if (difference.inDays == 1) {
+        timeText = '1 day ago';
+      } else if (difference.inDays < 7) {
+        timeText = '${difference.inDays} days ago';
+      } else {
+        final months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        timeText =
+            '${lastTransactionDate.day} ${months[lastTransactionDate.month - 1]}';
+      }
+    }
+
+    return {
+      'id': party.id,
+      'name': party.partyName,
+      'phone': party.phoneNumber ?? '',
+      'amount': totalAmount,
+      'type': type,
+      'time': timeText,
+      'hasRequest': false,
+      'address': party.address,
+    };
   }
 
   void changeTab(int index) {
@@ -128,14 +264,29 @@ class HomeController extends GetxController {
 
   void selectAccount(int index) {
     if (index >= 0 && index < accountsList.length) {
-      // Update all accounts to unselected
       for (var account in accountsList) {
         account['isSelected'] = false;
       }
-      // Select the chosen account
       accountsList[index]['isSelected'] = true;
-      storeName.value = accountsList[index]['name'] as String;
+      final selectedAccount = accountsList[index];
+      storeName.value = selectedAccount['name'] as String;
+
+      final businessId = selectedAccount['id']?.toString();
+      if (businessId != null && businessId.isNotEmpty) {
+        selectedBusinessId.value = businessId;
+        _notifyBusinessProfileController(businessId);
+        loadPartiesFromDatabase();
+      }
+
       closeAccountModal();
+    }
+  }
+
+  /// Notify BusinessProfileController to load business data
+  void _notifyBusinessProfileController(String businessId) {
+    if (Get.isRegistered<BusinessProfileController>()) {
+      final businessProfileController = Get.find<BusinessProfileController>();
+      businessProfileController.loadBusinessById(businessId);
     }
   }
 
@@ -154,6 +305,39 @@ class HomeController extends GetxController {
     if (showAccountModal.value) {
       closeAccountModal();
     }
+  }
+
+  /// Add new account from BusinessModel (used when creating from database)
+  void addNewAccountFromBusiness(BusinessModel business) {
+    for (var account in accountsList) {
+      account['isSelected'] = false;
+    }
+
+    final newAccount = {
+      'id': business.id,
+      'name': business.businessName,
+      'customerCount': 0,
+      'isSelected': true,
+      'business': business,
+    };
+    accountsList.add(newAccount);
+    storeName.value = business.businessName;
+    selectedBusinessId.value = business.id;
+
+    _notifyBusinessProfileController(business.id);
+
+    if (showAccountModal.value) {
+      closeAccountModal();
+    }
+
+    if (Get.isBottomSheetOpen == true) {
+      Get.back();
+    }
+  }
+
+  /// Refresh businesses from database
+  Future<void> refreshBusinesses() async {
+    await _loadBusinessesFromDatabase();
   }
 
   void updateSearchQuery(String query) {
@@ -257,10 +441,84 @@ class HomeController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    // Update amounts when tab changes
     ever(selectedTab, (_) {
       updateSummaryAmounts();
     });
+  }
+
+  void _showCreateBusinessBottomSheet() {
+    Get.bottomSheet(
+      _buildCreateBusinessBottomSheet(),
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      barrierColor: Colors.black.withOpacity(0.5),
+    );
+  }
+
+  Widget _buildCreateBusinessBottomSheet() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Icon(Icons.business, size: 80, color: AppColors.primary),
+          const SizedBox(height: 24),
+          const Text(
+            'Create Your First Business',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Start managing your accounts by creating your first business profile',
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Get.back();
+                Get.toNamed(Routes.createAccount);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'CREATE BUSINESS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

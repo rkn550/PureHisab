@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/create_account_controller.dart';
+import '../controllers/business_profile_controller.dart';
 import '../app/utils/app_colors.dart';
 
 class CreateAccountScreen extends StatelessWidget {
@@ -8,7 +8,17 @@ class CreateAccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<CreateAccountController>();
+    if (!Get.isRegistered<BusinessProfileController>()) {
+      Get.put(BusinessProfileController());
+    }
+    final controller = Get.find<BusinessProfileController>();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.mode.value != 'create') {
+        controller.mode.value = 'create';
+      }
+      controller.resetFormForCreate();
+    });
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,

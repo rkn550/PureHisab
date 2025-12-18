@@ -167,83 +167,165 @@ class TransactionEntryScreen extends StatelessWidget {
     TransactionEntryController controller,
     BuildContext context,
   ) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: Obx(
-            () => InkWell(
-              onTap: () => controller.selectDate(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 20,
-                      color: Colors.grey.shade600,
+        Row(
+          children: [
+            Expanded(
+              child: Obx(
+                () => InkWell(
+                  onTap: () => controller.selectDate(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      controller.getFormattedDate(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade800,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          size: 20,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          controller.getFormattedDate(),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          color: controller.transactionType.value == 'give'
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Obx(
+              () => InkWell(
+                onTap: controller.onAttachBills,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: controller.billImageFile.value != null
+                        ? Border.all(
+                            color: controller.transactionType.value == 'give'
+                                ? Colors.red
+                                : Colors.green,
+                            width: 2,
+                          )
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        controller.billImageFile.value != null
+                            ? Icons.attach_file
+                            : Icons.camera_alt,
+                        size: 20,
+                        color: controller.transactionType.value == 'give'
+                            ? Colors.red
+                            : Colors.green,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        controller.billImageFile.value != null
+                            ? 'Bill attached'
+                            : 'Attach bills',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: controller.transactionType.value == 'give'
+                              ? Colors.red
+                              : Colors.green,
+                          fontWeight: controller.billImageFile.value != null
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        Obx(
+          () => controller.billImageFile.value != null
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: controller.transactionType.value == 'give'
+                            ? Colors.red.shade200
+                            : Colors.green.shade200,
+                        width: 1,
                       ),
                     ),
-                    const Spacer(),
-                    Icon(
-                      Icons.arrow_drop_down,
-                      color: controller.transactionType.value == 'give'
-                          ? Colors.red
-                          : Colors.green,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Obx(
-          () => InkWell(
-            onTap: controller.onAttachBills,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.camera_alt,
-                    size: 20,
-                    color: controller.transactionType.value == 'give'
-                        ? Colors.red
-                        : Colors.green,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Attach bills',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: controller.transactionType.value == 'give'
-                          ? Colors.red
-                          : Colors.green,
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            controller.billImageFile.value!,
+                            width: double.infinity,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: InkWell(
+                            onTap: () {
+                              controller.billImageFile.value = null;
+                              Get.snackbar(
+                                'Success',
+                                'Bill removed',
+                                snackPosition: SnackPosition.BOTTOM,
+                                duration: const Duration(seconds: 2),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );
