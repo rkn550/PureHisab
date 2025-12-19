@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/transaction_entry_controller.dart';
+import 'widgets/widgets.dart';
 
 class TransactionEntryScreen extends StatelessWidget {
   const TransactionEntryScreen({super.key});
@@ -125,10 +126,7 @@ class TransactionEntryScreen extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: .symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: .symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color:
                         (controller.transactionType.value == 'give'
@@ -211,10 +209,7 @@ class TransactionEntryScreen extends StatelessWidget {
             if (controller.calculationDisplay.value.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
-                padding: .symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: .symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.6),
                   borderRadius: .circular(8),
@@ -304,10 +299,7 @@ class TransactionEntryScreen extends StatelessWidget {
                 () => InkWell(
                   onTap: () => controller.selectDate(context),
                   child: Container(
-                    padding: .symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    padding: .symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: .circular(12),
@@ -345,10 +337,7 @@ class TransactionEntryScreen extends StatelessWidget {
               () => InkWell(
                 onTap: controller.onAttachBills,
                 child: Container(
-                  padding: .symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  padding: .symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: .circular(12),
@@ -461,28 +450,15 @@ class TransactionEntryScreen extends StatelessWidget {
 
   Widget _buildSaveButton(TransactionEntryController controller) {
     return Obx(
-      () => SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: controller.saveTransaction,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: controller.transactionType.value == 'give'
-                ? Colors.red
-                : Colors.green,
-            padding: .symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: .circular(12),
-            ),
-          ),
-          child: const Text(
-            'SAVE',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: .bold,
-            ),
-          ),
-        ),
+      () => PrimaryButton(
+        text: 'SAVE',
+        onPressed: controller.saveTransaction,
+        height: 56,
+        fontSize: 18,
+        backgroundColor: controller.transactionType.value == 'give'
+            ? Colors.red
+            : Colors.green,
+        foregroundColor: Colors.white,
       ),
     );
   }
@@ -684,9 +660,7 @@ class TransactionEntryScreen extends StatelessWidget {
               button.label,
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: isEquals || isOperator
-                    ? .bold
-                    : .w600,
+                fontWeight: isEquals || isOperator ? .bold : .w600,
                 color: textColor,
               ),
             ),

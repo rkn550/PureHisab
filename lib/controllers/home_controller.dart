@@ -69,7 +69,6 @@ class HomeController extends GetxController {
       );
       return parties.length;
     } catch (e) {
-      print('Error getting customer count: $e');
       return 0;
     }
   }
@@ -82,7 +81,6 @@ class HomeController extends GetxController {
       );
       return parties.length;
     } catch (e) {
-      print('Error getting supplier count: $e');
       return 0;
     }
   }
@@ -96,16 +94,13 @@ class HomeController extends GetxController {
           final supplierCount = await _getSupplierCount(businessId);
           accountsList[i]['customerCount'] = customerCount;
           accountsList[i]['supplierCount'] = supplierCount;
-          print(
-            'Refreshed counts for business $businessId: $customerCount customers, $supplierCount suppliers',
-          );
         } else {
           accountsList[i]['customerCount'] = 0;
           accountsList[i]['supplierCount'] = 0;
         }
       }
     } catch (e) {
-      print('Error refreshing account counts: $e');
+      // Error handling
     }
   }
 
@@ -162,7 +157,6 @@ class HomeController extends GetxController {
         loadPartiesFromDatabase();
       }
     } catch (e) {
-      print('Error loading businesses from database: $e');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (accountsList.isEmpty) {
           _showCreateBusinessBottomSheet();
@@ -193,7 +187,7 @@ class HomeController extends GetxController {
 
       updateSummaryAmounts();
     } catch (e) {
-      print('Error loading parties from database: $e');
+      // Error handling
     }
   }
 

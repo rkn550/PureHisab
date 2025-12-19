@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/customer_detail_controller.dart';
 import '../app/utils/app_colors.dart';
 import '../app/routes/app_pages.dart';
+import 'widgets/widgets.dart';
 
 class CustomerDetailScreen extends StatelessWidget {
   const CustomerDetailScreen({super.key});
@@ -32,9 +33,12 @@ class CustomerDetailScreen extends StatelessWidget {
     return AppBar(
       backgroundColor: AppColors.primaryDark,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+      leading: CustomIconButton(
+        icon: Icons.arrow_back,
         onPressed: () => Get.back(),
+        iconColor: Colors.white,
+        size: 48,
+        backgroundColor: Colors.transparent,
       ),
       title: Obx(
         () => Row(
@@ -81,10 +85,7 @@ class CustomerDetailScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Obx(
                         () => Container(
-                          padding: .symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
+                          padding: .symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: .circular(12),
@@ -129,11 +130,14 @@ class CustomerDetailScreen extends StatelessWidget {
       ),
       actions: [
         Obx(
-          () => IconButton(
-            icon: const Icon(Icons.phone, color: Colors.white),
+          () => CustomIconButton(
+            icon: Icons.phone,
             onPressed: controller.customerPhone.value.isNotEmpty
                 ? () => controller.makePhoneCall()
                 : null,
+            iconColor: Colors.white,
+            size: 48,
+            backgroundColor: Colors.transparent,
             tooltip: controller.customerPhone.value.isNotEmpty
                 ? 'Call ${controller.customerPhone.value}'
                 : 'No phone number available',
@@ -202,72 +206,117 @@ class CustomerDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Obx(
-                () => Container(
-                  padding: .all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: .circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 18,
-                        color: Colors.white.withOpacity(0.9),
+                () => InkWell(
+                  onTap: controller.hasReminder.value
+                      ? null
+                      : () => _showDatePicker(controller),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: .symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: .circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          controller.hasReminder.value
-                              ? 'Collection reminder set'
-                              : 'Set collection reminder',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.9),
-                            fontWeight: .w500,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: .all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: .circular(8),
+                          ),
+                          child: Icon(
+                            Icons.calendar_today_rounded,
+                            size: 20,
+                            color: Colors.white,
                           ),
                         ),
-                      ),
-                      if (controller.hasReminder.value)
-                        IconButton(
-                          icon: Icon(
-                            Icons.close_rounded,
-                            size: 18,
-                            color: Colors.white.withOpacity(0.9),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: .start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                controller.hasReminder.value
+                                    ? 'Reminder Set'
+                                    : 'Set Reminder',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                  fontWeight: .w600,
+                                ),
+                              ),
+                              if (controller.hasReminder.value) ...[
+                                const SizedBox(height: 2),
+                                Obx(() {
+                                  if (controller
+                                      .collectionReminderDate
+                                      .value
+                                      .isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  try {
+                                    final parts = controller
+                                        .collectionReminderDate
+                                        .value
+                                        .split('-');
+                                    if (parts.length == 3) {
+                                      final year = int.parse(parts[0]);
+                                      final month = int.parse(parts[1]);
+                                      final day = int.parse(parts[2]);
+                                      final date = DateTime(year, month, day);
+                                      return Text(
+                                        controller.formatDateHeader(date),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontWeight: .w400,
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    // Ignore parsing errors
+                                  }
+                                  return const SizedBox.shrink();
+                                }),
+                              ] else ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Tap to set collection date',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontWeight: .w400,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          padding: .zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: () {
-                            controller.removeCollectionReminder();
-                          },
-                        )
-                      else
-                        TextButton(
-                          onPressed: () {
-                            _showDatePicker(controller);
-                          },
-                          style: TextButton.styleFrom(
-                            padding: .symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            minimumSize: const Size(0, 32),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        if (controller.hasReminder.value)
+                          CustomIconButton(
+                            icon: Icons.close_rounded,
+                            onPressed: () {
+                              controller.removeCollectionReminder();
+                            },
+                            iconColor: Colors.white,
+                            iconSize: 20,
+                            size: 32,
                             backgroundColor: Colors.white.withOpacity(0.2),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: .circular(8),
-                            ),
+                          )
+                        else
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: Colors.white.withOpacity(0.7),
                           ),
-                          child: const Text(
-                            'SET DATE',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
-                              fontWeight: .bold,
-                            ),
-                          ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -322,22 +371,23 @@ class CustomerDetailScreen extends StatelessWidget {
         onTap: isEnabled ? onTap : null,
         borderRadius: .circular(10),
         child: Container(
-          padding: .symmetric(horizontal: 16, vertical: 12),
+          padding: .symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isEnabled
                 ? AppColors.primary.withOpacity(0.1)
                 : Colors.grey.shade100,
             borderRadius: .circular(10),
           ),
-          child: Column(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
+            spacing: 4,
             children: [
               Icon(
                 icon,
                 color: isEnabled ? AppColors.primary : Colors.grey.shade400,
                 size: 26,
               ),
-              const SizedBox(height: 6),
+
               Text(
                 label,
                 style: TextStyle(
@@ -432,10 +482,7 @@ class CustomerDetailScreen extends StatelessWidget {
               crossAxisAlignment: .start,
               children: [
                 Container(
-                  margin: .symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  margin: .symmetric(horizontal: 16, vertical: 8),
                   child: Text(
                     dateHeader,
                     style: TextStyle(
@@ -499,10 +546,7 @@ class CustomerDetailScreen extends StatelessWidget {
                   children: [
                     Text(
                       '${date.day} ${_getMonthName(date.month)} ${date.year.toString().substring(2)} • $time',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: .w500,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: .w500),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -576,44 +620,24 @@ class CustomerDetailScreen extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: ElevatedButton(
+            child: PrimaryButton(
+              text: 'YOU GAVE ₹',
               onPressed: controller.onYouGaveTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                padding: .symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: .circular(8),
-                ),
-              ),
-              child: const Text(
-                'YOU GAVE ₹',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: .bold,
-                ),
-              ),
+              height: 50,
+              fontSize: 16,
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: ElevatedButton(
+            child: PrimaryButton(
+              text: 'YOU GOT ₹',
               onPressed: controller.onYouGotTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding: .symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: .circular(8),
-                ),
-              ),
-              child: const Text(
-                'YOU GOT ₹',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: .bold,
-                ),
-              ),
+              height: 50,
+              fontSize: 16,
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
             ),
           ),
         ],

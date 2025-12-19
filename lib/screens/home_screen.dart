@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:purehisab/app/routes/app_pages.dart';
 import '../app/utils/app_colors.dart';
 import '../controllers/home_controller.dart';
+import 'widgets/widgets.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -82,42 +83,13 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildTab(HomeController controller, String label, int index) {
-    return Obx(() {
-      final isSelected = controller.selectedTab.value == index;
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            controller.changeTab(index);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : Colors.transparent,
-              border: Border(
-                bottom: BorderSide(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
-                  width: 2,
-                ),
-              ),
-            ),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-      );
-    });
+    return Obx(
+      () => CustomTabWidget(
+        label: label,
+        isSelected: controller.selectedTab.value == index,
+        onTap: () => controller.changeTab(index),
+      ),
+    );
   }
 
   Widget _buildSummaryCard(HomeController controller) {
@@ -246,66 +218,24 @@ class HomeScreen extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Obx(() {
-                final hasText = controller.searchQuery.value.isNotEmpty;
-                return TextField(
-                  focusNode: controller.searchFocusNode,
-                  onChanged: (value) {
-                    controller.updateSearchQuery(value);
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Name, Mobile no.',
-                    hintStyle: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                    prefixIcon: hasText
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.close,
-                              color: AppColors.textSecondary,
-                              size: 20,
-                            ),
-                            onPressed: () {
-                              controller.updateSearchQuery('');
-                              controller.searchFocusNode.unfocus();
-                            },
-                          )
-                        : Icon(
-                            Icons.search,
-                            color: AppColors.textSecondary,
-                            size: 20,
-                          ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
-                  style: const TextStyle(fontSize: 14),
-                );
-              }),
+            child: CustomSearchBar(
+              focusNode: controller.searchFocusNode,
+              hintText: 'Name, Mobile no.',
+              searchQuery: controller.searchQuery,
+              onChanged: (value) {
+                controller.updateSearchQuery(value);
+              },
+              onClear: () {
+                controller.updateSearchQuery('');
+                controller.searchFocusNode.unfocus();
+              },
             ),
           ),
           const SizedBox(width: 12),
-          InkWell(
-            onTap: () {
-              controller.toggleFilterModal();
-            },
-            child: Column(
-              children: [
-                Icon(Icons.filter_list, color: AppColors.primary, size: 24),
-                const SizedBox(height: 2),
-                const Text(
-                  'Filters',
-                  style: TextStyle(fontSize: 10, color: AppColors.primary),
-                ),
-              ],
+          Obx(
+            () => FilterButton(
+              onTap: () => controller.toggleFilterModal(),
+              isActive: controller.showFilterModal.value,
             ),
           ),
         ],
@@ -318,33 +248,11 @@ class HomeScreen extends StatelessWidget {
       final items = controller.getFilteredList();
 
       if (items.isEmpty) {
-        return Container(
-          margin: const EdgeInsets.all(32),
-          child: Column(
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person,
-                  size: 60,
-                  color: Colors.grey.shade400,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                controller.selectedTab.value == 0
-                    ? 'Add supplier and manage your purchases'
-                    : 'Add customer and manage your sales',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+        return EmptyState(
+          icon: Icons.person,
+          message: controller.selectedTab.value == 0
+              ? 'Add supplier and manage your purchases'
+              : 'Add customer and manage your sales',
         );
       }
 
@@ -563,22 +471,14 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
-          child: FloatingActionButton.extended(
+          child: CustomExtendedFAB(
+            icon: Icons.person_add,
+            label: isCustomerTab ? 'ADD CUSTOMER' : 'ADD SUPPLIER',
             onPressed: () {
               _handleAddParty(controller);
             },
-            elevation: 0,
             backgroundColor: Colors.transparent,
-            icon: const Icon(Icons.person_add, color: Colors.white, size: 24),
-            label: Text(
-              isCustomerTab ? 'ADD CUSTOMER' : 'ADD SUPPLIER',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                letterSpacing: 0.5,
-              ),
-            ),
+            foregroundColor: Colors.white,
           ),
         ),
       );
@@ -931,30 +831,16 @@ class HomeScreen extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.all(16),
-                    child: ElevatedButton(
+                    child: ActionButton(
+                      label: 'CREATE NEW ACCOUNT',
+                      icon: Icons.add,
                       onPressed: () {
                         controller.closeAccountModal();
                         Get.toNamed(Routes.createAccount);
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.add, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            'CREATE NEW ACCOUNT',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                      backgroundColor: AppColors.primary,
+                      height: 50,
+                      width: double.infinity,
                     ),
                   ),
                 ],

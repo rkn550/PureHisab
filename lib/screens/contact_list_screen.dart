@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../app/utils/app_colors.dart';
 import '../app/routes/app_pages.dart';
 import '../controllers/contact_list_controller.dart';
+import 'widgets/widgets.dart';
 
 class ContactListScreen extends StatelessWidget {
   const ContactListScreen({super.key});
@@ -41,7 +42,7 @@ class ContactListScreen extends StatelessWidget {
         ),
         title: Text(title, style: const TextStyle(color: Colors.white)),
       ),
-      body: _buildBody(controller, isCustomer),
+      body: SafeArea(child: _buildBody(controller, isCustomer)),
     );
   }
 
@@ -56,32 +57,17 @@ class ContactListScreen extends StatelessWidget {
             color: Colors.grey.shade100,
             borderRadius: .circular(8),
           ),
-          child: Obx(
-            () => TextField(
-              controller: controller.searchTextController,
-              onChanged: controller.updateSearchQuery,
-              decoration: InputDecoration(
-                hintText: isCustomer
-                    ? 'Search customer name'
-                    : 'Search supplier name',
-                hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                border: InputBorder.none,
-                icon: Icon(Icons.search, color: Colors.grey.shade600, size: 20),
-                suffixIcon: controller.searchQuery.value.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: Colors.grey.shade600,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          controller.searchTextController.clear();
-                          controller.updateSearchQuery('');
-                        },
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ),
+          child: CustomSearchBar(
+            controller: controller.searchTextController,
+            searchQuery: controller.searchQuery,
+            onChanged: controller.updateSearchQuery,
+            hintText: isCustomer
+                ? 'Search customer name'
+                : 'Search supplier name',
+            onClear: () {
+              controller.searchTextController.clear();
+              controller.updateSearchQuery('');
+            },
           ),
         ),
         // Add Customer option
@@ -249,10 +235,7 @@ class ContactListScreen extends StatelessWidget {
                   ),
                   title: Text(
                     name.isEmpty ? 'Unknown' : name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: .w500,
-                    ),
+                    style: const TextStyle(fontSize: 16, fontWeight: .w500),
                   ),
                   subtitle: Text(
                     number,
@@ -317,7 +300,8 @@ class ContactListScreen extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: TextButton(
+                    child: CustomTextButton(
+                      text: 'Don\'t Allow',
                       onPressed: () {
                         Get.back();
                         controller.showPermissionDialog.value = false;
@@ -326,37 +310,20 @@ class ContactListScreen extends StatelessWidget {
                         Get.back();
                         Get.toNamed(Routes.addParty, arguments: args);
                       },
-                      child: const Text(
-                        'Don\'t Allow',
-                        style: TextStyle(color: Colors.white70),
-                      ),
+                      textColor: Colors.white70,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
+                    child: PrimaryButton(
+                      text: 'Allow',
                       onPressed: () async {
                         Get.back();
                         controller.showPermissionDialog.value = false;
                         await controller.requestPermission();
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: .symmetric(
-                          horizontal: 32,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: .circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Allow',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: .bold,
-                        ),
-                      ),
+                      backgroundColor: AppColors.primary,
+                      height: 44,
                     ),
                   ),
                 ],

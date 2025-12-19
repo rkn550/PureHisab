@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/add_party_controller.dart';
 import '../app/utils/app_colors.dart';
+import 'widgets/widgets.dart';
 
 class AddPartyScreen extends StatelessWidget {
   const AddPartyScreen({super.key});
@@ -31,42 +32,14 @@ class AddPartyScreen extends StatelessWidget {
               crossAxisAlignment: .start,
               children: [
                 // Party Name
-                TextFormField(
+                CustomTextField(
                   controller: controller.partyNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Party name',
-                    labelStyle: TextStyle(color: Colors.grey.shade600),
-                    border: OutlineInputBorder(
-                      borderRadius: .circular(8),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 1,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: .circular(8),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 1,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: .circular(8),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: .symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                  style: const TextStyle(fontSize: 16),
+                  label: 'Party name',
+                  hintText: 'Enter party name',
                   validator: controller.validatePartyName,
-                  autofocus: true,
+                  borderRadius: 8,
+                  focusedBorderColor: AppColors.primary,
+                  enabledBorderColor: AppColors.primary,
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -88,42 +61,18 @@ class AddPartyScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: TextFormField(
+                      child: CustomTextField(
                         controller: controller.mobileController,
+                        label: 'Mobile Number',
+                        hintText: 'Enter mobile number',
                         keyboardType: TextInputType.phone,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(10),
                         ],
-                        decoration: InputDecoration(
-                          hintText: 'Enter mobile number',
-
-                          labelText: 'Mobile Number',
-                          labelStyle: TextStyle(color: Colors.grey.shade600),
-                          border: OutlineInputBorder(
-                            borderRadius: .circular(8),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: .circular(8),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: .circular(8),
-                            borderSide: BorderSide(
-                              color: AppColors.primary,
-                              width: 2,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: .symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
-                        style: const TextStyle(fontSize: 16),
                         validator: controller.validateMobile,
+                        borderRadius: 8,
+                        focusedBorderColor: AppColors.primary,
                       ),
                     ),
                   ],
@@ -178,41 +127,15 @@ class AddPartyScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 // Add Button
                 Obx(
-                  () => SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: controller.isLoading.value
-                          ? null
-                          : () {
-                              controller.addParty();
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: .symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: .circular(8),
-                        ),
-                      ),
-                      child: controller.isLoading.value
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              'ADD ${controller.partyType.value.toUpperCase()}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: .bold,
-                              ),
-                            ),
-                    ),
+                  () => PrimaryButton(
+                    text: 'ADD ${controller.partyType.value.toUpperCase()}',
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : () => controller.addParty(),
+                    isLoading: controller.isLoading.value,
+                    height: 50,
+                    fontSize: 16,
+                    backgroundColor: AppColors.primary,
                   ),
                 ),
               ],
@@ -269,33 +192,14 @@ class AddPartyScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        TextFormField(
+        CustomTextField(
           controller: controller.addressController,
+          label: 'Address',
+          hintText: 'Enter address',
+          borderRadius: 8,
+          focusedBorderColor: AppColors.primary,
           minLines: 3,
           maxLines: 5,
-          decoration: InputDecoration(
-            labelText: 'Address',
-            labelStyle: TextStyle(color: Colors.grey.shade600),
-            border: OutlineInputBorder(
-              borderRadius: .circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: .circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: .circular(8),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            hintText: 'Enter address',
-            contentPadding: .symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-          ),
         ),
       ],
     );

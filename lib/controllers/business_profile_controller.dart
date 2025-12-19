@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:purehisab/data/services/business_repo.dart';
-import 'package:purehisab/data/local/local_db.dart';
 import '../app/utils/app_colors.dart';
 import 'home_controller.dart';
 
@@ -75,7 +74,7 @@ class BusinessProfileController extends GetxController {
           final homeController = Get.find<HomeController>();
           businessIdToLoad = homeController.selectedBusinessId.value;
         } catch (e) {
-          print('Error getting business ID from HomeController: $e');
+          // Error handling
         }
       }
     }
@@ -120,8 +119,6 @@ class BusinessProfileController extends GetxController {
         businessName.value = business.businessName;
         ownerName.value = business.ownerName ?? '';
         businessPhone.value = business.phoneNumber ?? '';
-        print('Loaded business phone number: ${business.phoneNumber}');
-        print('Set businessPhone.value to: ${businessPhone.value}');
       } else {
         // Business not found
         Get.snackbar(
@@ -236,10 +233,6 @@ class BusinessProfileController extends GetxController {
           }
         });
       } catch (e) {
-        // Log the full error for debugging
-        print('Error creating business: $e');
-        print('Error stack trace: ${StackTrace.current}');
-
         final errorMessage = e.toString().replaceAll('Exception: ', '');
         Get.snackbar(
           'Error',
@@ -281,17 +274,11 @@ class BusinessProfileController extends GetxController {
         throw Exception('Business not found');
       }
 
-      print(
-        'Updating owner name from: ${business.ownerName} to: ${ownerName.value}',
-      );
-
       final updatedBusiness = business.copyWith(
         ownerName: ownerName.value.isNotEmpty ? ownerName.value : null,
       );
 
-      print('Updated business data: ${updatedBusiness.toMap()}');
       await _businessRepository.updateBusiness(updatedBusiness);
-      print('Business updated in database');
 
       // Reload business data from database to ensure UI is in sync
       await _loadBusinessFromDatabase(businessId.value);
@@ -542,56 +529,6 @@ class BusinessProfileController extends GetxController {
       Get.snackbar(
         'Error',
         'Failed to pick photo. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
-      );
-    }
-  }
-
-  // Debug method to print all database tables
-  Future<void> printDatabaseTables() async {
-    try {
-      final dbHelper = DatabaseHelper();
-      await dbHelper.printAllTables();
-      Get.snackbar(
-        'Success',
-        'Database tables printed to console',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade50,
-        colorText: Colors.green.shade900,
-        duration: const Duration(seconds: 2),
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to print tables: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
-      );
-    }
-  }
-
-  // Debug method to print table counts
-  Future<void> printTableCounts() async {
-    try {
-      final dbHelper = DatabaseHelper();
-      await dbHelper.printTableCounts();
-      Get.snackbar(
-        'Success',
-        'Table counts printed to console',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade50,
-        colorText: Colors.green.shade900,
-        duration: const Duration(seconds: 2),
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to print counts: $e',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade50,
         colorText: Colors.red.shade900,

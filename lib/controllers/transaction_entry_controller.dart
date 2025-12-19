@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:purehisab/data/services/transaction_repo.dart';
 import 'package:purehisab/controllers/home_controller.dart';
 import 'customer_detail_controller.dart';
+import 'analytics_controller.dart';
 
 class TransactionEntryController extends GetxController {
   final TransactionRepository _transactionRepository = TransactionRepository();
@@ -293,6 +294,12 @@ class TransactionEntryController extends GetxController {
       if (Get.isRegistered<HomeController>()) {
         final homeController = Get.find<HomeController>();
         await homeController.loadPartiesFromDatabase();
+      }
+
+      // Refresh analytics to update month/week calculations
+      if (Get.isRegistered<AnalyticsController>()) {
+        final analyticsController = Get.find<AnalyticsController>();
+        await analyticsController.refreshAnalytics();
       }
 
       Get.back(result: {'success': true});

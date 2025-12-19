@@ -20,6 +20,8 @@ class CustomTextField extends StatelessWidget {
   final Color? focusedBorderColor;
   final Color? enabledBorderColor;
   final double borderWidth;
+  final int? minLines;
+  final int? maxLines;
 
   const CustomTextField({
     super.key,
@@ -40,6 +42,8 @@ class CustomTextField extends StatelessWidget {
     this.focusedBorderColor,
     this.enabledBorderColor,
     this.borderWidth = 1,
+    this.minLines,
+    this.maxLines,
   });
 
   @override
@@ -63,6 +67,8 @@ class CustomTextField extends StatelessWidget {
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           maxLength: maxLength,
+          minLines: minLines,
+          maxLines: maxLines,
           validator: validator,
           onChanged: onChanged,
           obscureText: obscureText,
@@ -118,10 +124,7 @@ class CustomTextField extends StatelessWidget {
               ),
             ),
             errorStyle: TextStyle(color: AppColors.error, fontSize: 12),
-            contentPadding: .symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
+            contentPadding: .symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],

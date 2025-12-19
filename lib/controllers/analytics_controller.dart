@@ -59,19 +59,16 @@ class AnalyticsController extends GetxController {
 
   Future<void> _loadAnalyticsData() async {
     if (!Get.isRegistered<HomeController>()) {
-      print('Analytics: HomeController not registered');
       return;
     }
 
     try {
       final homeController = Get.find<HomeController>();
       if (homeController.selectedBusinessId.value.isEmpty) {
-        print('Analytics: selectedBusinessId is empty');
         return;
       }
 
       final businessId = homeController.selectedBusinessId.value;
-      print('Analytics: Loading data for businessId: $businessId');
 
       final parties = await _partyRepository.getPartiesByBusiness(businessId);
       final customers = parties.where((p) => p.type == 'customer').toList();
@@ -79,15 +76,11 @@ class AnalyticsController extends GetxController {
 
       totalCustomers.value = customers.length;
       totalSuppliers.value = suppliers.length;
-      print(
-        'Analytics: Found ${customers.length} customers, ${suppliers.length} suppliers',
-      );
 
       final transactions = await _transactionRepository
           .getTransactionsByBusiness(businessId);
 
       totalTransactions.value = transactions.length;
-      print('Analytics: Found ${transactions.length} transactions');
 
       double give = 0.0;
       double get = 0.0;
@@ -103,18 +96,12 @@ class AnalyticsController extends GetxController {
       totalToGive.value = give;
       totalToGet.value = get;
       totalBalance.value = get - give;
-      print(
-        'Analytics: Total to give: $give, Total to get: $get, Balance: ${get - give}',
-      );
 
       _calculateThisMonthData(transactions);
       _calculateThisWeekData(transactions);
       _calculateTopParties(customers, suppliers, transactions);
-
-      print('Analytics: Data loaded successfully');
     } catch (e) {
-      print('Error loading analytics data: $e');
-      print('Error stack trace: ${StackTrace.current}');
+      // Error handling
     }
   }
 
@@ -128,15 +115,22 @@ class AnalyticsController extends GetxController {
     int transactionCount = 0;
 
     for (var tx in transactions) {
-      final date = DateTime.fromMillisecondsSinceEpoch(tx.date);
+      try {
+        final date = DateTime.fromMillisecondsSinceEpoch(tx.date);
+        final txMonth = date.month;
+        final txYear = date.year;
 
-      if (date.month == currentMonth && date.year == currentYear) {
-        if (tx.direction == 'got') {
-          income += tx.amount;
-        } else {
-          expense += tx.amount;
+        // Check if transaction is in current month
+        if (txMonth == currentMonth && txYear == currentYear) {
+          if (tx.direction == 'got') {
+            income += tx.amount;
+          } else if (tx.direction == 'gave') {
+            expense += tx.amount;
+          }
+          transactionCount++;
         }
-        transactionCount++;
+      } catch (e) {
+        // Error handling
       }
     }
 
@@ -159,29 +153,44 @@ class AnalyticsController extends GetxController {
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
 
+    // Normalize to start of day for comparison
+    final weekStart = DateTime(
+      startOfWeek.year,
+      startOfWeek.month,
+      startOfWeek.day,
+    );
+    final weekEnd = DateTime(
+      endOfWeek.year,
+      endOfWeek.month,
+      endOfWeek.day,
+      23,
+      59,
+      59,
+    );
+
     double income = 0.0;
     double expense = 0.0;
     int transactionCount = 0;
-    for (var tx in transactions) {
-      final date = DateTime.fromMillisecondsSinceEpoch(tx.date);
-      final transactionDate = DateTime(date.year, date.month, date.day);
-      final weekStart = DateTime(
-        startOfWeek.year,
-        startOfWeek.month,
-        startOfWeek.day,
-      );
-      final weekEnd = DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
 
-      if (transactionDate.isAfter(
-            weekStart.subtract(const Duration(days: 1)),
-          ) &&
-          transactionDate.isBefore(weekEnd.add(const Duration(days: 1)))) {
-        if (tx.direction == 'got') {
-          income += tx.amount;
-        } else {
-          expense += tx.amount;
+    for (var tx in transactions) {
+      try {
+        final date = DateTime.fromMillisecondsSinceEpoch(tx.date);
+        final transactionDate = DateTime(date.year, date.month, date.day);
+
+        final txMs = transactionDate.millisecondsSinceEpoch;
+        final weekStartMs = weekStart.millisecondsSinceEpoch;
+        final weekEndMs = weekEnd.millisecondsSinceEpoch;
+
+        if (txMs >= weekStartMs && txMs <= weekEndMs) {
+          if (tx.direction == 'got') {
+            income += tx.amount;
+          } else if (tx.direction == 'gave') {
+            expense += tx.amount;
+          }
+          transactionCount++;
         }
-        transactionCount++;
+      } catch (e) {
+        // Error handling
       }
     }
 

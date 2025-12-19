@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../controllers/business_profile_controller.dart';
 import '../app/utils/app_colors.dart';
+import 'widgets/widgets.dart';
 
 class BusinessProfileScreen extends StatelessWidget {
   const BusinessProfileScreen({super.key});
@@ -42,19 +43,12 @@ class BusinessProfileScreen extends StatelessWidget {
           Stack(
             children: [
               Obx(
-                () => CircleAvatar(
-                  radius: 50,
+                () => AvatarWidget(
+                  imagePath: controller.profileImageFile.value?.path,
+                  name: controller.businessName.value,
+                  size: 100,
                   backgroundColor: Colors.grey.shade300,
-                  backgroundImage: controller.profileImageFile.value != null
-                      ? FileImage(controller.profileImageFile.value!)
-                      : null,
-                  child: controller.profileImageFile.value == null
-                      ? Icon(
-                          Icons.business,
-                          size: 50,
-                          color: Colors.grey.shade600,
-                        )
-                      : null,
+                  fallbackIcon: Icons.business,
                 ),
               ),
               Positioned(
@@ -621,14 +615,12 @@ class BusinessProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Switch(
-              value: controller.appLockEnabled.value,
-              onChanged: (value) => controller.toggleAppLock(),
-              activeColor: AppColors.success,
-              activeTrackColor: AppColors.success.withValues(alpha: 0.5),
-              inactiveThumbColor: Colors.grey.shade400,
-              inactiveTrackColor: Colors.grey.shade300,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            Obx(
+              () => CustomSwitch(
+                value: controller.appLockEnabled.value,
+                onChanged: (value) => controller.toggleAppLock(),
+                activeColor: AppColors.success,
+              ),
             ),
           ],
         ),
@@ -667,20 +659,6 @@ class BusinessProfileScreen extends StatelessWidget {
                       title: 'Share App',
                       onTap: () {
                         _shareApp(context);
-                      },
-                    ),
-                    _buildSettingsItem(
-                      icon: Icons.table_chart_rounded,
-                      title: 'Print Database Tables',
-                      onTap: () {
-                        controller.printDatabaseTables();
-                      },
-                    ),
-                    _buildSettingsItem(
-                      icon: Icons.numbers_rounded,
-                      title: 'Print Table Counts',
-                      onTap: () {
-                        controller.printTableCounts();
                       },
                     ),
                   ],
@@ -820,52 +798,20 @@ class BusinessProfileScreen extends StatelessWidget {
                   ],
                 ),
 
-                TextFormField(
+                CustomTextField(
                   controller: textController,
-                  maxLines: maxLines,
+                  hintText: 'Enter ${title.toLowerCase()}',
                   keyboardType: isPhone
                       ? TextInputType.phone
                       : TextInputType.text,
-                  textInputAction: TextInputAction.done,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: 'Enter ${title.toLowerCase()}',
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    prefixIcon: Icon(
-                      isPhone ? Icons.phone_rounded : Icons.edit_rounded,
-                      color: AppColors.primary,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 1,
-                      ),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.red.shade300,
-                        width: 1,
-                      ),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(color: Colors.red, width: 1),
-                    ),
-                    contentPadding: .symmetric(horizontal: 12, vertical: 12),
+                  maxLines: maxLines,
+                  prefixIcon: Icon(
+                    isPhone ? Icons.phone_rounded : Icons.edit_rounded,
+                    color: AppColors.primary,
                   ),
-                  style: const TextStyle(fontSize: 16, color: Colors.black87),
+                  borderRadius: 12,
+                  focusedBorderColor: AppColors.primary,
+                  enabledBorderColor: Colors.grey.shade300,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter ${title.toLowerCase()}';
@@ -880,44 +826,23 @@ class BusinessProfileScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: .end,
                   children: [
-                    TextButton(
+                    CustomTextButton(
+                      text: 'Cancel',
                       onPressed: () => Get.back(),
-                      style: TextButton.styleFrom(
-                        padding: .symmetric(horizontal: 16, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: .circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                          fontWeight: .w500,
-                        ),
-                      ),
+                      textColor: Colors.grey.shade700,
                     ),
                     const SizedBox(width: 12),
-                    ElevatedButton(
+                    PrimaryButton(
+                      text: 'Save',
                       onPressed: () {
                         if (formKey.currentState!.validate()) {
                           onSave(textController.text.trim());
                           Get.back();
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: .symmetric(horizontal: 24, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: .circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Save',
-                        style: TextStyle(fontSize: 14, fontWeight: .w500),
-                      ),
+                      height: 40,
+                      fontSize: 14,
+                      backgroundColor: AppColors.primary,
                     ),
                   ],
                 ),

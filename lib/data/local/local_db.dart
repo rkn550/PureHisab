@@ -106,66 +106,6 @@ class DatabaseHelper {
     await db.close();
   }
 
-  // Print all tables and their data
-  Future<void> printAllTables() async {
-    final db = await database;
-
-    print('\n========== DATABASE TABLES ==========\n');
-
-    // Print businesses table
-    await _printTable(db, 'businesses');
-
-    // Print parties table
-    await _printTable(db, 'parties');
-
-    // Print transactions table
-    await _printTable(db, 'transactions');
-
-    print('\n=====================================\n');
-  }
-
-  // Print a specific table
-  Future<void> printTable(String tableName) async {
-    final db = await database;
-    await _printTable(db, tableName);
-  }
-
-  // Helper method to print table data
-  Future<void> _printTable(Database db, String tableName) async {
-    try {
-      // Get table schema
-      final tableInfo = await db.rawQuery("PRAGMA table_info($tableName)");
-
-      print('\n--- TABLE: $tableName ---');
-      print('Columns:');
-      for (var column in tableInfo) {
-        print('  - ${column['name']} (${column['type']})');
-      }
-
-      // Get all data
-      final data = await db.query(tableName);
-
-      print('\nTotal Rows: ${data.length}');
-
-      if (data.isNotEmpty) {
-        print('\nData:');
-        for (var i = 0; i < data.length; i++) {
-          print('\nRow ${i + 1}:');
-          data[i].forEach((key, value) {
-            print('  $key: $value');
-          });
-        }
-      } else {
-        print('\n(No data)');
-      }
-
-      print('\n');
-    } catch (e) {
-      print('Error printing table $tableName: $e');
-    }
-  }
-
-  // Get table count
   Future<Map<String, int>> getTableCounts() async {
     final db = await database;
 
@@ -192,16 +132,5 @@ class DatabaseHelper {
       'parties': partiesCount,
       'transactions': transactionsCount,
     };
-  }
-
-  // Print table counts
-  Future<void> printTableCounts() async {
-    final counts = await getTableCounts();
-
-    print('\n========== TABLE COUNTS ==========');
-    print('Businesses: ${counts['businesses']}');
-    print('Parties: ${counts['parties']}');
-    print('Transactions: ${counts['transactions']}');
-    print('===================================\n');
   }
 }

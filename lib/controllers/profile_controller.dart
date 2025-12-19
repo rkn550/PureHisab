@@ -57,7 +57,7 @@ class ProfileController extends GetxController {
         }
       }
     } catch (e) {
-      print('Error loading party profile: $e');
+      // Error handling
     } finally {
       isLoading.value = false;
     }
@@ -440,7 +440,7 @@ class ProfileController extends GetxController {
                                 }
                               }
                             } catch (e) {
-                              print('Error removing photo from database: $e');
+                              // Error handling
                             }
                           }
 
@@ -509,7 +509,7 @@ class ProfileController extends GetxController {
               }
             }
           } catch (e) {
-            print('Error saving photo to database: $e');
+            // Error handling
           }
         }
 
@@ -601,7 +601,7 @@ class ProfileController extends GetxController {
               }
             }
           } catch (e) {
-            print('Error saving photo to database: $e');
+            // Error handling
           }
         }
 

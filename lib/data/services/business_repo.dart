@@ -24,9 +24,6 @@ class BusinessRepository {
       final now = DateTime.now().millisecondsSinceEpoch;
       final phoneNumber = currentUser.phoneNumber ?? '';
 
-      print('Firebase Auth Phone Number: $phoneNumber');
-      print('Current User: ${currentUser.uid}');
-
       final business = BusinessModel(
         id: _uuid.v4(),
         businessName: businessName,
@@ -41,21 +38,16 @@ class BusinessRepository {
         firebaseUpdatedAt: null,
       );
 
-      print('Creating business with data: ${business.toMap()}');
-      final insertResult = await db.insert(
+      await db.insert(
         'businesses',
         business.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      print('Insert result: $insertResult');
       final savedBusiness = await getBusinessById(business.id);
       if (savedBusiness == null) {
-        print('ERROR: Business not found after insertion. ID: ${business.id}');
         throw Exception('Business was not saved to database');
       }
-
-      print('Business successfully saved: ${savedBusiness.businessName}');
       return savedBusiness;
     } catch (e) {
       if (e is Exception) {
@@ -107,20 +99,11 @@ class BusinessRepository {
         )
         .toMap();
 
-    print('Updating business in database: $updateData');
-
-    final updateResult = await db.update(
+    await db.update(
       'businesses',
       updateData,
       where: 'id = ?',
       whereArgs: [business.id],
-    );
-
-    print('Update result: $updateResult');
-
-    final verifyBusiness = await getBusinessById(business.id);
-    print(
-      'Verified business after update - ownerName: ${verifyBusiness?.ownerName}',
     );
   }
 

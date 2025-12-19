@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_controller.dart';
 import '../app/utils/app_colors.dart';
+import 'widgets/widgets.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -180,47 +181,11 @@ class ProfileScreen extends StatelessWidget {
     String? value,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return ListItem(
+      title: value ?? label,
+      subtitle: value != null ? label : null,
+      leadingIcon: icon,
       onTap: onTap,
-      child: Container(
-        padding: .symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.shade200, width: 1),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.grey.shade700, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: .start,
-                children: [
-                  if (value != null)
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  if (value != null) const SizedBox(height: 4),
-                  Text(
-                    value ?? label,
-                    style: TextStyle(
-                      color: value != null ? Colors.black87 : Colors.black,
-                      fontSize: value != null ? 16 : 15,
-                      fontWeight: value != null ? .normal : .w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: Colors.grey.shade400),
-          ],
-        ),
-      ),
     );
   }
 
@@ -233,7 +198,7 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: .start,
         children: [
-          Divider(color: Colors.grey.shade300, thickness: 1),
+          CustomDivider(color: Colors.grey.shade300, thickness: 1),
           const SizedBox(height: 8),
           Obx(
             () => Text(
@@ -302,19 +267,10 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           Obx(
-            () => Tooltip(
-              message: controller.smsEnabled.value
-                  ? 'SMS is ON - SMS will be sent on each entry'
-                  : 'SMS is OFF - SMS will not be sent',
-              child: Switch(
-                value: controller.smsEnabled.value,
-                onChanged: (_) => controller.toggleSmsEnabled(),
-                activeThumbColor: AppColors.success,
-                activeTrackColor: AppColors.success.withOpacity(0.5),
-                inactiveThumbColor: Colors.grey.shade400,
-                inactiveTrackColor: Colors.grey.shade300,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
+            () => CustomSwitch(
+              value: controller.smsEnabled.value,
+              onChanged: (_) => controller.toggleSmsEnabled(),
+              activeColor: AppColors.success,
             ),
           ),
         ],
@@ -357,7 +313,7 @@ class ProfileScreen extends StatelessWidget {
                 Obx(
                   () => Row(
                     children: [
-                      Radio<String>(
+                      CustomRadio<String>(
                         value: 'English',
                         groupValue: controller.smsLanguage.value,
                         onChanged: (value) {
@@ -365,14 +321,11 @@ class ProfileScreen extends StatelessWidget {
                             controller.setSmsLanguage(value);
                           }
                         },
+                        label: 'English',
                         activeColor: AppColors.primaryDark,
                       ),
-                      const Text(
-                        'English',
-                        style: TextStyle(fontSize: 14, color: Colors.black87),
-                      ),
                       const SizedBox(width: 24),
-                      Radio<String>(
+                      CustomRadio<String>(
                         value: 'Hindi',
                         groupValue: controller.smsLanguage.value,
                         onChanged: (value) {
@@ -380,11 +333,8 @@ class ProfileScreen extends StatelessWidget {
                             controller.setSmsLanguage(value);
                           }
                         },
+                        label: 'Hindi',
                         activeColor: AppColors.primaryDark,
-                      ),
-                      const Text(
-                        'Hindi',
-                        style: TextStyle(fontSize: 14, color: Colors.black87),
                       ),
                     ],
                   ),
@@ -449,140 +399,69 @@ class ProfileScreen extends StatelessWidget {
         title.toLowerCase().contains('number');
 
     Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: .circular(24)),
-        elevation: 8,
-        child: Container(
-          padding: .all(24),
-          constraints: const BoxConstraints(maxWidth: 400),
-          decoration: BoxDecoration(
-            borderRadius: .circular(24),
-            color: Colors.white,
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: .start,
-              spacing: 20,
-              children: [
-                Row(
-                  mainAxisAlignment: .center,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: .w500,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-
-                TextFormField(
-                  controller: textController,
-                  maxLines: maxLines,
-                  keyboardType: isPhone
-                      ? TextInputType.phone
-                      : TextInputType.text,
-                  textInputAction: TextInputAction.done,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: 'Enter ${title.toLowerCase()}',
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    prefixIcon: Icon(
-                      isPhone ? Icons.phone_rounded : Icons.edit_rounded,
-                      color: AppColors.primary,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 1,
-                      ),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.red.shade300,
-                        width: 1,
-                      ),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: .circular(12),
-                      borderSide: BorderSide(color: Colors.red, width: 1),
-                    ),
-                    contentPadding: .symmetric(horizontal: 12, vertical: 12),
-                  ),
-                  style: const TextStyle(fontSize: 16, color: Colors.black87),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter ${title.toLowerCase()}';
-                    }
-                    if (isPhone && value.length < 10) {
-                      return 'Please enter a valid phone number';
-                    }
-                    return null;
-                  },
-                ),
-
-                Row(
-                  mainAxisAlignment: .end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Get.back(),
-                      style: TextButton.styleFrom(
-                        padding: .symmetric(horizontal: 16, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: .circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                          fontWeight: .w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (formKey.currentState!.validate()) {
-                          onSave(textController.text.trim());
-                          Get.back();
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: .symmetric(horizontal: 24, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: .circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Save',
-                        style: TextStyle(fontSize: 14, fontWeight: .w500),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+      CustomDialog(
+        title: title,
+        confirmText: 'Save',
+        cancelText: 'Cancel',
+        onConfirm: () {
+          if (formKey.currentState!.validate()) {
+            onSave(textController.text.trim());
+            Get.back();
+          }
+        },
+        onCancel: () => Get.back(),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: textController,
+            maxLines: maxLines,
+            keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
+            textInputAction: TextInputAction.done,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Enter ${title.toLowerCase()}',
+              hintStyle: TextStyle(color: Colors.grey.shade400),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              prefixIcon: Icon(
+                isPhone ? Icons.phone_rounded : Icons.edit_rounded,
+                color: AppColors.primary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.primary, width: 1),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.red.shade300, width: 1),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.red, width: 1),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
             ),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter ${title.toLowerCase()}';
+              }
+              if (isPhone && value.length < 10) {
+                return 'Please enter a valid phone number';
+              }
+              return null;
+            },
           ),
         ),
       ),

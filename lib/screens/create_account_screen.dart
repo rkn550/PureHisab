@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/business_profile_controller.dart';
 import '../app/utils/app_colors.dart';
+import 'widgets/widgets.dart';
 
 class CreateAccountScreen extends StatelessWidget {
   const CreateAccountScreen({super.key});
@@ -43,74 +44,26 @@ class CreateAccountScreen extends StatelessWidget {
               crossAxisAlignment: .stretch,
               children: [
                 const SizedBox(height: 40),
-                TextFormField(
+                CustomTextField(
                   controller: controller.nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Business Name',
-                    hintText: 'Enter business name',
-                    border: OutlineInputBorder(
-                      borderRadius: .circular(8),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 1,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: .circular(8),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 1,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: .circular(8),
-                      borderSide: BorderSide(
-                        color: AppColors.primary,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: .symmetric(horizontal: 16, vertical: 16),
-                  ),
-                  style: const TextStyle(fontSize: 16),
+                  label: 'Business Name',
+                  hintText: 'Enter business name',
                   validator: controller.validateName,
-                  autofocus: true,
+                  borderRadius: 8,
+                  focusedBorderColor: AppColors.primary,
+                  enabledBorderColor: AppColors.primary,
                 ),
                 const Spacer(),
                 Obx(
-                  () => ElevatedButton(
+                  () => PrimaryButton(
+                    text: 'CREATE',
                     onPressed: controller.isLoading.value
                         ? null
-                        : () {
-                            controller.createAccount();
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      padding: .symmetric(vertical: 16),
-                      minimumSize: Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: .circular(8)),
-                      elevation: 0,
-                    ),
-                    child: controller.isLoading.value
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : const Text(
-                            'CREATE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: .bold,
-                            ),
-                          ),
+                        : () => controller.createAccount(),
+                    isLoading: controller.isLoading.value,
+                    height: 50,
+                    fontSize: 16,
+                    backgroundColor: AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: 16),

@@ -58,7 +58,7 @@ class CustomerDetailController extends GetxController {
         isCustomer.value = party.type == 'customer';
       }
     } catch (e) {
-      print('Error loading party data: $e');
+      // Error handling
     }
 
     if (Get.isRegistered<HomeController>()) {
@@ -66,7 +66,7 @@ class CustomerDetailController extends GetxController {
         final homeController = Get.find<HomeController>();
         storeName.value = homeController.storeName.value;
       } catch (e) {
-        print('Error getting store name: $e');
+        // Error handling
       }
     }
   }
@@ -100,7 +100,7 @@ class CustomerDetailController extends GetxController {
 
       calculateSummary();
     } catch (e) {
-      print('Error loading transactions: $e');
+      // Error handling
     }
   }
 
