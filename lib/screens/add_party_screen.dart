@@ -26,9 +26,9 @@ class AddPartyScreen extends StatelessWidget {
         child: Form(
           key: controller.formKey,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: .all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 // Party Name
                 TextFormField(
@@ -37,21 +37,21 @@ class AddPartyScreen extends StatelessWidget {
                     labelText: 'Party name',
                     labelStyle: TextStyle(color: Colors.grey.shade600),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: .circular(8),
                       borderSide: BorderSide(
                         color: AppColors.primary,
                         width: 1,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: .circular(8),
                       borderSide: BorderSide(
                         color: AppColors.primary,
                         width: 1,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: .circular(8),
                       borderSide: BorderSide(
                         color: AppColors.primary,
                         width: 2,
@@ -59,7 +59,7 @@ class AddPartyScreen extends StatelessWidget {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
+                    contentPadding: .symmetric(
                       horizontal: 16,
                       vertical: 16,
                     ),
@@ -75,10 +75,10 @@ class AddPartyScreen extends StatelessWidget {
                       width: 80,
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: .circular(8),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: .center,
                         children: [
                           const Text('🇮🇳', style: TextStyle(fontSize: 20)),
                           const SizedBox(width: 4),
@@ -101,15 +101,15 @@ class AddPartyScreen extends StatelessWidget {
                           labelText: 'Mobile Number',
                           labelStyle: TextStyle(color: Colors.grey.shade600),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: .circular(8),
                             borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: .circular(8),
                             borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: .circular(8),
                             borderSide: BorderSide(
                               color: AppColors.primary,
                               width: 2,
@@ -117,7 +117,7 @@ class AddPartyScreen extends StatelessWidget {
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
+                          contentPadding: .symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
@@ -137,7 +137,7 @@ class AddPartyScreen extends StatelessWidget {
                         'Who are they?',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: .w500,
                         ),
                       ),
                       Expanded(
@@ -170,7 +170,7 @@ class AddPartyScreen extends StatelessWidget {
                             style: TextStyle(
                               color: AppColors.primary,
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: .w500,
                             ),
                           ),
                         ),
@@ -188,9 +188,9 @@ class AddPartyScreen extends StatelessWidget {
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: .symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: .circular(8),
                         ),
                       ),
                       child: controller.isLoading.value
@@ -209,7 +209,7 @@ class AddPartyScreen extends StatelessWidget {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: .bold,
                               ),
                             ),
                     ),
@@ -229,7 +229,7 @@ class AddPartyScreen extends StatelessWidget {
     bool isSelected,
   ) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: .center,
       children: [
         IconButton(
           onPressed: () => controller.togglePartyType(label),
@@ -245,7 +245,7 @@ class AddPartyScreen extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 16,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontWeight: isSelected ? .w600 : .normal,
             color: isSelected ? AppColors.primary : Colors.black,
           ),
         ),
@@ -255,7 +255,7 @@ class AddPartyScreen extends StatelessWidget {
 
   Widget _buildGstinAddressSection(AddPartyController controller) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         InkWell(
           onTap: () => controller.toggleGstinAddress(),
@@ -264,7 +264,7 @@ class AddPartyScreen extends StatelessWidget {
             style: TextStyle(
               color: AppColors.primary,
               fontSize: 14,
-              fontWeight: FontWeight.w500,
+              fontWeight: .w500,
             ),
           ),
         ),
@@ -277,21 +277,21 @@ class AddPartyScreen extends StatelessWidget {
             labelText: 'Address',
             labelStyle: TextStyle(color: Colors.grey.shade600),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: .circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: .circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: .circular(8),
               borderSide: BorderSide(color: AppColors.primary, width: 2),
             ),
             filled: true,
             fillColor: Colors.white,
             hintText: 'Enter address',
-            contentPadding: const EdgeInsets.symmetric(
+            contentPadding: .symmetric(
               horizontal: 16,
               vertical: 16,
             ),

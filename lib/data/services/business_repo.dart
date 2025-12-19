@@ -67,7 +67,11 @@ class BusinessRepository {
 
   Future<List<BusinessModel>> getBusinesses() async {
     final db = await _dbHelper.database;
-    final uid = _auth.currentUser!.uid;
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      throw Exception('User not authenticated. Please login first.');
+    }
+    final uid = currentUser.uid;
 
     final result = await db.query(
       'businesses',

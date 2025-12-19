@@ -131,12 +131,12 @@ class ContactListController extends GetxController {
   void _showSettingsDialog() {
     Get.dialog(
       Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: .circular(16)),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: .all(24),
           decoration: BoxDecoration(
             color: Colors.grey.shade800,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: .circular(16),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -145,17 +145,17 @@ class ContactListController extends GetxController {
               const SizedBox(height: 16),
               const Text(
                 'Permission Required',
-                textAlign: TextAlign.center,
+                textAlign: .center,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: .bold,
                 ),
               ),
               const SizedBox(height: 16),
               const Text(
                 'Please enable contacts permission in Settings to continue.',
-                textAlign: TextAlign.center,
+                textAlign: .center,
                 style: TextStyle(color: Colors.white70, fontSize: 14),
               ),
               const SizedBox(height: 24),
@@ -188,9 +188,9 @@ class ContactListController extends GetxController {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: .symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: .circular(8),
                         ),
                       ),
                       child: const Text(

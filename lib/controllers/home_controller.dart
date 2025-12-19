@@ -50,9 +50,15 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadBusinessesFromDatabase();
-    searchFocusNode.addListener(() {
+    searchFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    try {
       isSearchFocused.value = searchFocusNode.hasFocus;
-    });
+    } catch (e) {
+      // FocusNode might be disposed, ignore
+    }
   }
 
   Future<int> _getCustomerCount(String businessId) async {
@@ -63,7 +69,43 @@ class HomeController extends GetxController {
       );
       return parties.length;
     } catch (e) {
+      print('Error getting customer count: $e');
       return 0;
+    }
+  }
+
+  Future<int> _getSupplierCount(String businessId) async {
+    try {
+      final parties = await _partyRepository.getPartiesByType(
+        businessId,
+        'supplier',
+      );
+      return parties.length;
+    } catch (e) {
+      print('Error getting supplier count: $e');
+      return 0;
+    }
+  }
+
+  Future<void> refreshAccountCounts() async {
+    try {
+      for (int i = 0; i < accountsList.length; i++) {
+        final businessId = accountsList[i]['id']?.toString();
+        if (businessId != null && businessId.isNotEmpty) {
+          final customerCount = await _getCustomerCount(businessId);
+          final supplierCount = await _getSupplierCount(businessId);
+          accountsList[i]['customerCount'] = customerCount;
+          accountsList[i]['supplierCount'] = supplierCount;
+          print(
+            'Refreshed counts for business $businessId: $customerCount customers, $supplierCount suppliers',
+          );
+        } else {
+          accountsList[i]['customerCount'] = 0;
+          accountsList[i]['supplierCount'] = 0;
+        }
+      }
+    } catch (e) {
+      print('Error refreshing account counts: $e');
     }
   }
 
@@ -74,10 +116,13 @@ class HomeController extends GetxController {
       accountsList.clear();
 
       for (var business in businesses) {
+        final customerCount = await _getCustomerCount(business.id);
+        final supplierCount = await _getSupplierCount(business.id);
         final account = {
           'id': business.id,
           'name': business.businessName,
-          'customerCount': await _getCustomerCount(business.id),
+          'customerCount': customerCount,
+          'supplierCount': supplierCount,
           'isSelected': false,
           'business': business,
         };
@@ -234,7 +279,7 @@ class HomeController extends GetxController {
 
   void changeTab(int index) {
     selectedTab.value = index;
-    searchQuery.value = ''; // Clear search when switching tabs
+    searchQuery.value = '';
     updateSummaryAmounts();
   }
 
@@ -254,7 +299,10 @@ class HomeController extends GetxController {
     showFilterModal.value = false;
   }
 
-  void toggleAccountModal() {
+  void toggleAccountModal() async {
+    if (!showAccountModal.value) {
+      await refreshAccountCounts();
+    }
     showAccountModal.value = !showAccountModal.value;
   }
 
@@ -308,15 +356,18 @@ class HomeController extends GetxController {
   }
 
   /// Add new account from BusinessModel (used when creating from database)
-  void addNewAccountFromBusiness(BusinessModel business) {
+  Future<void> addNewAccountFromBusiness(BusinessModel business) async {
     for (var account in accountsList) {
       account['isSelected'] = false;
     }
 
+    final customerCount = await _getCustomerCount(business.id);
+    final supplierCount = await _getSupplierCount(business.id);
     final newAccount = {
       'id': business.id,
       'name': business.businessName,
-      'customerCount': 0,
+      'customerCount': customerCount,
+      'supplierCount': supplierCount,
       'isSelected': true,
       'business': business,
     };
@@ -458,12 +509,12 @@ class HomeController extends GetxController {
 
   Widget _buildCreateBusinessBottomSheet() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: .all(16),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: .circular(20),
+          topRight: .circular(20),
         ),
       ),
       child: Column(
@@ -472,47 +523,45 @@ class HomeController extends GetxController {
           Container(
             width: 40,
             height: 4,
-            margin: const EdgeInsets.only(bottom: 20),
+            margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
               color: Colors.grey.shade300,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Icon(Icons.business, size: 80, color: AppColors.primary),
-          const SizedBox(height: 24),
+          Icon(Icons.business, size: 60, color: AppColors.primary),
+          const SizedBox(height: 20),
           const Text(
             'Create Your First Business',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             'Start managing your accounts by creating your first business profile',
             style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Get.back();
-                Get.toNamed(Routes.createAccount);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+          const SizedBox(height: 26),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              Get.toNamed(Routes.createAccount);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              minimumSize: Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                'CREATE BUSINESS',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+            ),
+            child: const Text(
+              'CREATE BUSINESS',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -523,6 +572,7 @@ class HomeController extends GetxController {
 
   @override
   void onClose() {
+    searchFocusNode.removeListener(_onFocusChange);
     searchFocusNode.dispose();
     super.onClose();
   }

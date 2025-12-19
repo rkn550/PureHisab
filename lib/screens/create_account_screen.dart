@@ -36,11 +36,11 @@ class CreateAccountScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: .all(24.0),
           child: Form(
             key: controller.formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: .stretch,
               children: [
                 const SizedBox(height: 40),
                 TextFormField(
@@ -49,21 +49,21 @@ class CreateAccountScreen extends StatelessWidget {
                     labelText: 'Business Name',
                     hintText: 'Enter business name',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: .circular(8),
                       borderSide: BorderSide(
                         color: AppColors.primary,
                         width: 1,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: .circular(8),
                       borderSide: BorderSide(
                         color: AppColors.primary,
                         width: 1,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: .circular(8),
                       borderSide: BorderSide(
                         color: AppColors.primary,
                         width: 2,
@@ -71,10 +71,7 @@ class CreateAccountScreen extends StatelessWidget {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
+                    contentPadding: .symmetric(horizontal: 16, vertical: 16),
                   ),
                   style: const TextStyle(fontSize: 16),
                   validator: controller.validateName,
@@ -90,10 +87,9 @@ class CreateAccountScreen extends StatelessWidget {
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      padding: .symmetric(vertical: 16),
+                      minimumSize: Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: .circular(8)),
                       elevation: 0,
                     ),
                     child: controller.isLoading.value
@@ -112,7 +108,7 @@ class CreateAccountScreen extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: .bold,
                             ),
                           ),
                   ),

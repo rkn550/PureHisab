@@ -22,7 +22,7 @@ class ResendTimer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: .center,
       children: [
         if (prefixText != null)
           Text(
@@ -33,7 +33,7 @@ class ResendTimer extends StatelessWidget {
           TextButton(
             onPressed: onResend,
             style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: .symmetric(horizontal: 8),
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -41,7 +41,7 @@ class ResendTimer extends StatelessWidget {
               resendText ?? 'Resend Code',
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontWeight: .w600,
                 color: AppColors.primary,
               ),
             ),
@@ -53,7 +53,7 @@ class ResendTimer extends StatelessWidget {
                 : 'Resend in ${timer}s',
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontWeight: .w600,
               color: AppColors.textSecondary,
             ),
           ),

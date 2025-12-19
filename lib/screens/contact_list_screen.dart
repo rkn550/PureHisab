@@ -50,11 +50,11 @@ class ContactListScreen extends StatelessWidget {
       children: [
         // Search bar
         Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          margin: .all(16),
+          padding: .symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: .circular(8),
           ),
           child: Obx(
             () => TextField(
@@ -91,7 +91,7 @@ class ContactListScreen extends StatelessWidget {
             Get.toNamed(Routes.addParty, arguments: Get.arguments);
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: .symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 Container(
@@ -108,7 +108,7 @@ class ContactListScreen extends StatelessWidget {
                   isCustomer ? 'Add Customer' : 'Add Supplier',
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: .w500,
                     color: AppColors.primary,
                   ),
                 ),
@@ -129,7 +129,7 @@ class ContactListScreen extends StatelessWidget {
             if (!controller.hasPermission.value) {
               return Center(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: .center,
                   children: [
                     Icon(
                       Icons.contacts_outlined,
@@ -141,7 +141,7 @@ class ContactListScreen extends StatelessWidget {
                       'Permission denied',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: .w500,
                         color: Colors.grey.shade700,
                       ),
                     ),
@@ -165,7 +165,7 @@ class ContactListScreen extends StatelessWidget {
                 // Search returned no results
                 return Center(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: .center,
                     children: [
                       Icon(
                         Icons.search_off,
@@ -177,7 +177,7 @@ class ContactListScreen extends StatelessWidget {
                         'No contacts found',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: .w500,
                           color: Colors.grey.shade700,
                         ),
                       ),
@@ -196,7 +196,7 @@ class ContactListScreen extends StatelessWidget {
                 // No contacts at all
                 return Center(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: .center,
                     children: [
                       Icon(
                         Icons.contacts_outlined,
@@ -208,7 +208,7 @@ class ContactListScreen extends StatelessWidget {
                         'No contacts found',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: .w500,
                           color: Colors.grey.shade700,
                         ),
                       ),
@@ -243,7 +243,7 @@ class ContactListScreen extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: .bold,
                       ),
                     ),
                   ),
@@ -251,7 +251,7 @@ class ContactListScreen extends StatelessWidget {
                     name.isEmpty ? 'Unknown' : name,
                     style: const TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: .w500,
                     ),
                   ),
                   subtitle: Text(
@@ -292,12 +292,12 @@ class ContactListScreen extends StatelessWidget {
   ) {
     Get.dialog(
       Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: .circular(16)),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: .all(24),
           decoration: BoxDecoration(
             color: Colors.grey.shade800,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: .circular(16),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -306,11 +306,11 @@ class ContactListScreen extends StatelessWidget {
               const SizedBox(height: 16),
               const Text(
                 'Allow Khatabook to access your contacts?',
-                textAlign: TextAlign.center,
+                textAlign: .center,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: .bold,
                 ),
               ),
               const SizedBox(height: 24),
@@ -342,19 +342,19 @@ class ContactListScreen extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(
+                        padding: .symmetric(
                           horizontal: 32,
                           vertical: 12,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: .circular(8),
                         ),
                       ),
                       child: const Text(
                         'Allow',
                         style: TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: .bold,
                         ),
                       ),
                     ),

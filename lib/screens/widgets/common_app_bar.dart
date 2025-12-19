@@ -55,7 +55,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: .w500,
                   ),
                 ),
                 if (showDropdown)
@@ -91,7 +91,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
             style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
-              fontWeight: FontWeight.w500,
+              fontWeight: .w500,
             ),
           ),
           if (showDropdown)

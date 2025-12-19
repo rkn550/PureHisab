@@ -14,7 +14,7 @@ class SectionHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.subtitle,
-    this.textAlign = TextAlign.center,
+    this.textAlign = .center,
     this.titleFontSize = 28,
     this.subtitleFontSize = 16,
     this.titleColor,
@@ -29,7 +29,7 @@ class SectionHeader extends StatelessWidget {
           title,
           style: TextStyle(
             fontSize: titleFontSize,
-            fontWeight: FontWeight.bold,
+            fontWeight: .bold,
             color: titleColor ?? AppColors.textPrimary,
           ),
           textAlign: textAlign,

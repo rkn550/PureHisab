@@ -329,12 +329,12 @@ class TransactionEntryController extends GetxController {
       Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.only(
+          borderRadius: const .only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: .symmetric(vertical: 20),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -342,19 +342,19 @@ class TransactionEntryController extends GetxController {
               Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: .only(bottom: 20),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: .circular(2),
                 ),
               ),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: .symmetric(horizontal: 24, vertical: 8),
                 child: Text(
                   'Attach Bill',
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: .bold,
                     color: Colors.black87,
                   ),
                 ),

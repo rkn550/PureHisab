@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
           color: AppColors.surface,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: .circular(12),
             side: const BorderSide(color: AppColors.border, width: 1),
           ),
         ),

@@ -26,8 +26,7 @@ class BusinessProfileScreen extends StatelessWidget {
             _buildSettingsSection(controller),
             _buildHelpSupportSection(controller),
             _buildAboutSection(controller),
-            _buildVersionAndShareSection(),
-            const SizedBox(height: 32),
+            _buildVersionAndShareSection(controller),
           ],
         ),
       ),
@@ -36,7 +35,8 @@ class BusinessProfileScreen extends StatelessWidget {
 
   Widget _buildProfileSection(BusinessProfileController controller) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white),
+      padding: .all(24),
       child: Column(
         children: [
           Stack(
@@ -63,17 +63,24 @@ class BusinessProfileScreen extends StatelessWidget {
                 child: GestureDetector(
                   onTap: controller.addPhoto,
                   child: Container(
-                    width: 32,
-                    height: 32,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
                       color: Colors.white,
-                      size: 18,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.primary, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: AppColors.primary,
+                      size: 20,
                     ),
                   ),
                 ),
@@ -88,7 +95,7 @@ class BusinessProfileScreen extends StatelessWidget {
               style: TextStyle(
                 color: AppColors.primaryDark,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: .w500,
               ),
             ),
           ),
@@ -97,9 +104,9 @@ class BusinessProfileScreen extends StatelessWidget {
             () => Text(
               controller.businessName.value,
               style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                color: AppColors.primary,
+                fontSize: 24,
+                fontWeight: .w500,
               ),
             ),
           ),
@@ -113,8 +120,9 @@ class BusinessProfileScreen extends StatelessWidget {
     BuildContext context,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: .fromLTRB(16, 8, 16, 16),
       child: Column(
+        crossAxisAlignment: .start,
         children: [
           _buildDetailItem(
             icon: Icons.person_outlined,
@@ -128,25 +136,19 @@ class BusinessProfileScreen extends StatelessWidget {
               controller.ownerName.value,
               (value) async {
                 controller.updateOwnerName(value);
-                // Save to database if business ID exists
                 if (controller.businessId.value.isNotEmpty) {
                   await controller.updateBusinessProfile();
                 }
               },
             ),
           ),
+          const SizedBox(height: 8),
           _buildDetailItem(
             icon: Icons.phone_outlined,
             label: 'Mobile Number',
             value: controller.businessPhone.value.isEmpty
                 ? 'Not set'
                 : controller.businessPhone.value,
-            // onTap: () => _showEditDialog(
-            //   context,
-            //   'Edit Mobile Number',
-            //   controller.businessPhone.value,
-            //   (value) => controller.updateBusinessPhone(value),
-            // ),
           ),
         ],
       ),
@@ -159,48 +161,66 @@ class BusinessProfileScreen extends StatelessWidget {
     String? value,
     VoidCallback? onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          margin: .symmetric(horizontal: 4, vertical: 3),
+          padding: .all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: .circular(12),
+            border: Border.all(color: Colors.grey.shade200, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.grey.shade700, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (value != null)
+          child: Row(
+            children: [
+              Container(
+                padding: .all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: .circular(8),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: .start,
+                  children: [
                     Text(
                       label,
                       style: TextStyle(
                         color: Colors.grey.shade600,
-                        fontSize: 12,
+                        fontSize: 11,
+                        fontWeight: .w500,
                       ),
                     ),
-                  if (value != null) const SizedBox(height: 4),
-                  Text(
-                    value ?? label,
-                    style: TextStyle(
-                      color: value != null ? Colors.black87 : Colors.black,
-                      fontSize: value != null ? 16 : 15,
-                      fontWeight: value != null
-                          ? FontWeight.normal
-                          : FontWeight.w500,
+                    const SizedBox(height: 3),
+                    Text(
+                      value ?? 'Not set',
+                      style: TextStyle(
+                        color: value != null
+                            ? Colors.black87
+                            : Colors.grey.shade400,
+                        fontSize: 16,
+                        fontWeight: value != null ? .w600 : .normal,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (onTap != null)
-              Icon(Icons.chevron_right, color: Colors.grey.shade400),
-          ],
+              if (onTap != null)
+                Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400),
+            ],
+          ),
         ),
       ),
     );
@@ -208,67 +228,86 @@ class BusinessProfileScreen extends StatelessWidget {
 
   Widget _buildHelpSupportSection(BusinessProfileController controller) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: .symmetric(horizontal: 16),
       child: Column(
         children: [
-          Divider(color: Colors.grey.shade300, thickness: 1),
-
+          const SizedBox(height: 8),
           Obx(
-            () => ExpansionTile(
-              initiallyExpanded: controller.helpSupportExpanded.value,
-              onExpansionChanged: (expanded) {
-                controller.helpSupportExpanded.value = expanded;
-              },
-              tilePadding: const EdgeInsets.symmetric(
-                horizontal: 0,
-                vertical: 0,
-              ),
-              childrenPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.help_outline,
-                color: controller.helpSupportExpanded.value
-                    ? AppColors.primaryDark
-                    : Colors.grey.shade700,
-                size: 24,
-              ),
-              title: Text(
-                'Help & Support',
-                style: TextStyle(
+            () => Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: .circular(16),
+                border: Border.all(
                   color: controller.helpSupportExpanded.value
-                      ? AppColors.primaryDark
-                      : Colors.black87,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
+                      ? AppColors.primary.withValues(alpha: 0.3)
+                      : Colors.grey.shade200,
+                  width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              children: [
-                // Help on WhatsApp
-                _buildSettingsItem(
-                  icon: Icons.chat_outlined,
-                  title: 'Help on WhatsApp',
-                  onTap: () {
-                    // TODO: Open WhatsApp with help number
-                    Get.snackbar(
-                      'Help on WhatsApp',
-                      'Coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
+              child: ExpansionTile(
+                initiallyExpanded: controller.helpSupportExpanded.value,
+                onExpansionChanged: (expanded) {
+                  controller.helpSupportExpanded.value = expanded;
+                },
+                tilePadding: .symmetric(horizontal: 16, vertical: 8),
+                childrenPadding: .zero,
+                leading: Container(
+                  padding: .all(8),
+                  decoration: BoxDecoration(
+                    color: controller.helpSupportExpanded.value
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : Colors.grey.shade100,
+                    borderRadius: .circular(10),
+                  ),
+                  child: Icon(
+                    Icons.help_outline_rounded,
+                    color: controller.helpSupportExpanded.value
+                        ? AppColors.primary
+                        : Colors.grey.shade700,
+                    size: 22,
+                  ),
                 ),
-                // Call Us
-                _buildSettingsItem(
-                  icon: Icons.phone_outlined,
-                  title: 'Call Us',
-                  onTap: () {
-                    // TODO: Open phone dialer with support number
-                    Get.snackbar(
-                      'Call Us',
-                      'Coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
+                title: Text(
+                  'Help & Support',
+                  style: TextStyle(
+                    color: controller.helpSupportExpanded.value
+                        ? AppColors.primary
+                        : Colors.black87,
+                    fontSize: 16,
+                    fontWeight: .w600,
+                  ),
                 ),
-              ],
+                children: [
+                  Padding(
+                    padding: .symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        _buildSettingsItem(
+                          icon: Icons.wechat_sharp,
+                          title: 'Help on WhatsApp',
+                          onTap: () {
+                            controller.openWhatsApp();
+                          },
+                        ),
+                        _buildSettingsItem(
+                          icon: Icons.phone_outlined,
+                          title: 'Call Us',
+                          onTap: () {
+                            controller.makePhoneCall();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -278,77 +317,105 @@ class BusinessProfileScreen extends StatelessWidget {
 
   Widget _buildAboutSection(BusinessProfileController controller) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: .symmetric(horizontal: 16),
       child: Column(
         children: [
-          Divider(color: Colors.grey.shade300, thickness: 1),
-
+          const SizedBox(height: 8),
           Obx(
-            () => ExpansionTile(
-              initiallyExpanded: controller.aboutExpanded.value,
-              onExpansionChanged: (expanded) {
-                controller.aboutExpanded.value = expanded;
-              },
-              tilePadding: const EdgeInsets.symmetric(
-                horizontal: 0,
-                vertical: 0,
-              ),
-              childrenPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.info_outline,
-                color: controller.aboutExpanded.value
-                    ? AppColors.primaryDark
-                    : Colors.grey.shade700,
-                size: 24,
-              ),
-              title: Text(
-                'About Us',
-                style: TextStyle(
+            () => Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: .circular(16),
+                border: Border.all(
                   color: controller.aboutExpanded.value
-                      ? AppColors.primaryDark
-                      : Colors.black87,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
+                      ? AppColors.primary.withValues(alpha: 0.3)
+                      : Colors.grey.shade200,
+                  width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              children: [
-                // About PureHisab
-                _buildSettingsItem(
-                  icon: Icons.business_outlined,
-                  title: 'About PureHisab',
-                  onTap: () {
-                    Get.snackbar(
-                      'About PureHisab',
-                      'Coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
+              child: ExpansionTile(
+                initiallyExpanded: controller.aboutExpanded.value,
+                onExpansionChanged: (expanded) {
+                  controller.aboutExpanded.value = expanded;
+                },
+                tilePadding: .symmetric(horizontal: 16, vertical: 8),
+                childrenPadding: .zero,
+                leading: Container(
+                  padding: .all(8),
+                  decoration: BoxDecoration(
+                    color: controller.aboutExpanded.value
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : Colors.grey.shade100,
+                    borderRadius: .circular(10),
+                  ),
+                  child: Icon(
+                    Icons.info_outline_rounded,
+                    color: controller.aboutExpanded.value
+                        ? AppColors.primary
+                        : Colors.grey.shade700,
+                    size: 22,
+                  ),
                 ),
-                // Privacy Policy
-                _buildSettingsItem(
-                  icon: Icons.privacy_tip_outlined,
-                  title: 'Privacy Policy',
-                  onTap: () {
-                    Get.snackbar(
-                      'Privacy Policy',
-                      'Coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
+                title: Text(
+                  'About Us',
+                  style: TextStyle(
+                    color: controller.aboutExpanded.value
+                        ? AppColors.primary
+                        : Colors.black87,
+                    fontSize: 16,
+                    fontWeight: .w600,
+                  ),
                 ),
-                // Terms & Conditions
-                _buildSettingsItem(
-                  icon: Icons.description_outlined,
-                  title: 'Terms & Conditions',
-                  onTap: () {
-                    Get.snackbar(
-                      'Terms & Conditions',
-                      'Coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
-                ),
-              ],
+                children: [
+                  Padding(
+                    padding: .symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        _buildSettingsItem(
+                          icon: Icons.business_rounded,
+                          title: 'About PureHisab',
+                          onTap: () {
+                            Get.snackbar(
+                              'About PureHisab',
+                              'Coming soon',
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          },
+                        ),
+                        _buildSettingsItem(
+                          icon: Icons.privacy_tip_rounded,
+                          title: 'Privacy Policy',
+                          onTap: () {
+                            Get.snackbar(
+                              'Privacy Policy',
+                              'Coming soon',
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          },
+                        ),
+                        _buildSettingsItem(
+                          icon: Icons.description_rounded,
+                          title: 'Terms & Conditions',
+                          onTap: () {
+                            Get.snackbar(
+                              'Terms & Conditions',
+                              'Coming soon',
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -358,72 +425,100 @@ class BusinessProfileScreen extends StatelessWidget {
 
   Widget _buildSettingsSection(BusinessProfileController controller) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: .symmetric(horizontal: 16),
       child: Column(
         children: [
-          Divider(color: Colors.grey.shade300, thickness: 1),
-
+          const SizedBox(height: 8),
           Obx(
-            () => ExpansionTile(
-              initiallyExpanded: controller.settingsExpanded.value,
-              onExpansionChanged: (expanded) {
-                controller.settingsExpanded.value = expanded;
-              },
-              tilePadding: const EdgeInsets.symmetric(
-                horizontal: 0,
-                vertical: 0,
-              ),
-              childrenPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.settings,
-                color: controller.settingsExpanded.value
-                    ? AppColors.primaryDark
-                    : Colors.grey.shade700,
-                size: 24,
-              ),
-              title: Text(
-                'Settings',
-                style: TextStyle(
+            () => Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: .circular(16),
+                border: Border.all(
                   color: controller.settingsExpanded.value
-                      ? AppColors.primaryDark
-                      : Colors.black87,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
+                      ? AppColors.primary.withValues(alpha: 0.3)
+                      : Colors.grey.shade200,
+                  width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              children: [
-                // App Lock
-                _buildAppLockItem(controller),
-                // Manage App Lock (shown when App Lock is enabled)
-                Obx(
-                  () => controller.appLockEnabled.value
-                      ? _buildSettingsItem(
-                          icon: Icons.lock_outline,
-                          title: 'Manage App Lock',
-                          titleColor: AppColors.primaryDark,
+              child: ExpansionTile(
+                initiallyExpanded: controller.settingsExpanded.value,
+                onExpansionChanged: (expanded) {
+                  controller.settingsExpanded.value = expanded;
+                },
+                tilePadding: .symmetric(horizontal: 16, vertical: 8),
+                childrenPadding: .zero,
+                leading: Container(
+                  padding: .all(8),
+                  decoration: BoxDecoration(
+                    color: controller.settingsExpanded.value
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : Colors.grey.shade100,
+                    borderRadius: .circular(10),
+                  ),
+                  child: Icon(
+                    Icons.settings_rounded,
+                    color: controller.settingsExpanded.value
+                        ? AppColors.primary
+                        : Colors.grey.shade700,
+                    size: 22,
+                  ),
+                ),
+                title: Text(
+                  'Settings',
+                  style: TextStyle(
+                    color: controller.settingsExpanded.value
+                        ? AppColors.primary
+                        : Colors.black87,
+                    fontSize: 16,
+                    fontWeight: .w600,
+                  ),
+                ),
+                children: [
+                  Padding(
+                    padding: .symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        _buildAppLockItem(controller),
+                        Obx(
+                          () => controller.appLockEnabled.value
+                              ? _buildSettingsItem(
+                                  icon: Icons.lock_clock_outlined,
+                                  title: 'Manage App Lock',
+                                  titleColor: AppColors.primary,
+                                  onTap: () {
+                                    Get.snackbar(
+                                      'Manage App Lock',
+                                      'Coming soon',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                  },
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                        _buildSettingsItem(
+                          icon: Icons.backup_outlined,
+                          title: 'Backup Information',
                           onTap: () {
                             Get.snackbar(
-                              'Manage App Lock',
+                              'Backup Information',
                               'Coming soon',
                               snackPosition: SnackPosition.BOTTOM,
                             );
                           },
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                // Backup Information
-                _buildSettingsItem(
-                  icon: Icons.backup_outlined,
-                  title: 'Backup Information',
-                  onTap: () {
-                    Get.snackbar(
-                      'Backup Information',
-                      'Coming soon',
-                      snackPosition: SnackPosition.BOTTOM,
-                    );
-                  },
-                ),
-              ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -437,120 +532,205 @@ class BusinessProfileScreen extends StatelessWidget {
     required VoidCallback onTap,
     Color? titleColor,
   }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: .circular(10),
+        child: Container(
+          padding: .symmetric(vertical: 14, horizontal: 4),
+          margin: .only(bottom: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: .circular(10),
           ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.grey.shade700, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: titleColor ?? Colors.black87,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
+          child: Row(
+            children: [
+              Container(
+                padding: .all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: .circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: titleColor ?? AppColors.primary,
+                  size: 20,
                 ),
               ),
-            ),
-            Icon(Icons.chevron_right, color: Colors.grey.shade400),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: titleColor ?? Colors.black87,
+                    fontSize: 15,
+                    fontWeight: .w500,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.grey.shade400,
+                size: 20,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildAppLockItem(BusinessProfileController controller) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+    return Obx(
+      () => Container(
+        padding: .symmetric(vertical: 14, horizontal: 4),
+        margin: .only(bottom: 4),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: .circular(10),
         ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.lock_outline, color: Colors.grey.shade700, size: 24),
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Text(
-              'App Lock',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
+        child: Row(
+          children: [
+            Container(
+              padding: .all(8),
+              decoration: BoxDecoration(
+                color: controller.appLockEnabled.value
+                    ? AppColors.success.withValues(alpha: 0.15)
+                    : AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: .circular(8),
+              ),
+              child: Icon(
+                controller.appLockEnabled.value
+                    ? Icons.lock_rounded
+                    : Icons.lock_open_rounded,
+                color: controller.appLockEnabled.value
+                    ? AppColors.success
+                    : AppColors.primary,
+                size: 20,
               ),
             ),
-          ),
-          Obx(
-            () => Switch(
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'App Lock',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 15,
+                  fontWeight: .w500,
+                ),
+              ),
+            ),
+            Switch(
               value: controller.appLockEnabled.value,
               onChanged: (value) => controller.toggleAppLock(),
-              activeThumbColor: AppColors.success,
+              activeColor: AppColors.success,
               activeTrackColor: AppColors.success.withValues(alpha: 0.5),
               inactiveThumbColor: Colors.grey.shade400,
               inactiveTrackColor: Colors.grey.shade300,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildVersionAndShareSection() {
+  Widget _buildVersionAndShareSection(BusinessProfileController controller) {
     return FutureBuilder<PackageInfo>(
       future: PackageInfo.fromPlatform(),
       builder: (context, snapshot) {
         final version = snapshot.hasData ? snapshot.data!.version : '1.0.0';
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          padding: .fromLTRB(16, 8, 16, 24),
           child: Column(
             children: [
-              // Share App
-              _buildSettingsItem(
-                icon: Icons.share_outlined,
-                title: 'Share App',
-                onTap: () {
-                  _shareApp(context);
-                },
-              ),
-              const SizedBox(height: 24),
-              // App Version
-              Center(
-                child: Text(
-                  'V $version',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              Container(
+                padding: .all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: .circular(16),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildSettingsItem(
+                      icon: Icons.share_rounded,
+                      title: 'Share App',
+                      onTap: () {
+                        _shareApp(context);
+                      },
+                    ),
+                    _buildSettingsItem(
+                      icon: Icons.table_chart_rounded,
+                      title: 'Print Database Tables',
+                      onTap: () {
+                        controller.printDatabaseTables();
+                      },
+                    ),
+                    _buildSettingsItem(
+                      icon: Icons.numbers_rounded,
+                      title: 'Print Table Counts',
+                      onTap: () {
+                        controller.printTableCounts();
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              // App Logo/Name
+              const SizedBox(height: 24),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: .min,
                 children: [
+                  // Container(
+                  //   decoration: BoxDecoration(
+                  //     color: AppColors.primary.withValues(alpha: 0.1),
+                  //     shape: BoxShape.circle,
+                  //   ),
+                  //   child:
                   Image.asset(
                     'assets/images/pure_hisab_logo.png',
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.contain,
-                    color: AppColors.primaryDark,
+                    color: AppColors.primary,
+                    height: 70,
+                    width: 70,
+                    // ),
                   ),
+                  const SizedBox(height: 12),
+                  Column(
+                    spacing: 3,
+                    children: [
+                      Text(
+                        'PureHisab',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 16,
+                          fontWeight: .bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
 
-                  Text(
-                    'PureHisab',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                      Text(
+                        'Version $version',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                          fontWeight: .w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+
+              const SizedBox(height: 25),
             ],
           ),
         );
@@ -570,12 +750,14 @@ class BusinessProfileScreen extends StatelessWidget {
 
       // Use Share.share with proper context
       final box = context.findRenderObject() as RenderBox?;
-      await Share.share(
-        shareText,
-        subject: 'Share $appName',
-        sharePositionOrigin: box != null
-            ? box.localToGlobal(Offset.zero) & box.size
-            : null,
+      await SharePlus.instance.share(
+        ShareParams(
+          text: shareText,
+          subject: 'Share $appName',
+          sharePositionOrigin: box != null
+              ? box.localToGlobal(Offset.zero) & box.size
+              : null,
+        ),
       );
     } catch (e) {
       // Show detailed error message for debugging
@@ -608,27 +790,36 @@ class BusinessProfileScreen extends StatelessWidget {
 
     Get.dialog(
       Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: .circular(24)),
+        elevation: 8,
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: .all(24),
           constraints: const BoxConstraints(maxWidth: 400),
+          decoration: BoxDecoration(
+            borderRadius: .circular(24),
+            color: Colors.white,
+          ),
           child: Form(
             key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
+              spacing: 20,
               children: [
-                // Title
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                Row(
+                  mainAxisAlignment: .center,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: .w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                // Text Field
+
                 TextFormField(
                   controller: textController,
                   maxLines: maxLines,
@@ -636,30 +827,43 @@ class BusinessProfileScreen extends StatelessWidget {
                       ? TextInputType.phone
                       : TextInputType.text,
                   textInputAction: TextInputAction.done,
+                  autofocus: true,
                   decoration: InputDecoration(
                     hintText: 'Enter ${title.toLowerCase()}',
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     filled: true,
                     fillColor: Colors.grey.shade50,
+                    prefixIcon: Icon(
+                      isPhone ? Icons.phone_rounded : Icons.edit_rounded,
+                      color: AppColors.primary,
+                    ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: .circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: .circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: .circular(12),
                       borderSide: BorderSide(
-                        color: AppColors.primaryDark,
-                        width: 2,
+                        color: AppColors.primary,
+                        width: 1,
                       ),
                     ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: maxLines > 1 ? 16 : 16,
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: .circular(12),
+                      borderSide: BorderSide(
+                        color: Colors.red.shade300,
+                        width: 1,
+                      ),
                     ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: .circular(12),
+                      borderSide: BorderSide(color: Colors.red, width: 1),
+                    ),
+                    contentPadding: .symmetric(horizontal: 12, vertical: 12),
                   ),
                   style: const TextStyle(fontSize: 16, color: Colors.black87),
                   validator: (value) {
@@ -672,25 +876,24 @@ class BusinessProfileScreen extends StatelessWidget {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
-                // Action Buttons
+
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: .end,
                   children: [
                     TextButton(
                       onPressed: () => Get.back(),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
+                        padding: .symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: .circular(12),
                         ),
                       ),
                       child: Text(
                         'Cancel',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: .w500,
                         ),
                       ),
                     ),
@@ -703,23 +906,17 @@ class BusinessProfileScreen extends StatelessWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryDark,
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 12,
-                        ),
+                        padding: .symmetric(horizontal: 24, vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: .circular(10),
                         ),
                         elevation: 0,
                       ),
                       child: const Text(
                         'Save',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontSize: 14, fontWeight: .w500),
                       ),
                     ),
                   ],

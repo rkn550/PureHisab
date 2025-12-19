@@ -47,6 +47,14 @@ class ProfileController extends GetxController {
         customerPhone.value = party.phoneNumber ?? '';
         address.value = party.address ?? '';
         isCustomer.value = party.type == 'customer';
+
+        // Load photo if photoUrl exists
+        if (party.photoUrl != null && party.photoUrl!.isNotEmpty) {
+          final photoFile = File(party.photoUrl!);
+          if (await photoFile.exists()) {
+            profileImageFile.value = photoFile;
+          }
+        }
       }
     } catch (e) {
       print('Error loading party profile: $e');
@@ -198,12 +206,12 @@ class ProfileController extends GetxController {
       Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.only(
+          borderRadius: const .only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
         ),
-        padding: EdgeInsets.only(
+        padding: .only(
           left: 24,
           right: 24,
           top: 24,
@@ -211,16 +219,16 @@ class ProfileController extends GetxController {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             Center(
               child: Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: .only(bottom: 20),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: .circular(2),
                 ),
               ),
             ),
@@ -228,7 +236,7 @@ class ProfileController extends GetxController {
               'Delete ${customerName.value}?',
               style: const TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
+                fontWeight: .bold,
                 color: Colors.black87,
               ),
             ),
@@ -253,16 +261,16 @@ class ProfileController extends GetxController {
                         width: 1.5,
                       ),
                       foregroundColor: AppColors.primaryDark,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: .symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: .circular(10),
                       ),
                     ),
                     child: const Text(
                       'CANCEL',
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: .w600,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -308,9 +316,9 @@ class ProfileController extends GetxController {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryDark,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: .symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: .circular(10),
                       ),
                       elevation: 0,
                     ),
@@ -318,7 +326,7 @@ class ProfileController extends GetxController {
                       'CONFIRM',
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: .w600,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -352,12 +360,12 @@ class ProfileController extends GetxController {
       Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.only(
+          borderRadius: const .only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: .symmetric(vertical: 20),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -366,20 +374,20 @@ class ProfileController extends GetxController {
               Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: .only(bottom: 20),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: .circular(2),
                 ),
               ),
               // Title
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: .symmetric(horizontal: 24, vertical: 8),
                 child: Text(
                   'Select Photo',
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: .bold,
                     color: Colors.black87,
                   ),
                 ),
@@ -412,8 +420,30 @@ class ProfileController extends GetxController {
                     ? ListTile(
                         leading: Icon(Icons.delete, color: Colors.red),
                         title: const Text('Remove Photo'),
-                        onTap: () {
+                        onTap: () async {
                           Get.back(); // Close bottom sheet
+
+                          // Remove photoUrl from database
+                          if (customerId.value.isNotEmpty) {
+                            try {
+                              final party = await _partyRepository.getPartyById(
+                                customerId.value,
+                              );
+                              if (party != null) {
+                                await _partyRepository.updateParty(
+                                  party.copyWith(clearPhotoUrl: true),
+                                );
+
+                                if (Get.isRegistered<HomeController>()) {
+                                  await Get.find<HomeController>()
+                                      .loadPartiesFromDatabase();
+                                }
+                              }
+                            } catch (e) {
+                              print('Error removing photo from database: $e');
+                            }
+                          }
+
                           profileImageFile.value = null;
                           Get.snackbar(
                             'Success',
@@ -462,7 +492,27 @@ class ProfileController extends GetxController {
         maxHeight: 800,
       );
       if (image != null) {
-        profileImageFile.value = File(image.path);
+        final imageFile = File(image.path);
+        profileImageFile.value = imageFile;
+
+        // Save photoUrl to database
+        if (customerId.value.isNotEmpty) {
+          try {
+            final party = await _partyRepository.getPartyById(customerId.value);
+            if (party != null) {
+              await _partyRepository.updateParty(
+                party.copyWith(photoUrl: image.path),
+              );
+
+              if (Get.isRegistered<HomeController>()) {
+                await Get.find<HomeController>().loadPartiesFromDatabase();
+              }
+            }
+          } catch (e) {
+            print('Error saving photo to database: $e');
+          }
+        }
+
         Get.snackbar(
           'Success',
           'Photo added successfully',
@@ -534,7 +584,27 @@ class ProfileController extends GetxController {
         maxHeight: 800,
       );
       if (image != null) {
-        profileImageFile.value = File(image.path);
+        final imageFile = File(image.path);
+        profileImageFile.value = imageFile;
+
+        // Save photoUrl to database
+        if (customerId.value.isNotEmpty) {
+          try {
+            final party = await _partyRepository.getPartyById(customerId.value);
+            if (party != null) {
+              await _partyRepository.updateParty(
+                party.copyWith(photoUrl: image.path),
+              );
+
+              if (Get.isRegistered<HomeController>()) {
+                await Get.find<HomeController>().loadPartiesFromDatabase();
+              }
+            }
+          } catch (e) {
+            print('Error saving photo to database: $e');
+          }
+        }
+
         Get.snackbar(
           'Success',
           'Photo added successfully',
@@ -578,12 +648,12 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.only(
+        borderRadius: const .only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
       ),
-      padding: EdgeInsets.only(
+      padding: .only(
         left: 28,
         right: 28,
         top: 28,
@@ -591,17 +661,17 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           // Drag handle
           Center(
             child: Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: .only(bottom: 20),
               decoration: BoxDecoration(
                 color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: .circular(2),
               ),
             ),
           ),
@@ -610,7 +680,7 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
             'Change $customerName to $newType?',
             style: const TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontWeight: .bold,
               color: Colors.black87,
               height: 1.3,
             ),
@@ -635,7 +705,7 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 26,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: .bold,
                     ),
                   ),
                 ),
@@ -644,13 +714,13 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
               // Name and Phone
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(
                       customerName,
                       style: const TextStyle(
                         fontSize: 19,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: .w600,
                         color: Colors.black87,
                       ),
                     ),
@@ -662,7 +732,7 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w400,
+                        fontWeight: .w400,
                       ),
                     ),
                   ],
@@ -678,7 +748,7 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
               fontSize: 15,
               color: Colors.grey.shade700,
               height: 1.5,
-              fontWeight: FontWeight.w400,
+              fontWeight: .w400,
             ),
           ),
           const SizedBox(height: 32),
@@ -690,17 +760,15 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                padding: .symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: .circular(10)),
                 elevation: 0,
               ),
               child: const Text(
                 'CHANGE',
                 style: TextStyle(
                   fontSize: 17,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: .w700,
                   letterSpacing: 1.0,
                 ),
               ),

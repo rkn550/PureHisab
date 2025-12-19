@@ -84,7 +84,7 @@ class MainNavigationScreen extends StatelessWidget {
       child: Container(
         color: Colors.black.withValues(alpha: 0.5),
         child: Align(
-          alignment: Alignment.bottomCenter,
+          alignment: .bottomCenter,
           child: GestureDetector(
             onTap: () {}, // Prevent closing when tapping inside modal
             child: Container(
@@ -93,7 +93,7 @@ class MainNavigationScreen extends StatelessWidget {
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
+                borderRadius: .only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -102,24 +102,24 @@ class MainNavigationScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    margin: const EdgeInsets.only(top: 12),
+                    margin: .only(top: 12),
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: .circular(2),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: .all(16),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: .spaceBetween,
                       children: [
                         const Text(
                           'Select Account',
                           style: TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: .bold,
                           ),
                         ),
                         IconButton(
@@ -149,7 +149,7 @@ class MainNavigationScreen extends StatelessWidget {
                               controller.selectAccount(index);
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: .symmetric(
                                 horizontal: 16,
                                 vertical: 12,
                               ),
@@ -178,7 +178,7 @@ class MainNavigationScreen extends StatelessWidget {
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: .bold,
                                         ),
                                       ),
                                     ),
@@ -187,13 +187,13 @@ class MainNavigationScreen extends StatelessWidget {
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                          .start,
                                       children: [
                                         Text(
                                           name,
                                           style: const TextStyle(
                                             fontSize: 16,
-                                            fontWeight: FontWeight.w500,
+                                            fontWeight: .w500,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -235,7 +235,7 @@ class MainNavigationScreen extends StatelessWidget {
                   ),
                   Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.all(16),
+                    margin: .all(16),
                     child: ElevatedButton(
                       onPressed: () {
                         controller.closeAccountModal();
@@ -243,10 +243,10 @@ class MainNavigationScreen extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: .symmetric(vertical: 16),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: .center,
                         children: const [
                           Icon(Icons.add, color: Colors.white),
                           SizedBox(width: 8),
@@ -255,7 +255,7 @@ class MainNavigationScreen extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: .bold,
                             ),
                           ),
                         ],

@@ -36,7 +36,7 @@ class AppLogo extends StatelessWidget {
             'PureHisab',
             style: TextStyle(
               fontSize: 28,
-              fontWeight: FontWeight.bold,
+              fontWeight: .bold,
               color: AppColors.primary,
               letterSpacing: 1.2,
             ),

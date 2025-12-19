@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:purehisab/data/services/business_repo.dart';
+import 'package:purehisab/data/local/local_db.dart';
 import '../app/utils/app_colors.dart';
 import 'home_controller.dart';
 
@@ -217,7 +219,7 @@ class BusinessProfileController extends GetxController {
         // Get HomeController and add new account
         if (Get.isRegistered<HomeController>()) {
           final homeController = Get.find<HomeController>();
-          homeController.addNewAccountFromBusiness(business);
+          await homeController.addNewAccountFromBusiness(business);
         }
 
         // Show success message after state update
@@ -344,12 +346,12 @@ class BusinessProfileController extends GetxController {
       Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.only(
+          borderRadius: const .only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: .symmetric(vertical: 20),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -358,20 +360,20 @@ class BusinessProfileController extends GetxController {
               Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: .only(bottom: 20),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: .circular(2),
                 ),
               ),
               // Title
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: .symmetric(horizontal: 24, vertical: 8),
                 child: Text(
                   'Select Photo',
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: .bold,
                     color: Colors.black87,
                   ),
                 ),
@@ -540,6 +542,121 @@ class BusinessProfileController extends GetxController {
       Get.snackbar(
         'Error',
         'Failed to pick photo. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  // Debug method to print all database tables
+  Future<void> printDatabaseTables() async {
+    try {
+      final dbHelper = DatabaseHelper();
+      await dbHelper.printAllTables();
+      Get.snackbar(
+        'Success',
+        'Database tables printed to console',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade50,
+        colorText: Colors.green.shade900,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to print tables: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  // Debug method to print table counts
+  Future<void> printTableCounts() async {
+    try {
+      final dbHelper = DatabaseHelper();
+      await dbHelper.printTableCounts();
+      Get.snackbar(
+        'Success',
+        'Table counts printed to console',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade50,
+        colorText: Colors.green.shade900,
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to print counts: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  // Support phone number - update this with your actual support number
+  static const String supportPhoneNumber =
+      '+919155776919'; // Replace with actual number
+
+  Future<void> openWhatsApp() async {
+    try {
+      // Remove any non-digit characters from phone number
+      final phoneNumber = supportPhoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+
+      // WhatsApp URL format: https://wa.me/PHONENUMBER
+      final whatsappUrl = Uri.parse('https://wa.me/$phoneNumber');
+
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar(
+          'Error',
+          'WhatsApp is not installed on your device',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade50,
+          colorText: Colors.orange.shade900,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to open WhatsApp. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade900,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  Future<void> makePhoneCall() async {
+    try {
+      // Phone URL format: tel:PHONENUMBER
+      final phoneUrl = Uri.parse('tel:$supportPhoneNumber');
+
+      if (await canLaunchUrl(phoneUrl)) {
+        await launchUrl(phoneUrl, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar(
+          'Error',
+          'Unable to make phone call',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade50,
+          colorText: Colors.orange.shade900,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to make phone call. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade50,
         colorText: Colors.red.shade900,

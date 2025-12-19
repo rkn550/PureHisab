@@ -15,11 +15,11 @@ class AnalyticsScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               // Summary Cards Section
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: .all(16),
                 child: Column(
                   children: [
                     _buildSummaryCard(controller),
@@ -51,15 +51,15 @@ class AnalyticsScreen extends StatelessWidget {
 
               // Monthly & Weekly Stats
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: .symmetric(horizontal: 16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     const Text(
                       'This Month',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: .bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -67,7 +67,7 @@ class AnalyticsScreen extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildStatsCard(
+                          child: _buildMiniCard(
                             'To Give',
                             controller.thisMonthToGive.value,
                             Icons.arrow_upward,
@@ -76,7 +76,7 @@ class AnalyticsScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _buildStatsCard(
+                          child: _buildMiniCard(
                             'To Get',
                             controller.thisMonthToGet.value,
                             Icons.arrow_downward,
@@ -101,15 +101,15 @@ class AnalyticsScreen extends StatelessWidget {
 
               // Weekly Stats
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: .symmetric(horizontal: 16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     const Text(
                       'This Week',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: .bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -117,7 +117,7 @@ class AnalyticsScreen extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildStatsCard(
+                          child: _buildMiniCard(
                             'You Got',
                             controller.thisWeekIncome.value,
                             Icons.arrow_downward,
@@ -126,7 +126,7 @@ class AnalyticsScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _buildStatsCard(
+                          child: _buildMiniCard(
                             'You Gave',
                             controller.thisWeekExpense.value,
                             Icons.arrow_upward,
@@ -134,6 +134,14 @@ class AnalyticsScreen extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildStatsCard(
+                      'Total Transactions',
+                      controller.thisWeekTransactions.value.toDouble(),
+                      Icons.receipt_long,
+                      AppColors.primary,
+                      isCount: true,
                     ),
                   ],
                 ),
@@ -143,15 +151,15 @@ class AnalyticsScreen extends StatelessWidget {
 
               // Top Customers
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: .symmetric(horizontal: 16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     const Text(
                       'Top Customers',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: .bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -165,15 +173,15 @@ class AnalyticsScreen extends StatelessWidget {
 
               // Top Suppliers
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: .symmetric(horizontal: 16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     const Text(
                       'Top Suppliers',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: .bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -194,14 +202,14 @@ class AnalyticsScreen extends StatelessWidget {
   Widget _buildSummaryCard(AnalyticsController controller) {
     return Obx(
       () => Container(
-        padding: const EdgeInsets.all(20),
+        padding: .all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [AppColors.primary, AppColors.primaryDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: .topLeft,
+            end: .bottomRight,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: .circular(12),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.3),
@@ -211,14 +219,14 @@ class AnalyticsScreen extends StatelessWidget {
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             const Text(
               'Total Balance',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: .w500,
               ),
             ),
             const SizedBox(height: 8),
@@ -227,7 +235,7 @@ class AnalyticsScreen extends StatelessWidget {
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 32,
-                fontWeight: FontWeight.bold,
+                fontWeight: .bold,
               ),
             ),
             const SizedBox(height: 16),
@@ -272,7 +280,7 @@ class AnalyticsScreen extends StatelessWidget {
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontWeight: .bold,
           ),
         ),
         Text(
@@ -290,45 +298,45 @@ class AnalyticsScreen extends StatelessWidget {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: .all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: .circular(12),
         border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: .start,
+        spacing: 12,
         children: [
-          Row(
+          Container(
+            padding: .all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: .circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          Column(
+            spacing: 4,
+            crossAxisAlignment: .start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontWeight: .w500,
                 ),
-                child: Icon(icon, color: color, size: 20),
               ),
-              const Spacer(),
+              Text(
+                _formatAmount(value),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: .bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _formatAmount(value),
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
           ),
         ],
       ),
@@ -343,33 +351,33 @@ class AnalyticsScreen extends StatelessWidget {
     bool isCount = false,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: .all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: .circular(12),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: .all(10),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: .circular(10),
             ),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Text(
                   title,
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: .w500,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -377,7 +385,7 @@ class AnalyticsScreen extends StatelessWidget {
                   isCount ? value.toInt().toString() : _formatAmount(value),
                   style: const TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: .bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -394,7 +402,7 @@ class AnalyticsScreen extends StatelessWidget {
       () => Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: .circular(12),
           border: Border.all(color: AppColors.border),
         ),
         child: Column(
@@ -404,7 +412,7 @@ class AnalyticsScreen extends StatelessWidget {
             final isLast = index == items.length - 1;
 
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: .symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 border: isLast
                     ? null
@@ -423,7 +431,7 @@ class AnalyticsScreen extends StatelessWidget {
                                   ? Colors.red
                                   : AppColors.success)
                               .withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: .circular(8),
                     ),
                     child: Icon(
                       item['type'] == 'give'
@@ -438,13 +446,13 @@ class AnalyticsScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: .start,
                       children: [
                         Text(
                           item['name'] as String,
                           style: const TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: .w600,
                             color: AppColors.textPrimary,
                           ),
                         ),
@@ -463,7 +471,7 @@ class AnalyticsScreen extends StatelessWidget {
                     _formatAmount((item['amount'] as num).toDouble()),
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: .bold,
                       color: item['type'] == 'give'
                           ? Colors.red
                           : AppColors.success,

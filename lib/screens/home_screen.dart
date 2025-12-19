@@ -66,7 +66,7 @@ class HomeScreen extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -92,15 +92,15 @@ class HomeScreen extends StatelessWidget {
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 18),
+            padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.primary.withOpacity(0.1)
+                  ? AppColors.primary.withValues(alpha: 0.1)
                   : Colors.transparent,
               border: Border(
                 bottom: BorderSide(
                   color: isSelected ? AppColors.primary : Colors.transparent,
-                  width: 3,
+                  width: 2,
                 ),
               ),
             ),
@@ -129,48 +129,49 @@ class HomeScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const .all(16),
         child: Row(
           children: [
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
+                spacing: 6,
                 children: [
                   Row(
+                    spacing: 4,
                     children: [
                       Icon(
                         Icons.arrow_upward,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         size: 16,
                       ),
-                      const SizedBox(width: 4),
                       Text(
                         'You will give',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.white.withOpacity(0.9),
-                          fontWeight: FontWeight.w500,
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: .w500,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+
                   Obx(
                     () => Text(
                       '₹ ${_formatAmount(controller.amountToGive.value)}',
                       style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontWeight: .bold,
                         color: Colors.white,
                         letterSpacing: 0.5,
                       ),
@@ -182,14 +183,14 @@ class HomeScreen extends StatelessWidget {
             Container(
               width: 1,
               height: 50,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const .symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                  begin: .topCenter,
+                  end: .bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.white.withOpacity(0.3),
+                    Colors.white.withValues(alpha: 0.3),
                     Colors.transparent,
                   ],
                 ),
@@ -198,32 +199,33 @@ class HomeScreen extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 6,
                 children: [
                   Row(
+                    spacing: 4,
                     children: [
                       Icon(
                         Icons.arrow_downward,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         size: 16,
                       ),
-                      const SizedBox(width: 4),
+
                       Text(
                         'You will get',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
                   Obx(
                     () => Text(
                       '₹ ${_formatAmount(controller.amountToGet.value)}',
                       style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontWeight: .bold,
                         color: Colors.white,
                         letterSpacing: 0.5,
                       ),
@@ -814,6 +816,8 @@ class HomeScreen extends StatelessWidget {
                           final name = account['name']?.toString() ?? '';
                           final customerCount =
                               account['customerCount'] as int? ?? 0;
+                          final supplierCount =
+                              account['supplierCount'] as int? ?? 0;
                           final isSelected =
                               account['isSelected'] as bool? ?? false;
 
@@ -870,12 +874,30 @@ class HomeScreen extends StatelessWidget {
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        Text(
-                                          '$customerCount ${customerCount == 1 ? 'Customer' : 'Customers'}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              '$customerCount ${customerCount == 1 ? 'Customer' : 'Customers'}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                            Text(
+                                              ' • ',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                            Text(
+                                              '$supplierCount ${supplierCount == 1 ? 'Supplier' : 'Suppliers'}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),

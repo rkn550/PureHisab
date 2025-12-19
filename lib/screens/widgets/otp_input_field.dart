@@ -32,7 +32,7 @@ class OtpInputField extends StatelessWidget {
       child: TextFormField(
         controller: controller,
         focusNode: focusNode,
-        textAlign: TextAlign.center,
+        textAlign: .center,
         keyboardType: TextInputType.number,
         textInputAction: index < totalFields - 1
             ? TextInputAction.next
@@ -42,7 +42,7 @@ class OtpInputField extends StatelessWidget {
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         style: TextStyle(
           fontSize: fontSize,
-          fontWeight: FontWeight.bold,
+          fontWeight: .bold,
           color: AppColors.textPrimary,
         ),
         cursorHeight: fontSize - 2,
@@ -51,26 +51,26 @@ class OtpInputField extends StatelessWidget {
           hintText: '0',
           hintStyle: TextStyle(
             fontSize: fontSize - 6,
-            fontWeight: FontWeight.w500,
+            fontWeight: .w500,
             color: AppColors.textSecondary,
           ),
-          contentPadding: EdgeInsets.zero,
+          contentPadding: .zero,
           filled: true,
           fillColor: AppColors.surface,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: .circular(8),
             borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: .circular(8),
             borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: .circular(8),
             borderSide: const BorderSide(color: AppColors.primary, width: 1),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: .circular(8),
             borderSide: BorderSide(color: AppColors.error, width: 1),
           ),
         ),

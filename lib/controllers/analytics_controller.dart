@@ -24,6 +24,7 @@ class AnalyticsController extends GetxController {
   // Weekly stats
   final RxDouble thisWeekIncome = 0.0.obs; // You Got
   final RxDouble thisWeekExpense = 0.0.obs; // You Gave
+  final RxInt thisWeekTransactions = 0.obs;
 
   // Top customers/suppliers
   final RxList<Map<String, dynamic>> topCustomers =
@@ -34,16 +35,20 @@ class AnalyticsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadAnalyticsData();
   }
 
   @override
   void onReady() {
     super.onReady();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _loadAnalyticsData();
+    });
     if (Get.isRegistered<HomeController>()) {
       final homeController = Get.find<HomeController>();
       ever(homeController.selectedBusinessId, (_) {
-        _loadAnalyticsData();
+        if (homeController.selectedBusinessId.value.isNotEmpty) {
+          _loadAnalyticsData();
+        }
       });
     }
   }
@@ -53,13 +58,20 @@ class AnalyticsController extends GetxController {
   }
 
   Future<void> _loadAnalyticsData() async {
-    if (!Get.isRegistered<HomeController>()) return;
+    if (!Get.isRegistered<HomeController>()) {
+      print('Analytics: HomeController not registered');
+      return;
+    }
 
     try {
       final homeController = Get.find<HomeController>();
-      if (homeController.selectedBusinessId.value.isEmpty) return;
+      if (homeController.selectedBusinessId.value.isEmpty) {
+        print('Analytics: selectedBusinessId is empty');
+        return;
+      }
 
       final businessId = homeController.selectedBusinessId.value;
+      print('Analytics: Loading data for businessId: $businessId');
 
       final parties = await _partyRepository.getPartiesByBusiness(businessId);
       final customers = parties.where((p) => p.type == 'customer').toList();
@@ -67,11 +79,15 @@ class AnalyticsController extends GetxController {
 
       totalCustomers.value = customers.length;
       totalSuppliers.value = suppliers.length;
+      print(
+        'Analytics: Found ${customers.length} customers, ${suppliers.length} suppliers',
+      );
 
       final transactions = await _transactionRepository
           .getTransactionsByBusiness(businessId);
 
       totalTransactions.value = transactions.length;
+      print('Analytics: Found ${transactions.length} transactions');
 
       double give = 0.0;
       double get = 0.0;
@@ -87,12 +103,18 @@ class AnalyticsController extends GetxController {
       totalToGive.value = give;
       totalToGet.value = get;
       totalBalance.value = get - give;
+      print(
+        'Analytics: Total to give: $give, Total to get: $get, Balance: ${get - give}',
+      );
 
       _calculateThisMonthData(transactions);
       _calculateThisWeekData(transactions);
       _calculateTopParties(customers, suppliers, transactions);
+
+      print('Analytics: Data loaded successfully');
     } catch (e) {
       print('Error loading analytics data: $e');
+      print('Error stack trace: ${StackTrace.current}');
     }
   }
 
@@ -139,7 +161,7 @@ class AnalyticsController extends GetxController {
 
     double income = 0.0;
     double expense = 0.0;
-
+    int transactionCount = 0;
     for (var tx in transactions) {
       final date = DateTime.fromMillisecondsSinceEpoch(tx.date);
       final transactionDate = DateTime(date.year, date.month, date.day);
@@ -159,11 +181,13 @@ class AnalyticsController extends GetxController {
         } else {
           expense += tx.amount;
         }
+        transactionCount++;
       }
     }
 
     thisWeekIncome.value = income;
     thisWeekExpense.value = expense;
+    thisWeekTransactions.value = transactionCount;
   }
 
   void _calculateTopParties(List customers, List suppliers, List transactions) {

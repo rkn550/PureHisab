@@ -34,7 +34,7 @@ class PrimaryButton extends StatelessWidget {
           foregroundColor: foregroundColor ?? AppColors.textWhite,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+            borderRadius: .circular(borderRadius),
           ),
           disabledBackgroundColor: AppColors.border,
         ),
@@ -53,7 +53,7 @@ class PrimaryButton extends StatelessWidget {
                 text,
                 style: TextStyle(
                   fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: .bold,
                   letterSpacing: 0.5,
                 ),
               ),

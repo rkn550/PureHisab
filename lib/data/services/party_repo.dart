@@ -148,6 +148,7 @@ extension PartyModelCopyWith on PartyModel {
     bool? isSynced,
     int? updatedAt,
     int? firebaseUpdatedAt,
+    bool clearPhotoUrl = false,
   }) {
     return PartyModel(
       id: id,
@@ -156,7 +157,7 @@ extension PartyModelCopyWith on PartyModel {
       type: type ?? this.type,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       address: address ?? this.address,
-      photoUrl: photoUrl ?? this.photoUrl,
+      photoUrl: clearPhotoUrl ? null : (photoUrl ?? this.photoUrl),
       reminderDate: reminderDate ?? this.reminderDate,
       reminderType: reminderType ?? this.reminderType,
       smsSetting: smsSetting ?? this.smsSetting,

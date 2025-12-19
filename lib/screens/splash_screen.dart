@@ -15,7 +15,7 @@ class SplashScreen extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: .center,
             children: [
               AnimatedBuilder(
                 animation: controller.animationController,
@@ -35,7 +35,7 @@ class SplashScreen extends StatelessWidget {
                   'PureHisab',
                   style: TextStyle(
                     fontSize: 30,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: .bold,
                     color: AppColors.primary,
                     letterSpacing: 1.2,
                   ),

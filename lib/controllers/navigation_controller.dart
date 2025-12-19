@@ -18,9 +18,11 @@ class NavigationController extends GetxController {
       if (index == 2) {
         _loadSelectedBusinessProfile();
       } else if (index == 0) {
-        if (Get.isRegistered<AnalyticsController>()) {
-          Get.find<AnalyticsController>().refreshAnalytics();
-        }
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (Get.isRegistered<AnalyticsController>()) {
+            Get.find<AnalyticsController>().refreshAnalytics();
+          }
+        });
       }
     });
   }

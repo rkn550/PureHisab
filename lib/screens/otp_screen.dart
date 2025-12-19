@@ -16,9 +16,9 @@ class OtpScreen extends StatelessWidget {
       body: SafeArea(
         child: KeyboardDismisser(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: .symmetric(horizontal: 24, vertical: 20),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: .stretch,
               children: [
                 const SizedBox(height: 20),
                 const AppLogo(),
@@ -51,7 +51,7 @@ class OtpScreen extends StatelessWidget {
   Widget _buildOtpInputs(OtpController controller) {
     return Obx(
       () => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: .spaceEvenly,
         children: List.generate(
           6,
           (index) => OtpInputField(

@@ -17,11 +17,11 @@ class LogInScreen extends StatelessWidget {
       body: SafeArea(
         child: KeyboardDismisser(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: .symmetric(horizontal: 24),
             child: Form(
               key: controller.formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: .stretch,
                 children: [
                   const SizedBox(height: 60),
                   _buildLogoSection(),
@@ -48,13 +48,13 @@ class LogInScreen extends StatelessWidget {
 
   Widget _buildWelcomeSection() {
     return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         Text(
           'Welcome Back!',
           style: TextStyle(
             fontSize: 32,
-            fontWeight: FontWeight.bold,
+            fontWeight: .bold,
             color: AppColors.textPrimary,
             letterSpacing: 0.5,
           ),
@@ -74,7 +74,7 @@ class LogInScreen extends StatelessWidget {
         LengthLimitingTextInputFormatter(10),
       ],
       prefixIcon: const Padding(
-        padding: EdgeInsets.all(8),
+        padding: .all(8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -84,7 +84,7 @@ class LogInScreen extends StatelessWidget {
               '+91',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: .w600,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -95,7 +95,7 @@ class LogInScreen extends StatelessWidget {
       suffixIcon: Obx(
         () => controller.phoneNumber.value.isNotEmpty
             ? const Padding(
-                padding: EdgeInsets.all(8),
+                padding: .all(8),
                 child: Icon(
                   Icons.check_circle,
                   color: AppColors.success,
@@ -132,9 +132,9 @@ class LogInScreen extends StatelessWidget {
 
   Widget _buildTermsText() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: .symmetric(horizontal: 16),
       child: RichText(
-        textAlign: TextAlign.center,
+        textAlign: .center,
         text: TextSpan(
           style: TextStyle(
             fontSize: 12,
@@ -147,7 +147,7 @@ class LogInScreen extends StatelessWidget {
               text: 'Terms of Service',
               style: const TextStyle(
                 color: AppColors.primary,
-                fontWeight: FontWeight.w600,
+                fontWeight: .w600,
                 decoration: TextDecoration.underline,
               ),
             ),
@@ -156,7 +156,7 @@ class LogInScreen extends StatelessWidget {
               text: 'Privacy Policy',
               style: const TextStyle(
                 color: AppColors.primary,
-                fontWeight: FontWeight.w600,
+                fontWeight: .w600,
                 decoration: TextDecoration.underline,
               ),
             ),

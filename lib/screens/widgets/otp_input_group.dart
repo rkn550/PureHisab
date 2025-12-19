@@ -24,7 +24,7 @@
 //   @override
 //   Widget build(BuildContext context) {
 //     return Row(
-//       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//       mainAxisAlignment: .spaceEvenly,
 //       children: List.generate(controllers.length, (index) {
 //         final isFilled = otpValue.length > index;
 //         return OtpInputField(

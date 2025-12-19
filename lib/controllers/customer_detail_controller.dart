@@ -277,19 +277,26 @@ class CustomerDetailController extends GetxController {
       dateText = _formatDateForMessage(DateTime.now());
     }
 
-    // Get store phone number (you can get this from HomeController or use a default)
-    String storePhone = '7991152422'; // Default store phone
+    // Get store phone number from business profile
+    String storePhone = '';
     if (Get.isRegistered<HomeController>()) {
       try {
-        // You can add store phone to HomeController if needed
+        final homeController = Get.find<HomeController>();
+        if (homeController.selectedBusinessId.value.isNotEmpty) {
+          // Get business phone from database if available
+          // For now, use empty string - can be enhanced to fetch from BusinessRepository
+        }
       } catch (e) {
-        // Use default
+        // Use empty string if error
       }
     }
 
+    // If no phone found, don't include it in message
+    final phoneText = storePhone.isNotEmpty ? ' ($storePhone)' : '';
+
     final messageType = amountToGet.value > 0 ? 'payment' : 'collection';
 
-    return '$storeName ($storePhone) has requested a $messageType of ₹ $formattedAmount on $dateText. Please visit https://purehisab.com/payment to view details';
+    return '$storeName$phoneText has requested a $messageType of ₹ $formattedAmount on $dateText. Please visit https://purehisab.com/payment to view details';
   }
 
   String _formatDateForMessage(DateTime date) {

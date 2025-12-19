@@ -54,7 +54,7 @@ class CustomerDetailScreen extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: .bold,
                   ),
                 ),
               ),
@@ -62,7 +62,7 @@ class CustomerDetailScreen extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
@@ -73,7 +73,7 @@ class CustomerDetailScreen extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: .w500,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -81,13 +81,13 @@ class CustomerDetailScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Obx(
                         () => Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: .symmetric(
                             horizontal: 8,
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: .circular(12),
                           ),
                           child: Text(
                             controller.isCustomer.value
@@ -96,7 +96,7 @@ class CustomerDetailScreen extends StatelessWidget {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: .w500,
                             ),
                           ),
                         ),
@@ -145,14 +145,14 @@ class CustomerDetailScreen extends StatelessWidget {
 
   Widget _buildSummaryCard(CustomerDetailController controller) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      margin: .fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.primary, AppColors.primaryDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: .topLeft,
+          end: .bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: .circular(16),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withOpacity(0.3),
@@ -162,7 +162,7 @@ class CustomerDetailScreen extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: .all(16),
         child: Obx(() {
           final willGet = controller.amountToGet.value > 0;
           final amount = willGet
@@ -170,7 +170,7 @@ class CustomerDetailScreen extends StatelessWidget {
               : controller.amountToGive.value;
 
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               Row(
                 children: [
@@ -185,28 +185,28 @@ class CustomerDetailScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white.withOpacity(0.9),
-                      fontWeight: FontWeight.w500,
+                      fontWeight: .w500,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 '₹ ${_formatAmount(amount)}',
                 style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                  fontWeight: .bold,
                   color: Colors.white,
                   letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Obx(
                 () => Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: .all(12),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: .circular(10),
                   ),
                   child: Row(
                     children: [
@@ -224,7 +224,7 @@ class CustomerDetailScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.white.withOpacity(0.9),
-                            fontWeight: FontWeight.w500,
+                            fontWeight: .w500,
                           ),
                         ),
                       ),
@@ -235,7 +235,7 @@ class CustomerDetailScreen extends StatelessWidget {
                             size: 18,
                             color: Colors.white.withOpacity(0.9),
                           ),
-                          padding: EdgeInsets.zero,
+                          padding: .zero,
                           constraints: const BoxConstraints(),
                           onPressed: () {
                             controller.removeCollectionReminder();
@@ -247,7 +247,7 @@ class CustomerDetailScreen extends StatelessWidget {
                             _showDatePicker(controller);
                           },
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
+                            padding: .symmetric(
                               horizontal: 12,
                               vertical: 6,
                             ),
@@ -255,7 +255,7 @@ class CustomerDetailScreen extends StatelessWidget {
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             backgroundColor: Colors.white.withOpacity(0.2),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: .circular(8),
                             ),
                           ),
                           child: const Text(
@@ -263,7 +263,7 @@ class CustomerDetailScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: .bold,
                             ),
                           ),
                         ),
@@ -280,9 +280,9 @@ class CustomerDetailScreen extends StatelessWidget {
 
   Widget _buildActionButtons(CustomerDetailController controller) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: .symmetric(horizontal: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: .spaceAround,
         children: [
           _buildActionButton(
             icon: Icons.picture_as_pdf,
@@ -320,14 +320,14 @@ class CustomerDetailScreen extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: isEnabled ? onTap : null,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: .circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: .symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isEnabled
                 ? AppColors.primary.withOpacity(0.1)
                 : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: .circular(10),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -342,7 +342,7 @@ class CustomerDetailScreen extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: .w600,
                   color: isEnabled ? AppColors.primary : Colors.grey.shade400,
                 ),
               ),
@@ -361,7 +361,7 @@ class CustomerDetailScreen extends StatelessWidget {
 
       if (grouped.isEmpty) {
         return Container(
-          margin: const EdgeInsets.all(32),
+          margin: .all(32),
           child: Column(
             children: [
               Icon(Icons.receipt_long, size: 60, color: Colors.grey.shade300),
@@ -376,12 +376,12 @@ class CustomerDetailScreen extends StatelessWidget {
       }
 
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           // Column headers
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            margin: .symmetric(horizontal: 16),
+            padding: .symmetric(vertical: 8),
             child: Row(
               children: [
                 Expanded(
@@ -390,7 +390,7 @@ class CustomerDetailScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: .w500,
                     ),
                   ),
                 ),
@@ -398,11 +398,11 @@ class CustomerDetailScreen extends StatelessWidget {
                   width: 80,
                   child: Text(
                     'YOU GAVE',
-                    textAlign: TextAlign.right,
+                    textAlign: .right,
                     style: TextStyle(
                       fontSize: 10,
                       color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: .w500,
                     ),
                   ),
                 ),
@@ -410,11 +410,11 @@ class CustomerDetailScreen extends StatelessWidget {
                   width: 80,
                   child: Text(
                     'YOU GOT',
-                    textAlign: TextAlign.right,
+                    textAlign: .right,
                     style: TextStyle(
                       fontSize: 10,
                       color: Colors.grey.shade500,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: .w500,
                     ),
                   ),
                 ),
@@ -429,10 +429,10 @@ class CustomerDetailScreen extends StatelessWidget {
             final dateHeader = controller.formatDateHeader(date);
 
             return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Container(
-                  margin: const EdgeInsets.symmetric(
+                  margin: .symmetric(
                     horizontal: 16,
                     vertical: 8,
                   ),
@@ -441,7 +441,7 @@ class CustomerDetailScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: .w500,
                     ),
                   ),
                 ),
@@ -469,11 +469,11 @@ class CustomerDetailScreen extends StatelessWidget {
     final time = controller.formatTransactionTime(date);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.all(16),
+      margin: .symmetric(horizontal: 16, vertical: 6),
+      padding: .all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: .circular(12),
         border: Border.all(
           color: isGive
               ? Colors.red.withOpacity(0.2)
@@ -489,19 +489,19 @@ class CustomerDetailScreen extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Row(
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(
                       '${date.day} ${_getMonthName(date.month)} ${date.year.toString().substring(2)} • $time',
                       style: const TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: .w500,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -530,10 +530,10 @@ class CustomerDetailScreen extends StatelessWidget {
                 child: isGive
                     ? Text(
                         '₹ ${_formatAmount(amount)}',
-                        textAlign: TextAlign.right,
+                        textAlign: .right,
                         style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: .bold,
                           color: Colors.red,
                         ),
                       )
@@ -544,10 +544,10 @@ class CustomerDetailScreen extends StatelessWidget {
                 child: !isGive
                     ? Text(
                         '₹ ${_formatAmount(amount)}',
-                        textAlign: TextAlign.right,
+                        textAlign: .right,
                         style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: .bold,
                           color: Colors.green,
                         ),
                       )
@@ -562,7 +562,7 @@ class CustomerDetailScreen extends StatelessWidget {
 
   Widget _buildBottomActionButtons(CustomerDetailController controller) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: .all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -580,9 +580,9 @@ class CustomerDetailScreen extends StatelessWidget {
               onPressed: controller.onYouGaveTap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: .symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: .circular(8),
                 ),
               ),
               child: const Text(
@@ -590,7 +590,7 @@ class CustomerDetailScreen extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: .bold,
                 ),
               ),
             ),
@@ -601,9 +601,9 @@ class CustomerDetailScreen extends StatelessWidget {
               onPressed: controller.onYouGotTap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: .symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: .circular(8),
                 ),
               ),
               child: const Text(
@@ -611,7 +611,7 @@ class CustomerDetailScreen extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: .bold,
                 ),
               ),
             ),

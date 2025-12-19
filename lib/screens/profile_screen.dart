@@ -41,7 +41,7 @@ class ProfileScreen extends StatelessWidget {
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.w500,
+            fontWeight: .w500,
           ),
         ),
       ),
@@ -50,7 +50,7 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildProfileSection(ProfileController controller) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: .all(24),
       child: Column(
         children: [
           Stack(
@@ -102,7 +102,7 @@ class ProfileScreen extends StatelessWidget {
               style: TextStyle(
                 color: AppColors.primaryDark,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: .w500,
               ),
             ),
           ),
@@ -116,7 +116,7 @@ class ProfileScreen extends StatelessWidget {
     BuildContext context,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: .symmetric(horizontal: 16),
       child: Column(
         children: [
           _buildDetailItem(
@@ -141,18 +141,22 @@ class ProfileScreen extends StatelessWidget {
               (value) => controller.updatePhone(value),
             ),
           ),
-          _buildDetailItem(
-            icon: Icons.location_on_outlined,
-            label: 'Add Address',
-            value: controller.address.value.isEmpty
-                ? null
-                : controller.address.value,
-            onTap: () => _showEditDialog(
-              context,
-              'Add Address',
-              controller.address.value,
-              (value) => controller.updateAddress(value),
-              maxLines: 3,
+          Obx(
+            () => _buildDetailItem(
+              icon: Icons.location_on_outlined,
+              label: 'Address',
+              value: controller.address.value.isEmpty
+                  ? null
+                  : controller.address.value,
+              onTap: () => _showEditDialog(
+                context,
+                controller.address.value.isEmpty
+                    ? 'Add Address'
+                    : 'Edit Address',
+                controller.address.value,
+                (value) => controller.updateAddress(value),
+                maxLines: 3,
+              ),
             ),
           ),
           Obx(
@@ -179,7 +183,7 @@ class ProfileScreen extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: .symmetric(vertical: 16),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(color: Colors.grey.shade200, width: 1),
@@ -191,7 +195,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 children: [
                   if (value != null)
                     Text(
@@ -207,9 +211,7 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(
                       color: value != null ? Colors.black87 : Colors.black,
                       fontSize: value != null ? 16 : 15,
-                      fontWeight: value != null
-                          ? FontWeight.normal
-                          : FontWeight.w500,
+                      fontWeight: value != null ? .normal : .w500,
                     ),
                   ),
                 ],
@@ -227,9 +229,9 @@ class ProfileScreen extends StatelessWidget {
     BuildContext context,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: .symmetric(horizontal: 16, vertical: 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Divider(color: Colors.grey.shade300, thickness: 1),
           const SizedBox(height: 8),
@@ -241,7 +243,7 @@ class ProfileScreen extends StatelessWidget {
               style: TextStyle(
                 color: Colors.grey.shade600,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: .w500,
               ),
             ),
           ),
@@ -255,7 +257,7 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildSmsSettingsItem(ProfileController controller) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: .symmetric(vertical: 16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: Colors.grey.shade200, width: 1),
@@ -265,7 +267,7 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
@@ -284,7 +286,7 @@ class ProfileScreen extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.black87,
                             fontSize: 15,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: .w500,
                           ),
                         ),
                       ),
@@ -325,7 +327,7 @@ class ProfileScreen extends StatelessWidget {
     BuildContext context,
   ) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: .symmetric(vertical: 16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: Colors.grey.shade200, width: 1),
@@ -335,7 +337,7 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
@@ -346,7 +348,7 @@ class ProfileScreen extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.black87,
                         fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: .w500,
                       ),
                     ),
                   ],
@@ -397,18 +399,18 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildDeleteButton(ProfileController controller) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: .all(16),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: .symmetric(vertical: 16),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.red, width: 1.5),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: .circular(8),
         ),
         child: InkWell(
           onTap: controller.deleteCustomerOrSupplier,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: .center,
             children: [
               Icon(Icons.delete_outline, color: Colors.red, size: 20),
               const SizedBox(width: 8),
@@ -420,7 +422,7 @@ class ProfileScreen extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.red,
                     fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: .w600,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -445,64 +447,83 @@ class ProfileScreen extends StatelessWidget {
         title.toLowerCase().contains('phone') ||
         title.toLowerCase().contains('mobile') ||
         title.toLowerCase().contains('number');
-    final isAddress = title.toLowerCase().contains('address');
 
     Get.dialog(
       Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: .circular(24)),
+        elevation: 8,
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: .all(24),
           constraints: const BoxConstraints(maxWidth: 400),
+          decoration: BoxDecoration(
+            borderRadius: .circular(24),
+            color: Colors.white,
+          ),
           child: Form(
             key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
+              spacing: 20,
               children: [
-                // Title
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                Row(
+                  mainAxisAlignment: .center,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: .w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                // Text Field
+
                 TextFormField(
                   controller: textController,
                   maxLines: maxLines,
                   keyboardType: isPhone
                       ? TextInputType.phone
-                      : isAddress
-                      ? TextInputType.multiline
                       : TextInputType.text,
                   textInputAction: TextInputAction.done,
+                  autofocus: true,
                   decoration: InputDecoration(
                     hintText: 'Enter ${title.toLowerCase()}',
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     filled: true,
                     fillColor: Colors.grey.shade50,
+                    prefixIcon: Icon(
+                      isPhone ? Icons.phone_rounded : Icons.edit_rounded,
+                      color: AppColors.primary,
+                    ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: .circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: .circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: .circular(12),
                       borderSide: BorderSide(
-                        color: AppColors.primaryDark,
-                        width: 2,
+                        color: AppColors.primary,
+                        width: 1,
                       ),
                     ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: maxLines > 1 ? 16 : 16,
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: .circular(12),
+                      borderSide: BorderSide(
+                        color: Colors.red.shade300,
+                        width: 1,
+                      ),
                     ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: .circular(12),
+                      borderSide: BorderSide(color: Colors.red, width: 1),
+                    ),
+                    contentPadding: .symmetric(horizontal: 12, vertical: 12),
                   ),
                   style: const TextStyle(fontSize: 16, color: Colors.black87),
                   validator: (value) {
@@ -515,25 +536,24 @@ class ProfileScreen extends StatelessWidget {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
-                // Action Buttons
+
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: .end,
                   children: [
                     TextButton(
                       onPressed: () => Get.back(),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
+                        padding: .symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: .circular(12),
                         ),
                       ),
                       child: Text(
                         'Cancel',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: .w500,
                         ),
                       ),
                     ),
@@ -546,23 +566,17 @@ class ProfileScreen extends StatelessWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryDark,
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 12,
-                        ),
+                        padding: .symmetric(horizontal: 24, vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: .circular(10),
                         ),
                         elevation: 0,
                       ),
                       child: const Text(
                         'Save',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontSize: 14, fontWeight: .w500),
                       ),
                     ),
                   ],
