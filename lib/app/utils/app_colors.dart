@@ -38,11 +38,11 @@ class AppColors {
     end: .bottomRight,
   );
 
-  static Color primaryWithOpacity(double opacity) {
+  static Color primarywithValues(double opacity) {
     return AppColors.primary.withValues(alpha: opacity);
   }
 
-  static Color secondaryWithOpacity(double opacity) {
+  static Color secondarywithValues(double opacity) {
     return AppColors.secondary.withValues(alpha: opacity);
   }
 }

@@ -6,8 +6,9 @@ import 'home_controller.dart';
 import '../app/routes/app_pages.dart';
 
 class CustomerDetailController extends GetxController {
-  final PartyRepository _partyRepository = PartyRepository();
-  final TransactionRepository _transactionRepository = TransactionRepository();
+  PartyRepository get _partyRepository => Get.find<PartyRepository>();
+  TransactionRepository get _transactionRepository =>
+      Get.find<TransactionRepository>();
 
   final RxString customerName = ''.obs;
   final RxString customerPhone = ''.obs;

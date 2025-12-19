@@ -291,10 +291,10 @@ class BusinessProfileScreen extends StatelessWidget {
                           },
                         ),
                         _buildSettingsItem(
-                          icon: Icons.phone_outlined,
-                          title: 'Call Us',
+                          icon: Icons.email_outlined,
+                          title: 'Email Us',
                           onTap: () {
-                            controller.makePhoneCall();
+                            controller.sendEmail();
                           },
                         ),
                       ],
@@ -488,11 +488,7 @@ class BusinessProfileScreen extends StatelessWidget {
                                   title: 'Manage App Lock',
                                   titleColor: AppColors.primary,
                                   onTap: () {
-                                    Get.snackbar(
-                                      'Manage App Lock',
-                                      'Coming soon',
-                                      snackPosition: SnackPosition.BOTTOM,
-                                    );
+                                    controller.manageAppLock();
                                   },
                                 )
                               : const SizedBox.shrink(),
@@ -718,6 +714,11 @@ class BusinessProfileScreen extends StatelessWidget {
 
   Future<void> _shareApp(BuildContext context) async {
     try {
+      final box = context.findRenderObject() as RenderBox?;
+      final sharePositionOrigin = box != null
+          ? box.localToGlobal(Offset.zero) & box.size
+          : null;
+
       final packageInfo = await PackageInfo.fromPlatform();
       final appName = packageInfo.appName;
       final version = packageInfo.version;
@@ -726,15 +727,11 @@ class BusinessProfileScreen extends StatelessWidget {
           'Check out $appName - Version $version\n\n'
           'Download now and manage your business accounts easily!';
 
-      // Use Share.share with proper context
-      final box = context.findRenderObject() as RenderBox?;
       await SharePlus.instance.share(
         ShareParams(
           text: shareText,
           subject: 'Share $appName',
-          sharePositionOrigin: box != null
-              ? box.localToGlobal(Offset.zero) & box.size
-              : null,
+          sharePositionOrigin: sharePositionOrigin,
         ),
       );
     } catch (e) {

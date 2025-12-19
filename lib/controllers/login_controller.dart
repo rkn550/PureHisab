@@ -6,7 +6,7 @@ import 'package:purehisab/app/routes/app_pages.dart';
 import 'package:purehisab/data/services/auth_service.dart';
 
 class LoginController extends GetxController {
-  final AuthService _authService = AuthService();
+  AuthService get _authService => Get.find<AuthService>();
 
   final phoneController = TextEditingController();
   final formKey = GlobalKey<FormState>();

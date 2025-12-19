@@ -11,6 +11,7 @@ import 'package:purehisab/screens/customer_detail_screen.dart';
 import 'package:purehisab/screens/transaction_entry_screen.dart';
 import 'package:purehisab/screens/profile_screen.dart';
 import 'package:purehisab/screens/business_profile_screen.dart';
+import 'package:purehisab/screens/app_lock_screen.dart';
 import '../bindings/splash_binding.dart';
 import '../bindings/login_binding.dart';
 import '../bindings/otp_binding.dart';
@@ -21,6 +22,7 @@ import '../bindings/customer_detail_binding.dart';
 import '../bindings/transaction_entry_binding.dart';
 import '../bindings/profile_binding.dart';
 import '../bindings/business_profile_binding.dart';
+import '../bindings/app_lock_binding.dart';
 
 class AppPages {
   static const initial = Routes.splash;
@@ -90,6 +92,11 @@ class AppPages {
       page: () => const BusinessProfileScreen(),
       binding: BusinessProfileBinding(),
     ),
+    GetPage(
+      name: Routes.appLock,
+      page: () => const AppLockScreen(),
+      binding: AppLockBinding(),
+    ),
   ];
 }
 
@@ -105,4 +112,5 @@ class Routes {
   static const transactionEntry = '/transaction-entry';
   static const profile = '/profile';
   static const businessProfile = '/business-profile';
+  static const appLock = '/app-lock';
 }

@@ -9,7 +9,8 @@ import 'customer_detail_controller.dart';
 import 'analytics_controller.dart';
 
 class TransactionEntryController extends GetxController {
-  final TransactionRepository _transactionRepository = TransactionRepository();
+  TransactionRepository get _transactionRepository =>
+      Get.find<TransactionRepository>();
   final ImagePicker _imagePicker = ImagePicker();
 
   final RxString transactionType = 'give'.obs;

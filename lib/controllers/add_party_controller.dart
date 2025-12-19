@@ -4,7 +4,7 @@ import 'package:purehisab/data/services/party_repo.dart';
 import 'home_controller.dart';
 
 class AddPartyController extends GetxController {
-  final PartyRepository _partyRepository = PartyRepository();
+  PartyRepository get _partyRepository => Get.find<PartyRepository>();
 
   final partyNameController = TextEditingController();
   final mobileController = TextEditingController();

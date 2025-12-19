@@ -1,10 +1,11 @@
+import 'package:get/get.dart';
 import 'package:purehisab/data/local/local_db.dart';
 import 'package:purehisab/data/model/transaction_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 
-class TransactionRepository {
+class TransactionRepository extends GetxService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Uuid _uuid = const Uuid();

@@ -5,7 +5,7 @@ import '../app/utils/app_colors.dart';
 import '../data/services/auth_service.dart';
 
 class OtpController extends GetxController {
-  final AuthService _authService = AuthService();
+  AuthService get _authService => Get.find<AuthService>();
 
   final List<TextEditingController> otpControllers = List.generate(
     6,

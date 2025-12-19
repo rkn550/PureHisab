@@ -2,12 +2,26 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/firebase_options.dart';
+import 'package:purehisab/controllers/app_lifecycle_controller.dart';
+import 'package:purehisab/data/services/app_lock_service.dart';
+import 'package:purehisab/data/services/auth_service.dart';
+import 'package:purehisab/data/services/business_repo.dart';
+import 'package:purehisab/data/services/party_repo.dart';
+import 'package:purehisab/data/services/transaction_repo.dart';
 import 'app/routes/app_pages.dart';
 import 'app/utils/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  Get.put(AppLifecycleController());
+  Get.put(AppLockService(), permanent: true);
+  Get.put(AuthService(), permanent: true);
+  Get.put(BusinessRepository(), permanent: true);
+  Get.put(PartyRepository(), permanent: true);
+  Get.put(TransactionRepository(), permanent: true);
+
   runApp(const MyApp());
 }
 

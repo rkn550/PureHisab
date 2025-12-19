@@ -159,7 +159,7 @@ class CustomerDetailScreen extends StatelessWidget {
         borderRadius: .circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -180,7 +180,7 @@ class CustomerDetailScreen extends StatelessWidget {
                 children: [
                   Icon(
                     willGet ? Icons.arrow_downward : Icons.arrow_upward,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     size: 18,
                   ),
                   const SizedBox(width: 6),
@@ -188,7 +188,7 @@ class CustomerDetailScreen extends StatelessWidget {
                     willGet ? 'You will get' : 'You will give',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontWeight: .w500,
                     ),
                   ),
@@ -214,10 +214,10 @@ class CustomerDetailScreen extends StatelessWidget {
                   child: Container(
                     padding: .symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: .circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -226,7 +226,7 @@ class CustomerDetailScreen extends StatelessWidget {
                         Container(
                           padding: .all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
+                            color: Colors.white.withValues(alpha: 0.25),
                             borderRadius: .circular(8),
                           ),
                           child: Icon(
@@ -274,7 +274,9 @@ class CustomerDetailScreen extends StatelessWidget {
                                         controller.formatDateHeader(date),
                                         style: TextStyle(
                                           fontSize: 11,
-                                          color: Colors.white.withOpacity(0.8),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
                                           fontWeight: .w400,
                                         ),
                                       );
@@ -290,7 +292,7 @@ class CustomerDetailScreen extends StatelessWidget {
                                   'Tap to set collection date',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: Colors.white.withValues(alpha: 0.7),
                                     fontWeight: .w400,
                                   ),
                                 ),
@@ -307,13 +309,15 @@ class CustomerDetailScreen extends StatelessWidget {
                             iconColor: Colors.white,
                             iconSize: 20,
                             size: 32,
-                            backgroundColor: Colors.white.withOpacity(0.2),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.2,
+                            ),
                           )
                         else
                           Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 16,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                       ],
                     ),
@@ -374,7 +378,7 @@ class CustomerDetailScreen extends StatelessWidget {
           padding: .symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isEnabled
-                ? AppColors.primary.withOpacity(0.1)
+                ? AppColors.primary.withValues(alpha: 0.1)
                 : Colors.grey.shade100,
             borderRadius: .circular(10),
           ),
@@ -523,13 +527,13 @@ class CustomerDetailScreen extends StatelessWidget {
         borderRadius: .circular(12),
         border: Border.all(
           color: isGive
-              ? Colors.red.withOpacity(0.2)
-              : Colors.green.withOpacity(0.2),
+              ? Colors.red.withValues(alpha: 0.2)
+              : Colors.green.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -611,7 +615,7 @@ class CustomerDetailScreen extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, -2),
           ),

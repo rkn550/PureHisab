@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../app/routes/app_pages.dart';
 import '../data/services/auth_service.dart';
+import '../data/services/app_lock_service.dart';
 
 class SplashController extends GetxController
     with GetSingleTickerProviderStateMixin {
   late AnimationController animationController;
   late Animation<double> fadeAnimation;
   late Animation<double> scaleAnimation;
-  final AuthService _authService = AuthService();
+  AuthService get _authService => Get.find<AuthService>();
 
   @override
   void onInit() {
@@ -43,11 +44,17 @@ class SplashController extends GetxController
     animationController.forward();
   }
 
-  void _checkAuthAndNavigate() {
-    Future.delayed(const Duration(seconds: 3), () {
+  void _checkAuthAndNavigate() async {
+    Future.delayed(const Duration(seconds: 3), () async {
       final currentUser = _authService.currentUser;
       if (currentUser != null) {
-        Get.offNamed(Routes.home, arguments: {'initialTab': 1});
+        final appLockService = Get.find<AppLockService>();
+        final isLockEnabled = await appLockService.isLockEnabled();
+        if (isLockEnabled) {
+          Get.offNamed(Routes.appLock);
+        } else {
+          Get.offNamed(Routes.home, arguments: {'initialTab': 1});
+        }
       } else {
         Get.offNamed(Routes.login);
       }

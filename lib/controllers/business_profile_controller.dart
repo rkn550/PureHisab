@@ -5,13 +5,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:purehisab/data/services/business_repo.dart';
+import 'package:purehisab/data/services/app_lock_service.dart';
 import '../app/utils/app_colors.dart';
 import 'home_controller.dart';
 
 class BusinessProfileController extends GetxController {
-  final BusinessRepository _businessRepository = BusinessRepository();
-  // Mode: 'create' for creating new business, 'edit' for editing existing
-  final RxString mode = 'edit'.obs; // 'create' or 'edit'
+  BusinessRepository get _businessRepository => Get.find<BusinessRepository>();
+  AppLockService get _appLockService => Get.find<AppLockService>();
+  final RxString mode = 'edit'.obs;
 
   // Form controllers for create account screen
   final nameController = TextEditingController();
@@ -28,7 +29,6 @@ class BusinessProfileController extends GetxController {
   // Settings section expanded state
   final RxBool settingsExpanded = true.obs;
 
-  // App Lock state
   final RxBool appLockEnabled = false.obs;
 
   // About section expanded state
@@ -41,6 +41,11 @@ class BusinessProfileController extends GetxController {
   void onInit() {
     super.onInit();
     _loadBusinessData();
+    _loadAppLockState();
+  }
+
+  Future<void> _loadAppLockState() async {
+    appLockEnabled.value = await _appLockService.isLockEnabled();
   }
 
   @override
@@ -158,9 +163,328 @@ class BusinessProfileController extends GetxController {
     settingsExpanded.value = !settingsExpanded.value;
   }
 
-  void toggleAppLock() {
-    appLockEnabled.value = !appLockEnabled.value;
-    // TODO: Implement app lock functionality
+  Future<void> toggleAppLock() async {
+    if (appLockEnabled.value) {
+      await _disableAppLock();
+    } else {
+      await _enableAppLock();
+    }
+  }
+
+  Future<void> _enableAppLock() async {
+    final hasPin = await _appLockService.hasPin();
+    if (!hasPin) {
+      final pin = await _showPinSetupDialog('Set PIN');
+      if (pin == null || pin.length != 4) {
+        Get.snackbar(
+          'Error',
+          'PIN is required to enable app lock',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade50,
+          colorText: Colors.red.shade900,
+        );
+        return;
+      }
+      await _appLockService.setPin(pin);
+    }
+
+    await _appLockService.setLockEnabled(true);
+    appLockEnabled.value = true;
+    Get.snackbar(
+      'Success',
+      'App lock enabled',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green.shade50,
+      colorText: Colors.green.shade900,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  Future<void> _disableAppLock() async {
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Disable App Lock'),
+        content: const Text('Are you sure you want to disable app lock?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _appLockService.setLockEnabled(false);
+      appLockEnabled.value = false;
+      Get.snackbar(
+        'Success',
+        'App lock disabled',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade50,
+        colorText: Colors.green.shade900,
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
+
+  Future<void> manageAppLock() async {
+    await Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: .circular(20)),
+        child: Padding(
+          padding: .all(24),
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              const Text(
+                'Manage App Lock',
+                style: TextStyle(fontSize: 20, fontWeight: .bold),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                contentPadding: .zero,
+                leading: const Icon(
+                  Icons.lock_outline,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Change PIN'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  Get.back();
+                  await _changePin();
+                },
+              ),
+              const Divider(),
+              FutureBuilder<bool>(
+                future: _appLockService.isBiometricAvailable(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data == true) {
+                    return ListTile(
+                      contentPadding: .zero,
+                      leading: const Icon(
+                        Icons.fingerprint,
+                        color: AppColors.primary,
+                      ),
+                      title: const Text('Test Biometric'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        Get.back();
+                        final authenticated = await _appLockService
+                            .authenticateWithBiometrics();
+                        Get.snackbar(
+                          authenticated ? 'Success' : 'Failed',
+                          authenticated
+                              ? 'Biometric authentication successful'
+                              : 'Biometric authentication failed',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: authenticated
+                              ? Colors.green.shade50
+                              : Colors.red.shade50,
+                          colorText: authenticated
+                              ? Colors.green.shade900
+                              : Colors.red.shade900,
+                        );
+                      },
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: .end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _changePin() async {
+    final currentPin = await _showPinVerificationDialog('Enter current PIN');
+    if (currentPin == null) return;
+
+    final isValid = await _appLockService.verifyPin(currentPin);
+    if (!isValid) {
+      Get.snackbar(
+        'Error',
+        'Incorrect PIN. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade900,
+      );
+      return;
+    }
+
+    final newPin = await _showPinSetupDialog('Enter new PIN');
+    if (newPin == null || newPin.length != 4) {
+      Get.snackbar(
+        'Error',
+        'Please enter a valid 4-digit PIN',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade900,
+      );
+      return;
+    }
+
+    final confirmPin = await _showPinSetupDialog('Confirm new PIN');
+    if (confirmPin != newPin) {
+      Get.snackbar(
+        'Error',
+        'PINs do not match. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade900,
+      );
+      return;
+    }
+
+    await _appLockService.setPin(newPin);
+    Get.snackbar(
+      'Success',
+      'PIN changed successfully',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green.shade50,
+      colorText: Colors.green.shade900,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  Future<String?> _showPinVerificationDialog(String title) async {
+    String? pin;
+    await Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: .circular(20)),
+        child: Padding(
+          padding: .all(24),
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 20, fontWeight: .bold),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                obscureText: true,
+                textAlign: TextAlign.center,
+                autofocus: true,
+                style: const TextStyle(fontSize: 24, letterSpacing: 8),
+                decoration: const InputDecoration(
+                  hintText: '0000',
+                  counterText: '',
+                ),
+                onChanged: (value) {
+                  pin = value;
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: .end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (pin != null && pin!.length == 4) {
+                        Get.back();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Verify'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return pin;
+  }
+
+  Future<String?> _showPinSetupDialog(String title) async {
+    String? pin;
+    await Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: .circular(20)),
+        child: Padding(
+          padding: .all(24),
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 20, fontWeight: .bold),
+              ),
+              const SizedBox(height: 16),
+              const Text('Enter a 4-digit PIN', textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              TextField(
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                obscureText: true,
+                textAlign: TextAlign.center,
+                autofocus: true,
+                style: const TextStyle(fontSize: 24, letterSpacing: 8),
+                decoration: const InputDecoration(
+                  hintText: '0000',
+                  counterText: '',
+                ),
+                onChanged: (value) {
+                  pin = value;
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: .end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (pin != null && pin!.length == 4) {
+                        Get.back();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Set PIN'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return pin;
   }
 
   void toggleAboutExpanded() {
@@ -540,6 +864,7 @@ class BusinessProfileController extends GetxController {
   // Support phone number - update this with your actual support number
   static const String supportPhoneNumber =
       '+919155776919'; // Replace with actual number
+  static const String supportEmail = 'purehisab1@gmail.com';
 
   Future<void> openWhatsApp() async {
     try {
@@ -573,17 +898,18 @@ class BusinessProfileController extends GetxController {
     }
   }
 
-  Future<void> makePhoneCall() async {
+  Future<void> sendEmail() async {
     try {
-      // Phone URL format: tel:PHONENUMBER
-      final phoneUrl = Uri.parse('tel:$supportPhoneNumber');
+      final emailUrl = Uri.parse('mailto:$supportEmail');
+      final launched = await launchUrl(
+        emailUrl,
+        mode: LaunchMode.externalApplication,
+      );
 
-      if (await canLaunchUrl(phoneUrl)) {
-        await launchUrl(phoneUrl, mode: LaunchMode.externalApplication);
-      } else {
+      if (!launched) {
         Get.snackbar(
           'Error',
-          'Unable to make phone call',
+          'Unable to open email app. Please check if an email app is installed.',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.orange.shade50,
           colorText: Colors.orange.shade900,
@@ -593,7 +919,7 @@ class BusinessProfileController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to make phone call. Please try again.',
+        'Failed to open email app. Please make sure an email app is installed.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade50,
         colorText: Colors.red.shade900,

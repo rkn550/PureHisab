@@ -10,9 +10,10 @@ import 'package:purehisab/app/utils/app_colors.dart';
 import 'business_profile_controller.dart';
 
 class HomeController extends GetxController {
-  final BusinessRepository _businessRepository = BusinessRepository();
-  final PartyRepository _partyRepository = PartyRepository();
-  final TransactionRepository _transactionRepository = TransactionRepository();
+  BusinessRepository get _businessRepository => Get.find<BusinessRepository>();
+  PartyRepository get _partyRepository => Get.find<PartyRepository>();
+  TransactionRepository get _transactionRepository =>
+      Get.find<TransactionRepository>();
 
   final searchFocusNode = FocusNode();
   // Tab selection: 0 for Customers, 1 for Suppliers
@@ -497,7 +498,7 @@ class HomeController extends GetxController {
       isScrollControlled: true,
       isDismissible: false,
       enableDrag: false,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
     );
   }
 

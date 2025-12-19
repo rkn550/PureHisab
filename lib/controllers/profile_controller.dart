@@ -8,7 +8,7 @@ import 'package:purehisab/controllers/home_controller.dart';
 import '../app/utils/app_colors.dart';
 
 class ProfileController extends GetxController {
-  final PartyRepository _partyRepository = PartyRepository();
+  PartyRepository get _partyRepository => Get.find<PartyRepository>();
 
   final RxString customerName = ''.obs;
   final RxString customerPhone = ''.obs;

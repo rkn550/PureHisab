@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../app/utils/app_colors.dart';
 
 class CustomDialog extends StatelessWidget {
@@ -67,7 +68,7 @@ class CustomDialog extends StatelessWidget {
               children: [
                 if (showCancel)
                   TextButton(
-                    onPressed: onCancel ?? () => Navigator.of(context).pop(),
+                    onPressed: onCancel ?? () => Get.back(),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -88,7 +89,7 @@ class CustomDialog extends StatelessWidget {
                   ),
                 if (showCancel) const SizedBox(width: 12),
                 ElevatedButton(
-                  onPressed: onConfirm ?? () => Navigator.of(context).pop(),
+                  onPressed: onConfirm ?? () => Get.back(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: confirmColor ?? AppColors.primary,
                     foregroundColor: Colors.white,

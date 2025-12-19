@@ -4,8 +4,9 @@ import 'package:purehisab/data/services/transaction_repo.dart';
 import 'package:purehisab/controllers/home_controller.dart';
 
 class AnalyticsController extends GetxController {
-  final PartyRepository _partyRepository = PartyRepository();
-  final TransactionRepository _transactionRepository = TransactionRepository();
+  PartyRepository get _partyRepository => Get.find<PartyRepository>();
+  TransactionRepository get _transactionRepository =>
+      Get.find<TransactionRepository>();
 
   final RxDouble totalBalance = 0.0.obs;
   final RxDouble totalToGive = 0.0.obs;
@@ -31,11 +32,6 @@ class AnalyticsController extends GetxController {
       <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> topSuppliers =
       <Map<String, dynamic>>[].obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-  }
 
   @override
   void onReady() {

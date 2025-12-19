@@ -54,7 +54,7 @@ class TransactionEntryScreen extends StatelessWidget {
                 (controller.transactionType.value == 'give'
                         ? Colors.red
                         : Colors.green)
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: IconButton(
@@ -76,7 +76,7 @@ class TransactionEntryScreen extends StatelessWidget {
                 (controller.transactionType.value == 'give'
                         ? Colors.red
                         : Colors.green)
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
             borderRadius: .circular(20),
           ),
           child: Text(
@@ -114,7 +114,7 @@ class TransactionEntryScreen extends StatelessWidget {
                   (controller.transactionType.value == 'give'
                           ? Colors.red
                           : Colors.green)
-                      .withOpacity(0.2),
+                      .withValues(alpha: 0.2),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -132,7 +132,7 @@ class TransactionEntryScreen extends StatelessWidget {
                         (controller.transactionType.value == 'give'
                                 ? Colors.red
                                 : Colors.green)
-                            .withOpacity(0.2),
+                            .withValues(alpha: 0.2),
                     borderRadius: .circular(8),
                   ),
                   child: Text(
@@ -191,7 +191,7 @@ class TransactionEntryScreen extends StatelessWidget {
                             (controller.transactionType.value == 'give'
                                     ? Colors.red
                                     : Colors.green)
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                       ),
                     ),
                     textAlign: .left,
@@ -211,7 +211,7 @@ class TransactionEntryScreen extends StatelessWidget {
               Container(
                 padding: .symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   borderRadius: .circular(8),
                 ),
                 child: Text(
@@ -427,7 +427,7 @@ class TransactionEntryScreen extends StatelessWidget {
                             child: Container(
                               padding: .all(6),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -642,14 +642,14 @@ class TransactionEntryScreen extends StatelessWidget {
                           (controller.transactionType.value == 'give'
                                   ? Colors.red
                                   : Colors.green)
-                              .withOpacity(0.3),
+                              .withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
