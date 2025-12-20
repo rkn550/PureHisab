@@ -12,6 +12,9 @@ import 'package:purehisab/screens/transaction_entry_screen.dart';
 import 'package:purehisab/screens/profile_screen.dart';
 import 'package:purehisab/screens/business_profile_screen.dart';
 import 'package:purehisab/screens/app_lock_screen.dart';
+import 'package:purehisab/screens/about_screen.dart';
+import 'package:purehisab/screens/privacy_policy_screen.dart';
+import 'package:purehisab/screens/terms_conditions_screen.dart';
 import '../bindings/splash_binding.dart';
 import '../bindings/login_binding.dart';
 import '../bindings/otp_binding.dart';
@@ -23,6 +26,9 @@ import '../bindings/transaction_entry_binding.dart';
 import '../bindings/profile_binding.dart';
 import '../bindings/business_profile_binding.dart';
 import '../bindings/app_lock_binding.dart';
+import '../bindings/about_binding.dart';
+import '../bindings/privacy_policy_binding.dart';
+import '../bindings/terms_conditions_binding.dart';
 
 class AppPages {
   static const initial = Routes.splash;
@@ -97,6 +103,21 @@ class AppPages {
       page: () => const AppLockScreen(),
       binding: AppLockBinding(),
     ),
+    GetPage(
+      name: Routes.about,
+      page: () => const AboutScreen(),
+      binding: AboutBinding(),
+    ),
+    GetPage(
+      name: Routes.privacyPolicy,
+      page: () => const PrivacyPolicyScreen(),
+      binding: PrivacyPolicyBinding(),
+    ),
+    GetPage(
+      name: Routes.termsConditions,
+      page: () => const TermsConditionsScreen(),
+      binding: TermsConditionsBinding(),
+    ),
   ];
 }
 
@@ -113,4 +134,7 @@ class Routes {
   static const profile = '/profile';
   static const businessProfile = '/business-profile';
   static const appLock = '/app-lock';
+  static const about = '/about';
+  static const privacyPolicy = '/privacy-policy';
+  static const termsConditions = '/terms-conditions';
 }

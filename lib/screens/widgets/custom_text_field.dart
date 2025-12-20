@@ -50,6 +50,7 @@ class CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: .start,
+
       children: [
         if (label != null) ...[
           Text(
@@ -67,8 +68,8 @@ class CustomTextField extends StatelessWidget {
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           maxLength: maxLength,
-          minLines: minLines,
-          maxLines: maxLines,
+          minLines: minLines ?? 1,
+          maxLines: maxLines ?? 1,
           validator: validator,
           onChanged: onChanged,
           obscureText: obscureText,

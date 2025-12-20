@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../controllers/business_profile_controller.dart';
 import '../app/utils/app_colors.dart';
+import '../app/routes/app_pages.dart';
 import 'widgets/widgets.dart';
 
 class BusinessProfileScreen extends StatelessWidget {
@@ -11,7 +12,6 @@ class BusinessProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize controller if not already registered
     if (!Get.isRegistered<BusinessProfileController>()) {
       Get.put(BusinessProfileController());
     }
@@ -376,33 +376,21 @@ class BusinessProfileScreen extends StatelessWidget {
                           icon: Icons.business_rounded,
                           title: 'About PureHisab',
                           onTap: () {
-                            Get.snackbar(
-                              'About PureHisab',
-                              'Coming soon',
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
+                            Get.toNamed(Routes.about);
                           },
                         ),
                         _buildSettingsItem(
                           icon: Icons.privacy_tip_rounded,
                           title: 'Privacy Policy',
                           onTap: () {
-                            Get.snackbar(
-                              'Privacy Policy',
-                              'Coming soon',
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
+                            Get.toNamed(Routes.privacyPolicy);
                           },
                         ),
                         _buildSettingsItem(
                           icon: Icons.description_rounded,
                           title: 'Terms & Conditions',
                           onTap: () {
-                            Get.snackbar(
-                              'Terms & Conditions',
-                              'Coming soon',
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
+                            Get.toNamed(Routes.termsConditions);
                           },
                         ),
                       ],

@@ -16,19 +16,15 @@ class HomeController extends GetxController {
       Get.find<TransactionRepository>();
 
   final searchFocusNode = FocusNode();
-  // Tab selection: 0 for Customers, 1 for Suppliers
   final RxInt selectedTab = 0.obs;
 
-  // Filter and sort states
   final RxString selectedFilter = 'All'.obs;
   final RxString selectedSort = 'Most Recent'.obs;
   final RxBool showFilterModal = false.obs;
 
-  // Summary amounts
   final RxDouble amountToGive = 0.0.obs;
   final RxDouble amountToGet = 0.0.obs;
 
-  // Store name
   final RxString storeName = ''.obs;
   final RxString selectedBusinessId = ''.obs;
   final RxBool showAccountModal = false.obs;
@@ -36,7 +32,6 @@ class HomeController extends GetxController {
   final RxList<Map<String, dynamic>> accountsList =
       <Map<String, dynamic>>[].obs;
 
-  // Search query
   final RxString searchQuery = ''.obs;
   final RxBool isSearchFocused = false.obs;
 
@@ -46,7 +41,6 @@ class HomeController extends GetxController {
   final RxList<Map<String, dynamic>> suppliersList =
       <Map<String, dynamic>>[].obs;
 
-  // Initialize summary amounts for suppliers tab
   @override
   void onInit() {
     super.onInit();
@@ -58,7 +52,7 @@ class HomeController extends GetxController {
     try {
       isSearchFocused.value = searchFocusNode.hasFocus;
     } catch (e) {
-      // FocusNode might be disposed, ignore
+      throw Exception('Error on focus change: $e');
     }
   }
 
@@ -101,7 +95,7 @@ class HomeController extends GetxController {
         }
       }
     } catch (e) {
-      // Error handling
+      throw Exception('Error refreshing account counts: $e');
     }
   }
 
@@ -125,7 +119,6 @@ class HomeController extends GetxController {
         accountsList.add(account);
       }
 
-      // Select first business if available and none selected
       if (accountsList.isNotEmpty) {
         bool hasSelected = false;
         for (var account in accountsList) {
@@ -140,7 +133,6 @@ class HomeController extends GetxController {
           }
         }
 
-        // If no business is selected, select the first one
         if (!hasSelected) {
           accountsList[0]['isSelected'] = true;
           selectedBusinessId.value = accountsList[0]['id'] as String;
@@ -188,7 +180,7 @@ class HomeController extends GetxController {
 
       updateSummaryAmounts();
     } catch (e) {
-      // Error handling
+      throw Exception('Error loading parties from database: $e');
     }
   }
 
@@ -325,7 +317,6 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Notify BusinessProfileController to load business data
   void _notifyBusinessProfileController(String businessId) {
     if (Get.isRegistered<BusinessProfileController>()) {
       final businessProfileController = Get.find<BusinessProfileController>();
@@ -334,23 +325,19 @@ class HomeController extends GetxController {
   }
 
   void addNewAccount(String name) {
-    // Unselect all accounts
     for (var account in accountsList) {
       account['isSelected'] = false;
     }
 
-    // Add new account and select it
     final newAccount = {'name': name, 'customerCount': 0, 'isSelected': true};
     accountsList.add(newAccount);
     storeName.value = name;
 
-    // Close account modal if it's open
     if (showAccountModal.value) {
       closeAccountModal();
     }
   }
 
-  /// Add new account from BusinessModel (used when creating from database)
   Future<void> addNewAccountFromBusiness(BusinessModel business) async {
     for (var account in accountsList) {
       account['isSelected'] = false;
@@ -381,7 +368,6 @@ class HomeController extends GetxController {
     }
   }
 
-  /// Refresh businesses from database
   Future<void> refreshBusinesses() async {
     await _loadBusinessesFromDatabase();
   }
@@ -390,12 +376,10 @@ class HomeController extends GetxController {
     searchQuery.value = query;
   }
 
-  // Get current list based on selected tab
   List<Map<String, dynamic>> getCurrentList() {
     return selectedTab.value == 0 ? customersList : suppliersList;
   }
 
-  // Update summary amounts based on current list
   void updateSummaryAmounts() {
     final list = getCurrentList();
     double give = 0.0;
@@ -413,11 +397,9 @@ class HomeController extends GetxController {
     amountToGet.value = get;
   }
 
-  // Get filtered and sorted list
   List<Map<String, dynamic>> getFilteredList() {
     var list = List<Map<String, dynamic>>.from(getCurrentList());
 
-    // Apply search filter
     if (searchQuery.value.isNotEmpty) {
       list = list.where((item) {
         final name = (item['name'] ?? '').toString().toLowerCase();
@@ -425,7 +407,6 @@ class HomeController extends GetxController {
       }).toList();
     }
 
-    // Apply filter
     if (selectedFilter.value != 'All') {
       switch (selectedFilter.value) {
         case 'You will give':
@@ -435,24 +416,18 @@ class HomeController extends GetxController {
           list = list.where((item) => item['type'] == 'get').toList();
           break;
         case 'Settled':
-          // TODO: Implement settled filter
           break;
         case 'Due Today':
-          // TODO: Implement due today filter
           break;
         case 'Upcoming':
-          // TODO: Implement upcoming filter
           break;
         case 'No Due Date':
-          // TODO: Implement no due date filter
           break;
       }
     }
 
-    // Apply sort
     switch (selectedSort.value) {
       case 'Most Recent':
-        // Keep original order (most recent first)
         break;
       case 'Highest Amount':
         list.sort((a, b) {
@@ -469,7 +444,6 @@ class HomeController extends GetxController {
         });
         break;
       case 'Oldest':
-        // Reverse order for oldest
         list = list.reversed.toList();
         break;
       case 'Least Amount':

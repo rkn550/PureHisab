@@ -14,27 +14,19 @@ class BusinessProfileController extends GetxController {
   AppLockService get _appLockService => Get.find<AppLockService>();
   final RxString mode = 'edit'.obs;
 
-  // Form controllers for create account screen
   final nameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
   final RxBool isLoading = false.obs;
 
-  // Business information
-  final RxString businessId = ''.obs; // Business ID from database
-  final RxString businessName = ''.obs; // Business Name
-  final RxString ownerName = ''.obs; // Owner Name (editable)
+  final RxString businessId = ''.obs;
+  final RxString businessName = ''.obs;
+  final RxString ownerName = ''.obs;
   final RxString businessPhone = ''.obs;
   final Rx<File?> profileImageFile = Rx<File?>(null);
 
-  // Settings section expanded state
-  final RxBool settingsExpanded = true.obs;
-
+  final RxBool settingsExpanded = false.obs;
   final RxBool appLockEnabled = false.obs;
-
-  // About section expanded state
   final RxBool aboutExpanded = false.obs;
-
-  // Help & Support section expanded state
   final RxBool helpSupportExpanded = false.obs;
 
   @override
@@ -42,6 +34,34 @@ class BusinessProfileController extends GetxController {
     super.onInit();
     _loadBusinessData();
     _loadAppLockState();
+    _setupHomeControllerListener();
+  }
+
+  void _setupHomeControllerListener() {
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (Get.isRegistered<HomeController>()) {
+        try {
+          final homeController = Get.find<HomeController>();
+          // Listen to selectedBusinessId changes and reload business data
+          ever(homeController.selectedBusinessId, (String newBusinessId) {
+            if (newBusinessId.isNotEmpty &&
+                newBusinessId != businessId.value &&
+                mode.value == 'edit') {
+              loadBusinessById(newBusinessId);
+            }
+          });
+
+          // Also check if there's already a selected business
+          if (homeController.selectedBusinessId.value.isNotEmpty &&
+              businessId.value.isEmpty &&
+              mode.value == 'edit') {
+            loadBusinessById(homeController.selectedBusinessId.value);
+          }
+        } catch (e) {
+          // HomeController might not be ready yet, ignore
+        }
+      }
+    });
   }
 
   Future<void> _loadAppLockState() async {
@@ -50,7 +70,11 @@ class BusinessProfileController extends GetxController {
 
   @override
   void onClose() {
-    nameController.dispose();
+    try {
+      nameController.dispose();
+    } catch (e) {
+      // Controller might already be disposed, ignore
+    }
     super.onClose();
   }
 
@@ -78,8 +102,20 @@ class BusinessProfileController extends GetxController {
         try {
           final homeController = Get.find<HomeController>();
           businessIdToLoad = homeController.selectedBusinessId.value;
+
+          // If businessId is still empty, wait a bit for HomeController to finish loading
+          if (businessIdToLoad.isEmpty) {
+            // Wait for HomeController to finish loading businesses
+            for (int i = 0; i < 10; i++) {
+              await Future.delayed(const Duration(milliseconds: 100));
+              businessIdToLoad = homeController.selectedBusinessId.value;
+              if (businessIdToLoad.isNotEmpty) {
+                break;
+              }
+            }
+          }
         } catch (e) {
-          // Error handling
+          throw Exception('Error loading business data: $e');
         }
       }
     }
@@ -87,11 +123,14 @@ class BusinessProfileController extends GetxController {
     if (businessIdToLoad != null && businessIdToLoad.isNotEmpty) {
       await _loadBusinessFromDatabase(businessIdToLoad);
     } else {
-      _resetFormForCreate();
+      // Don't reset form if we're in edit mode - wait for HomeController notification
+      // Only reset if we're sure there's no business to load
+      if (mode.value == 'create') {
+        _resetFormForCreate();
+      }
     }
   }
 
-  /// Reset form fields when entering create mode
   void resetFormForCreate() {
     nameController.clear();
     businessName.value = '';
@@ -99,22 +138,18 @@ class BusinessProfileController extends GetxController {
     businessPhone.value = '';
     businessId.value = '';
     profileImageFile.value = null;
-    // Reset form validation state
     formKey.currentState?.reset();
   }
 
-  /// Reset form fields when entering create mode (private alias)
   void _resetFormForCreate() {
     resetFormForCreate();
   }
 
-  /// Load business data from database (public method for external calls)
   Future<void> loadBusinessById(String id) async {
     if (id.isEmpty) return;
     await _loadBusinessFromDatabase(id);
   }
 
-  /// Load business data from database
   Future<void> _loadBusinessFromDatabase(String id) async {
     try {
       isLoading.value = true;
@@ -125,7 +160,6 @@ class BusinessProfileController extends GetxController {
         ownerName.value = business.ownerName ?? '';
         businessPhone.value = business.phoneNumber ?? '';
       } else {
-        // Business not found
         Get.snackbar(
           'Error',
           'Business not found',
@@ -154,10 +188,6 @@ class BusinessProfileController extends GetxController {
   void updateOwnerName(String name) {
     ownerName.value = name;
   }
-
-  // void updateBusinessPhone(String phone) {
-  //   businessPhone.value = phone;
-  // }
 
   void toggleSettingsExpanded() {
     settingsExpanded.value = !settingsExpanded.value;
@@ -652,7 +682,6 @@ class BusinessProfileController extends GetxController {
   Future<void> addPhoto() async {
     final ImagePicker picker = ImagePicker();
 
-    // Show bottom sheet with options
     Get.bottomSheet(
       Container(
         decoration: BoxDecoration(
@@ -667,7 +696,6 @@ class BusinessProfileController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Container(
                 width: 40,
                 height: 4,
@@ -677,7 +705,6 @@ class BusinessProfileController extends GetxController {
                   borderRadius: .circular(2),
                 ),
               ),
-              // Title
               const Padding(
                 padding: .symmetric(horizontal: 24, vertical: 8),
                 child: Text(
@@ -690,16 +717,14 @@ class BusinessProfileController extends GetxController {
                 ),
               ),
               const SizedBox(height: 16),
-              // Camera option
               ListTile(
                 leading: Icon(Icons.camera_alt, color: AppColors.primaryDark),
                 title: const Text('Take Photo'),
                 onTap: () async {
-                  Get.back(); // Close bottom sheet
+                  Get.back();
                   await _pickImageFromCamera(picker);
                 },
               ),
-              // Gallery option
               ListTile(
                 leading: Icon(
                   Icons.photo_library,
@@ -707,18 +732,17 @@ class BusinessProfileController extends GetxController {
                 ),
                 title: const Text('Choose from Gallery'),
                 onTap: () async {
-                  Get.back(); // Close bottom sheet
+                  Get.back();
                   await _pickImageFromGallery(picker);
                 },
               ),
-              // Remove photo option (if photo exists)
               Obx(
                 () => profileImageFile.value != null
                     ? ListTile(
                         leading: Icon(Icons.delete, color: Colors.red),
                         title: const Text('Remove Photo'),
                         onTap: () {
-                          Get.back(); // Close bottom sheet
+                          Get.back();
                           profileImageFile.value = null;
                           Get.snackbar(
                             'Success',
@@ -743,7 +767,6 @@ class BusinessProfileController extends GetxController {
 
   Future<void> _pickImageFromCamera(ImagePicker picker) async {
     try {
-      // Check camera permission
       final cameraStatus = await Permission.camera.status;
       if (!cameraStatus.isGranted) {
         final result = await Permission.camera.request();
@@ -791,33 +814,27 @@ class BusinessProfileController extends GetxController {
 
   Future<void> _pickImageFromGallery(ImagePicker picker) async {
     try {
-      // Note: image_picker handles permissions automatically on most platforms
-      // But we can still check and request if needed
       PermissionStatus? photoStatus;
 
       if (Platform.isAndroid) {
-        // Try photos permission first (Android 13+)
         try {
           photoStatus = await Permission.photos.status;
           if (!photoStatus.isGranted) {
             photoStatus = await Permission.photos.request();
           }
         } catch (e) {
-          // Fallback to storage permission for older Android
           photoStatus = await Permission.storage.status;
           if (!photoStatus.isGranted) {
             photoStatus = await Permission.storage.request();
           }
         }
       } else if (Platform.isIOS) {
-        // For iOS
         photoStatus = await Permission.photos.status;
         if (!photoStatus.isGranted) {
           photoStatus = await Permission.photos.request();
         }
       }
 
-      // If permission is denied, show message but still try (image_picker may handle it)
       if (photoStatus != null &&
           !photoStatus.isGranted &&
           photoStatus.isPermanentlyDenied) {
@@ -861,17 +878,13 @@ class BusinessProfileController extends GetxController {
     }
   }
 
-  // Support phone number - update this with your actual support number
-  static const String supportPhoneNumber =
-      '+919155776919'; // Replace with actual number
+  static const String supportPhoneNumber = '+919155776919';
   static const String supportEmail = 'purehisab1@gmail.com';
 
   Future<void> openWhatsApp() async {
     try {
-      // Remove any non-digit characters from phone number
       final phoneNumber = supportPhoneNumber.replaceAll(RegExp(r'[^\d]'), '');
 
-      // WhatsApp URL format: https://wa.me/PHONENUMBER
       final whatsappUrl = Uri.parse('https://wa.me/$phoneNumber');
 
       if (await canLaunchUrl(whatsappUrl)) {

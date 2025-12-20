@@ -30,13 +30,12 @@ class MainNavigationScreen extends StatelessWidget {
             () => IndexedStack(
               index: controller.currentIndex.value,
               children: const [
-                AnalyticsScreen(), // Index 0
-                HomeScreen(), // Index 1
-                BusinessProfileScreen(), // Index 2
+                AnalyticsScreen(),
+                HomeScreen(),
+                BusinessProfileScreen(),
               ],
             ),
           ),
-          // Account Modal - shown from all screens
           if (homeController != null)
             Obx(
               () => homeController.showAccountModal.value
@@ -86,7 +85,7 @@ class MainNavigationScreen extends StatelessWidget {
         child: Align(
           alignment: .bottomCenter,
           child: GestureDetector(
-            onTap: () {}, // Prevent closing when tapping inside modal
+            onTap: () {},
             child: Container(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.of(context).size.height * 0.7,
@@ -117,10 +116,7 @@ class MainNavigationScreen extends StatelessWidget {
                       children: [
                         const Text(
                           'Select Account',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: .bold,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: .bold),
                         ),
                         IconButton(
                           onPressed: () {
@@ -149,10 +145,7 @@ class MainNavigationScreen extends StatelessWidget {
                               controller.selectAccount(index);
                             },
                             child: Container(
-                              padding: .symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
+                              padding: .symmetric(horizontal: 16, vertical: 12),
                               child: Row(
                                 children: [
                                   Container(
@@ -186,8 +179,7 @@ class MainNavigationScreen extends StatelessWidget {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          .start,
+                                      crossAxisAlignment: .start,
                                       children: [
                                         Text(
                                           name,

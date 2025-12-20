@@ -30,12 +30,10 @@ class NavigationController extends GetxController {
   void _getArguments() {
     final args = Get.arguments;
     if (args != null && args is Map<String, dynamic>) {
-      // Get initial tab index if provided
       if (args.containsKey('initialTab')) {
         currentIndex.value = args['initialTab'] as int? ?? 0;
       }
 
-      // Get user data if provided
       if (args.containsKey('phoneNumber')) {
         phoneNumber.value = args['phoneNumber'] as String? ?? '';
       }
@@ -52,17 +50,14 @@ class NavigationController extends GetxController {
     currentIndex.value = index;
   }
 
-  /// Load selected business profile when profile tab is accessed
   void _loadSelectedBusinessProfile() {
     if (Get.isRegistered<HomeController>()) {
       try {
         final homeController = Get.find<HomeController>();
-        // Find selected account
         for (var account in homeController.accountsList) {
           if (account['isSelected'] == true) {
             final businessId = account['id']?.toString();
             if (businessId != null && businessId.isNotEmpty) {
-              // Load business data in BusinessProfileController
               if (Get.isRegistered<BusinessProfileController>()) {
                 final businessProfileController =
                     Get.find<BusinessProfileController>();
@@ -73,7 +68,7 @@ class NavigationController extends GetxController {
           }
         }
       } catch (e) {
-        // Error loading, ignore
+        throw Exception('Error loading selected business profile: $e');
       }
     }
   }

@@ -9,15 +9,9 @@ class CreateAccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!Get.isRegistered<BusinessProfileController>()) {
-      Get.put(BusinessProfileController());
-    }
     final controller = Get.find<BusinessProfileController>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (controller.mode.value != 'create') {
-        controller.mode.value = 'create';
-      }
       controller.resetFormForCreate();
     });
 
@@ -31,7 +25,11 @@ class CreateAccountScreen extends StatelessWidget {
         ),
         title: const Text(
           'Create New Account',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: .w700,
+          ),
         ),
         elevation: 0,
       ),

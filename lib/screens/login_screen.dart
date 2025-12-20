@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
 import '../app/utils/app_colors.dart';
+import '../app/routes/app_pages.dart';
 import 'widgets/widgets.dart';
 
 class LogInScreen extends StatelessWidget {
@@ -132,9 +134,9 @@ class LogInScreen extends StatelessWidget {
 
   Widget _buildTermsText() {
     return Padding(
-      padding: .symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: RichText(
-        textAlign: .center,
+        textAlign: TextAlign.center,
         text: TextSpan(
           style: TextStyle(
             fontSize: 12,
@@ -147,18 +149,26 @@ class LogInScreen extends StatelessWidget {
               text: 'Terms of Service',
               style: const TextStyle(
                 color: AppColors.primary,
-                fontWeight: .w600,
+                fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
               ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  Get.toNamed(Routes.termsConditions);
+                },
             ),
             const TextSpan(text: ' and '),
             TextSpan(
               text: 'Privacy Policy',
               style: const TextStyle(
                 color: AppColors.primary,
-                fontWeight: .w600,
+                fontWeight: FontWeight.w600,
                 decoration: TextDecoration.underline,
               ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  Get.toNamed(Routes.privacyPolicy);
+                },
             ),
           ],
         ),
