@@ -27,11 +27,10 @@ class AddPartyScreen extends StatelessWidget {
         child: Form(
           key: controller.formKey,
           child: SingleChildScrollView(
-            padding: .all(16),
+            padding: const .all(16),
             child: Column(
               crossAxisAlignment: .start,
               children: [
-                // Party Name
                 CustomTextField(
                   controller: controller.partyNameController,
                   label: 'Party name',
@@ -42,10 +41,17 @@ class AddPartyScreen extends StatelessWidget {
                   enabledBorderColor: AppColors.primary,
                 ),
                 const SizedBox(height: 16),
+                Text(
+                  'Mobile Number',
+                  style: TextStyle(fontSize: 16, fontWeight: .w700),
+                ),
+                const SizedBox(height: 4),
                 Row(
+                  crossAxisAlignment: .end,
                   children: [
                     Container(
                       width: 80,
+                      height: 54,
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: .circular(8),
@@ -60,12 +66,12 @@ class AddPartyScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
+
                     Expanded(
                       child: CustomTextField(
                         controller: controller.mobileController,
-                        label: 'Mobile Number',
                         hintText: 'Enter mobile number',
-                        keyboardType: TextInputType.phone,
+                        keyboardType: .phone,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(10),
@@ -77,38 +83,30 @@ class AddPartyScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 12),
+                Text(
+                  'Who are they?',
+                  style: TextStyle(fontSize: 16, fontWeight: .w700),
+                ),
+                const SizedBox(height: 4),
                 Obx(
                   () => Row(
                     children: [
-                      const Text(
-                        'Who are they?',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: .w500,
-                        ),
+                      _buildRadioOption(
+                        controller,
+                        'Customer',
+                        controller.partyType.value == 'Customer',
                       ),
-                      Expanded(
-                        child: _buildRadioOption(
-                          controller,
-                          'Customer',
-                          controller.partyType.value == 'Customer',
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildRadioOption(
-                          controller,
-                          'Supplier',
-                          controller.partyType.value == 'Supplier',
-                        ),
+
+                      _buildRadioOption(
+                        controller,
+                        'Supplier',
+                        controller.partyType.value == 'Supplier',
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                // GSTIN & Address Toggle
+
                 Obx(
                   () => controller.showGstinAddress.value
                       ? _buildGstinAddressSection(controller)
@@ -119,13 +117,12 @@ class AddPartyScreen extends StatelessWidget {
                             style: TextStyle(
                               color: AppColors.primary,
                               fontSize: 14,
-                              fontWeight: .w500,
+                              fontWeight: .w700,
                             ),
                           ),
                         ),
                 ),
                 const SizedBox(height: 32),
-                // Add Button
                 Obx(
                   () => PrimaryButton(
                     text: 'ADD ${controller.partyType.value.toUpperCase()}',
@@ -187,7 +184,7 @@ class AddPartyScreen extends StatelessWidget {
             style: TextStyle(
               color: AppColors.primary,
               fontSize: 14,
-              fontWeight: .w500,
+              fontWeight: .w700,
             ),
           ),
         ),

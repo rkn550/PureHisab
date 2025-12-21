@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:purehisab/data/services/party_repo.dart';
 import 'package:purehisab/data/services/transaction_repo.dart';
+import 'package:purehisab/data/services/reminder_notification_service.dart';
 import 'home_controller.dart';
 import '../app/routes/app_pages.dart';
 
@@ -9,24 +12,24 @@ class CustomerDetailController extends GetxController {
   PartyRepository get _partyRepository => Get.find<PartyRepository>();
   TransactionRepository get _transactionRepository =>
       Get.find<TransactionRepository>();
+  ReminderNotificationService get _reminderNotificationService =>
+      Get.find<ReminderNotificationService>();
 
   final RxString customerName = ''.obs;
   final RxString customerPhone = ''.obs;
   final RxString customerId = ''.obs;
   final RxBool isCustomer = true.obs;
 
-  // Summary amounts
-  final RxDouble amountToGive = 0.0.obs; // Amount user will give (green)
-  final RxDouble amountToGet = 0.0.obs; // Amount user will get (red)
+  final RxDouble amountToGive = 0.0.obs;
+  final RxDouble amountToGet = 0.0.obs;
 
-  // Collection reminder
   final RxString collectionReminderDate = ''.obs;
   final RxBool hasReminder = false.obs;
 
-  // Store name
   final RxString storeName = ''.obs;
 
-  // Transaction list
+  final RxString smsLanguage = 'English'.obs;
+
   final RxList<Map<String, dynamic>> transactions =
       <Map<String, dynamic>>[].obs;
 
@@ -57,9 +60,22 @@ class CustomerDetailController extends GetxController {
         customerName.value = party.partyName;
         customerPhone.value = party.phoneNumber ?? '';
         isCustomer.value = party.type == 'customer';
+
+        smsLanguage.value = party.smsLanguage ?? 'English';
+
+        if (party.reminderDate != null) {
+          final reminderDateTime = DateTime.fromMillisecondsSinceEpoch(
+            party.reminderDate!,
+          );
+          collectionReminderDate.value = _formatDateKey(reminderDateTime);
+          hasReminder.value = true;
+        } else {
+          collectionReminderDate.value = '';
+          hasReminder.value = false;
+        }
       }
     } catch (e) {
-      // Error handling
+      debugPrint('Error loading customer data: $e');
     }
 
     if (Get.isRegistered<HomeController>()) {
@@ -67,7 +83,7 @@ class CustomerDetailController extends GetxController {
         final homeController = Get.find<HomeController>();
         storeName.value = homeController.storeName.value;
       } catch (e) {
-        // Error handling
+        debugPrint('Error loading store name: $e');
       }
     }
   }
@@ -101,7 +117,7 @@ class CustomerDetailController extends GetxController {
 
       calculateSummary();
     } catch (e) {
-      // Error handling
+      debugPrint('Error loading transactions: $e');
     }
   }
 
@@ -122,22 +138,18 @@ class CustomerDetailController extends GetxController {
       }
     }
 
-    // Calculate net balance
     final netBalance = get - give;
 
     if (netBalance > 0) {
-      // User will get money
       amountToGet.value = netBalance;
       amountToGive.value = 0.0;
     } else {
-      // User will give money
       amountToGive.value = netBalance.abs();
       amountToGet.value = 0.0;
     }
   }
 
   void _calculateBalances() {
-    // Sort transactions by date (oldest first for balance calculation)
     final sortedTransactions = List<Map<String, dynamic>>.from(transactions);
     sortedTransactions.sort((a, b) {
       final dateA = a['date'] as DateTime;
@@ -147,7 +159,6 @@ class CustomerDetailController extends GetxController {
 
     double runningBalance = 0.0;
 
-    // Calculate running balance for each transaction
     for (var transaction in sortedTransactions) {
       if (transaction['type'] == 'give') {
         runningBalance -= (transaction['amount'] as num).toDouble();
@@ -157,7 +168,6 @@ class CustomerDetailController extends GetxController {
       transaction['balance'] = runningBalance.abs();
     }
 
-    // Sort back to most recent first for display
     transactions.sort((a, b) {
       final dateA = a['date'] as DateTime;
       final dateB = b['date'] as DateTime;
@@ -165,7 +175,6 @@ class CustomerDetailController extends GetxController {
     });
   }
 
-  // Group transactions by date
   Map<String, List<Map<String, dynamic>>> getGroupedTransactions() {
     final grouped = <String, List<Map<String, dynamic>>>{};
 
@@ -231,23 +240,102 @@ class CustomerDetailController extends GetxController {
     return '$displayHour:$minute $period';
   }
 
-  void setCollectionReminder(DateTime date) {
-    collectionReminderDate.value = _formatDateKey(date);
-    hasReminder.value = true;
+  Future<void> setCollectionReminder(DateTime date) async {
+    if (customerId.value.isEmpty) return;
+
+    try {
+      final party = await _partyRepository.getPartyById(customerId.value);
+      if (party != null) {
+        final reminderTimestamp = date.millisecondsSinceEpoch;
+        final updatedParty = party.copyWith(
+          reminderDate: reminderTimestamp,
+          reminderType: 'collection',
+        );
+        await _partyRepository.updateParty(updatedParty);
+
+        collectionReminderDate.value = _formatDateKey(date);
+        hasReminder.value = true;
+
+        final amount = amountToGet.value > 0
+            ? amountToGet.value
+            : amountToGive.value;
+        final type = amountToGet.value > 0 ? 'get' : 'give';
+        final notificationId = customerId.value.hashCode.abs() % 2147483647;
+
+        await _reminderNotificationService.scheduleReminderNotification(
+          notificationId: notificationId,
+          partyId: customerId.value,
+          partyName: customerName.value,
+          reminderDate: date,
+          amount: amount,
+          type: type,
+        );
+
+        Get.snackbar(
+          'Reminder Set',
+          'You will receive a notification on ${_formatDateForMessage(date)}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to set reminder. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
   }
 
-  void removeCollectionReminder() {
-    collectionReminderDate.value = '';
-    hasReminder.value = false;
+  Future<void> removeCollectionReminder() async {
+    if (customerId.value.isEmpty) return;
+
+    try {
+      final party = await _partyRepository.getPartyById(customerId.value);
+      if (party != null) {
+        final updatedParty = party.copyWith(
+          reminderDate: null,
+          reminderType: null,
+        );
+        await _partyRepository.updateParty(updatedParty);
+
+        collectionReminderDate.value = '';
+        hasReminder.value = false;
+
+        final notificationId = customerId.value.hashCode.abs() % 2147483647;
+        await _reminderNotificationService.cancelReminderNotification(
+          notificationId,
+        );
+
+        Get.snackbar(
+          'Reminder Removed',
+          'Notification has been cancelled',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade100,
+          colorText: Colors.orange.shade900,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to remove reminder. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
   }
 
   void onReportTap() {
-    // TODO: Implement report generation
     Get.snackbar('Report', 'Generating report...');
   }
 
   void onReminderTap() {
-    // TODO: Implement reminder functionality
     Get.snackbar('Reminder', 'Sending reminder...');
   }
 
@@ -257,7 +345,6 @@ class CustomerDetailController extends GetxController {
         : amountToGive.value;
     final formattedAmount = _formatAmount(amount);
 
-    // Get date - use reminder date if set, otherwise use today
     String dateText;
     if (hasReminder.value && collectionReminderDate.value.isNotEmpty) {
       try {
@@ -267,37 +354,48 @@ class CustomerDetailController extends GetxController {
           final month = int.parse(parts[1]);
           final day = int.parse(parts[2]);
           final date = DateTime(year, month, day);
-          dateText = _formatDateForMessage(date);
+          dateText = smsLanguage.value == 'Hindi'
+              ? _formatDateForMessageHindi(date)
+              : _formatDateForMessage(date);
         } else {
-          dateText = _formatDateForMessage(DateTime.now());
+          dateText = smsLanguage.value == 'Hindi'
+              ? _formatDateForMessageHindi(DateTime.now())
+              : _formatDateForMessage(DateTime.now());
         }
       } catch (e) {
-        dateText = _formatDateForMessage(DateTime.now());
+        dateText = smsLanguage.value == 'Hindi'
+            ? _formatDateForMessageHindi(DateTime.now())
+            : _formatDateForMessage(DateTime.now());
       }
     } else {
-      dateText = _formatDateForMessage(DateTime.now());
+      dateText = smsLanguage.value == 'Hindi'
+          ? _formatDateForMessageHindi(DateTime.now())
+          : _formatDateForMessage(DateTime.now());
     }
 
-    // Get store phone number from business profile
     String storePhone = '';
     if (Get.isRegistered<HomeController>()) {
       try {
         final homeController = Get.find<HomeController>();
-        if (homeController.selectedBusinessId.value.isNotEmpty) {
-          // Get business phone from database if available
-          // For now, use empty string - can be enhanced to fetch from BusinessRepository
-        }
+        if (homeController.selectedBusinessId.value.isNotEmpty) {}
       } catch (e) {
-        // Use empty string if error
+        debugPrint('Error getting store phone: $e');
       }
     }
 
-    // If no phone found, don't include it in message
     final phoneText = storePhone.isNotEmpty ? ' ($storePhone)' : '';
 
     final messageType = amountToGet.value > 0 ? 'payment' : 'collection';
 
-    return '$storeName$phoneText has requested a $messageType of ₹ $formattedAmount on $dateText. Please visit https://purehisab.com/payment to view details';
+    if (smsLanguage.value == 'Hindi') {
+      if (messageType == 'payment') {
+        return '$storeName$phoneText ने ₹ $formattedAmount की राशि का भुगतान $dateText को करने का अनुरोध किया है। विवरण देखने के लिए कृपया https://purehisab.com/payment पर जाएं।';
+      } else {
+        return '$storeName$phoneText ने ₹ $formattedAmount की राशि की वसूली $dateText को करने का अनुरोध किया है। विवरण देखने के लिए कृपया https://purehisab.com/payment पर जाएं।';
+      }
+    } else {
+      return '$storeName$phoneText has requested a $messageType of ₹ $formattedAmount on $dateText. Please visit https://purehisab.com/payment to view details';
+    }
   }
 
   String _formatDateForMessage(DateTime date) {
@@ -316,6 +414,24 @@ class CustomerDetailController extends GetxController {
       'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year.toString().substring(2)}';
+  }
+
+  String _formatDateForMessageHindi(DateTime date) {
+    final months = [
+      'जनवरी',
+      'फरवरी',
+      'मार्च',
+      'अप्रैल',
+      'मई',
+      'जून',
+      'जुलाई',
+      'अगस्त',
+      'सितंबर',
+      'अक्टूबर',
+      'नवंबर',
+      'दिसंबर',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   String _formatAmount(double amount) {
@@ -340,18 +456,14 @@ class CustomerDetailController extends GetxController {
       return;
     }
 
-    // Clean phone number (remove spaces, dashes, etc.)
     final cleanedPhone = customerPhone.value.replaceAll(RegExp(r'[^\d+]'), '');
 
-    // If phone doesn't start with +, add +91 for India
     final phoneNumber = cleanedPhone.startsWith('+')
         ? cleanedPhone
         : '+91$cleanedPhone';
 
-    // Create message
     final message = _getPaymentReminderMessage();
 
-    // Create SMS URI with phone and message body
     final Uri smsUri = Uri(
       scheme: 'sms',
       path: phoneNumber,
@@ -393,7 +505,6 @@ class CustomerDetailController extends GetxController {
     }
 
     try {
-      // Create and share the payment reminder card
       await _sharePaymentCardToWhatsApp();
     } catch (e) {
       Get.snackbar(
@@ -415,26 +526,20 @@ class CustomerDetailController extends GetxController {
       return;
     }
 
-    // Clean phone number (remove spaces, dashes, etc., but keep +)
     String cleanedPhone = customerPhone.value.replaceAll(RegExp(r'[^\d+]'), '');
 
-    // Ensure country code is present (add +91 for India if not present)
     if (!cleanedPhone.startsWith('+')) {
-      // Remove leading 0 if present
       if (cleanedPhone.startsWith('0')) {
         cleanedPhone = cleanedPhone.substring(1);
       }
       cleanedPhone = '+91$cleanedPhone';
     }
 
-    // Remove + for WhatsApp (it needs just the digits with country code)
     final phoneNumber = cleanedPhone.replaceAll('+', '');
 
-    // Create message with payment reminder details
     final message = Uri.encodeComponent(_getPaymentReminderMessage());
 
     try {
-      // Try native WhatsApp URI first (whatsapp://send?phone=&text=)
       final nativeUri = Uri.parse(
         'whatsapp://send?phone=$phoneNumber&text=$message',
       );
@@ -446,13 +551,12 @@ class CustomerDetailController extends GetxController {
         );
 
         if (launched) {
-          return; // Successfully opened WhatsApp
+          return;
         }
       } catch (e) {
-        // Native URI failed, try web link
+        debugPrint('Error opening WhatsApp: $e');
       }
 
-      // Fallback: Try web-based WhatsApp link (https://wa.me/?phone=&text=)
       final webUri = Uri.parse('https://wa.me/$phoneNumber?text=$message');
       final launched = await launchUrl(
         webUri,
@@ -489,7 +593,6 @@ class CustomerDetailController extends GetxController {
       if (result != null &&
           result is Map<String, dynamic> &&
           result['success'] == true) {
-        // Refresh transaction list
         loadTransactions();
         _calculateSummary();
       }
@@ -508,7 +611,6 @@ class CustomerDetailController extends GetxController {
       if (result != null &&
           result is Map<String, dynamic> &&
           result['success'] == true) {
-        // Refresh transaction list
         loadTransactions();
         _calculateSummary();
       }
@@ -525,10 +627,8 @@ class CustomerDetailController extends GetxController {
       return;
     }
 
-    // Clean phone number (remove spaces, dashes, etc.)
     final cleanedPhone = customerPhone.value.replaceAll(RegExp(r'[^\d+]'), '');
 
-    // If phone doesn't start with +, add +91 for India
     final phoneNumber = cleanedPhone.startsWith('+')
         ? cleanedPhone
         : '+91$cleanedPhone';
@@ -536,15 +636,12 @@ class CustomerDetailController extends GetxController {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
 
     try {
-      // Try to launch the phone dialer
-      // Note: This may not work in emulators as they don't have phone functionality
       final launched = await launchUrl(
         phoneUri,
         mode: LaunchMode.externalApplication,
       );
 
       if (!launched) {
-        // If launch failed, show the phone number so user can manually dial
         Get.snackbar(
           'Phone Dialer',
           'Phone number: $phoneNumber\n(Note: May not work in emulator)',
@@ -553,7 +650,6 @@ class CustomerDetailController extends GetxController {
         );
       }
     } catch (e) {
-      // Show error with phone number so user can manually dial
       Get.snackbar(
         'Phone Dialer',
         'Could not open dialer. Phone: $phoneNumber\n(Note: Emulators may not support phone calls)',

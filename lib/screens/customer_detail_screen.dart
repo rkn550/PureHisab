@@ -175,15 +175,16 @@ class CustomerDetailScreen extends StatelessWidget {
 
           return Column(
             crossAxisAlignment: .start,
+            spacing: 6,
             children: [
               Row(
+                spacing: 6,
                 children: [
                   Icon(
                     willGet ? Icons.arrow_downward : Icons.arrow_upward,
                     color: Colors.white.withValues(alpha: 0.9),
                     size: 18,
                   ),
-                  const SizedBox(width: 6),
                   Text(
                     willGet ? 'You will get' : 'You will give',
                     style: TextStyle(
@@ -194,7 +195,7 @@ class CustomerDetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+
               Text(
                 '₹ ${_formatAmount(amount)}',
                 style: const TextStyle(
@@ -204,7 +205,7 @@ class CustomerDetailScreen extends StatelessWidget {
                   letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 12),
+
               Obx(
                 () => InkWell(
                   onTap: controller.hasReminder.value
@@ -282,7 +283,7 @@ class CustomerDetailScreen extends StatelessWidget {
                                       );
                                     }
                                   } catch (e) {
-                                    // Ignore parsing errors
+                                    return const SizedBox.shrink();
                                   }
                                   return const SizedBox.shrink();
                                 }),
@@ -337,27 +338,34 @@ class CustomerDetailScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: .spaceAround,
         children: [
-          _buildActionButton(
-            icon: Icons.picture_as_pdf,
-            label: 'Report',
-            onTap: controller.onReportTap,
-          ),
-          Obx(
-            () => _buildActionButton(
+          Obx(() {
+            final hasPhone = controller.customerPhone.value.isNotEmpty;
+            final hasAmount =
+                controller.amountToGet.value > 0 ||
+                controller.amountToGive.value > 0;
+            final isEnabled = hasPhone && hasAmount;
+
+            return _buildActionButton(
               icon: Icons.message,
               label: 'SMS',
               onTap: controller.onSMSTap,
-              isEnabled: controller.customerPhone.value.isNotEmpty,
-            ),
-          ),
-          Obx(
-            () => _buildActionButton(
+              isEnabled: isEnabled,
+            );
+          }),
+          Obx(() {
+            final hasPhone = controller.customerPhone.value.isNotEmpty;
+            final hasAmount =
+                controller.amountToGet.value > 0 ||
+                controller.amountToGive.value > 0;
+            final isEnabled = hasPhone && hasAmount;
+
+            return _buildActionButton(
               icon: Icons.chat,
               label: 'WhatsApp',
               onTap: controller.onWhatsAppTap,
-              isEnabled: controller.customerPhone.value.isNotEmpty,
-            ),
-          ),
+              isEnabled: isEnabled,
+            );
+          }),
         ],
       ),
     );

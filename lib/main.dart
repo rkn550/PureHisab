@@ -8,21 +8,32 @@ import 'package:purehisab/data/services/auth_service.dart';
 import 'package:purehisab/data/services/business_repo.dart';
 import 'package:purehisab/data/services/party_repo.dart';
 import 'package:purehisab/data/services/transaction_repo.dart';
+import 'package:purehisab/data/services/reminder_notification_service.dart';
 import 'app/routes/app_pages.dart';
 import 'app/utils/app_colors.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+  }
+  _initServices();
+  runApp(const MyApp());
+}
 
+void _initServices() {
   Get.put(AppLifecycleController());
   Get.put(AppLockService(), permanent: true);
   Get.put(AuthService(), permanent: true);
   Get.put(BusinessRepository(), permanent: true);
   Get.put(PartyRepository(), permanent: true);
   Get.put(TransactionRepository(), permanent: true);
-
-  runApp(const MyApp());
+  Get.put(ReminderNotificationService(), permanent: true);
 }
 
 class MyApp extends StatelessWidget {

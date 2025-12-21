@@ -8,7 +8,6 @@ class AppLockController extends GetxController {
   AppLockService get _appLockService => Get.find<AppLockService>();
   final TextEditingController pinController = TextEditingController();
   final FocusNode pinFocusNode = FocusNode();
-
   final RxString enteredPin = ''.obs;
   final RxBool isAuthenticating = false.obs;
   final RxBool showBiometric = false.obs;

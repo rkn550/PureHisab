@@ -153,9 +153,7 @@ class LogInScreen extends StatelessWidget {
                 decoration: TextDecoration.underline,
               ),
               recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  Get.toNamed(Routes.termsConditions);
-                },
+                ..onTap = () => Get.toNamed(Routes.termsConditions),
             ),
             const TextSpan(text: ' and '),
             TextSpan(
@@ -166,9 +164,7 @@ class LogInScreen extends StatelessWidget {
                 decoration: TextDecoration.underline,
               ),
               recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  Get.toNamed(Routes.privacyPolicy);
-                },
+                ..onTap = () => Get.toNamed(Routes.privacyPolicy),
             ),
           ],
         ),

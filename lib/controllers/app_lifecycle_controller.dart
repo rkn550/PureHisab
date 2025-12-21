@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/data/services/app_lock_service.dart';
+import 'package:purehisab/data/services/reminder_notification_service.dart';
 import '../app/routes/app_pages.dart';
 
 class AppLifecycleController extends GetxController
     with WidgetsBindingObserver {
   AppLockService get _appLockService => Get.find<AppLockService>();
+  ReminderNotificationService get _reminderNotificationService =>
+      Get.find<ReminderNotificationService>();
   bool _isLockScreenShown = false;
 
   @override
@@ -13,6 +16,13 @@ class AppLifecycleController extends GetxController
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
     _checkInitialLockState();
+    _scheduleAllReminders();
+  }
+
+  Future<void> _scheduleAllReminders() async {
+    Future.delayed(const Duration(seconds: 2), () {
+      _reminderNotificationService.checkAndScheduleAllReminders();
+    });
   }
 
   Future<void> _checkInitialLockState() async {
@@ -37,6 +47,8 @@ class AppLifecycleController extends GetxController
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkAndShowLock();
+      // Check and reschedule reminders when app resumes
+      _reminderNotificationService.checkAndScheduleAllReminders();
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       _isLockScreenShown = false;

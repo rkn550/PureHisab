@@ -51,12 +51,8 @@ class ContactListScreen extends StatelessWidget {
       children: [
         // Search bar
         Container(
-          margin: .all(16),
-          padding: .symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: .circular(8),
-          ),
+          margin: const .all(16),
+          padding: .symmetric(horizontal: 8, vertical: 4),
           child: CustomSearchBar(
             controller: controller.searchTextController,
             searchQuery: controller.searchQuery,
@@ -77,7 +73,7 @@ class ContactListScreen extends StatelessWidget {
             Get.toNamed(Routes.addParty, arguments: Get.arguments);
           },
           child: Container(
-            padding: .symmetric(horizontal: 16, vertical: 12),
+            padding: const .symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
                 Container(
@@ -105,7 +101,7 @@ class ContactListScreen extends StatelessWidget {
           ),
         ),
         const Divider(),
-        // Contact list
+
         Expanded(
           child: Obx(() {
             if (controller.isLoading.value) {
@@ -242,19 +238,14 @@ class ContactListScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                   onTap: () {
-                    // Navigate to add party with contact details
-                    // Clean phone number before passing (remove non-digits)
                     final cleanedNumber = controller.getCleanedPhoneNumber(
                       contact,
                     );
-                    // Preserve party type from original arguments
                     final originalArgs = Get.arguments ?? <String, dynamic>{};
                     Get.toNamed(
                       Routes.addParty,
                       arguments: {
-                        'partyType':
-                            originalArgs['partyType'] ??
-                            0, // Preserve party type
+                        'partyType': originalArgs['partyType'] ?? 0,
                         'contactName': name.isEmpty ? '' : name,
                         'contactNumber': cleanedNumber,
                       },
@@ -305,7 +296,6 @@ class ContactListScreen extends StatelessWidget {
                       onPressed: () {
                         Get.back();
                         controller.showPermissionDialog.value = false;
-                        // Navigate to add party form
                         final args = Get.arguments;
                         Get.back();
                         Get.toNamed(Routes.addParty, arguments: args);

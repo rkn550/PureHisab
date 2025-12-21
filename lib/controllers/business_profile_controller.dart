@@ -12,7 +12,6 @@ import 'home_controller.dart';
 class BusinessProfileController extends GetxController {
   BusinessRepository get _businessRepository => Get.find<BusinessRepository>();
   AppLockService get _appLockService => Get.find<AppLockService>();
-  final RxString mode = 'edit'.obs;
 
   final nameController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -29,6 +28,8 @@ class BusinessProfileController extends GetxController {
   final RxBool aboutExpanded = false.obs;
   final RxBool helpSupportExpanded = false.obs;
 
+  Worker? _homeControllerWorker;
+
   @override
   void onInit() {
     super.onInit();
@@ -42,19 +43,16 @@ class BusinessProfileController extends GetxController {
       if (Get.isRegistered<HomeController>()) {
         try {
           final homeController = Get.find<HomeController>();
-          // Listen to selectedBusinessId changes and reload business data
-          ever(homeController.selectedBusinessId, (String newBusinessId) {
-            if (newBusinessId.isNotEmpty &&
-                newBusinessId != businessId.value &&
-                mode.value == 'edit') {
+          _homeControllerWorker = ever(homeController.selectedBusinessId, (
+            String newBusinessId,
+          ) {
+            if (newBusinessId.isNotEmpty && newBusinessId != businessId.value) {
               loadBusinessById(newBusinessId);
             }
           });
 
-          // Also check if there's already a selected business
           if (homeController.selectedBusinessId.value.isNotEmpty &&
-              businessId.value.isEmpty &&
-              mode.value == 'edit') {
+              businessId.value.isEmpty) {
             loadBusinessById(homeController.selectedBusinessId.value);
           }
         } catch (e) {
@@ -70,6 +68,7 @@ class BusinessProfileController extends GetxController {
 
   @override
   void onClose() {
+    _homeControllerWorker?.dispose();
     try {
       nameController.dispose();
     } catch (e) {
@@ -80,16 +79,6 @@ class BusinessProfileController extends GetxController {
 
   void _loadBusinessData() async {
     final args = Get.arguments;
-
-    if (args != null && args is Map<String, dynamic>) {
-      if (args['mode'] == 'create') {
-        mode.value = 'create';
-        _resetFormForCreate();
-        return;
-      }
-    }
-
-    mode.value = 'edit';
 
     String? businessIdToLoad;
 
@@ -103,9 +92,7 @@ class BusinessProfileController extends GetxController {
           final homeController = Get.find<HomeController>();
           businessIdToLoad = homeController.selectedBusinessId.value;
 
-          // If businessId is still empty, wait a bit for HomeController to finish loading
           if (businessIdToLoad.isEmpty) {
-            // Wait for HomeController to finish loading businesses
             for (int i = 0; i < 10; i++) {
               await Future.delayed(const Duration(milliseconds: 100));
               businessIdToLoad = homeController.selectedBusinessId.value;
@@ -115,7 +102,7 @@ class BusinessProfileController extends GetxController {
             }
           }
         } catch (e) {
-          throw Exception('Error loading business data: $e');
+          debugPrint('Error loading business data: $e');
         }
       }
     }
@@ -123,11 +110,7 @@ class BusinessProfileController extends GetxController {
     if (businessIdToLoad != null && businessIdToLoad.isNotEmpty) {
       await _loadBusinessFromDatabase(businessIdToLoad);
     } else {
-      // Don't reset form if we're in edit mode - wait for HomeController notification
-      // Only reset if we're sure there's no business to load
-      if (mode.value == 'create') {
-        _resetFormForCreate();
-      }
+      resetFormForCreate();
     }
   }
 
@@ -139,10 +122,6 @@ class BusinessProfileController extends GetxController {
     businessId.value = '';
     profileImageFile.value = null;
     formKey.currentState?.reset();
-  }
-
-  void _resetFormForCreate() {
-    resetFormForCreate();
   }
 
   Future<void> loadBusinessById(String id) async {
@@ -525,9 +504,6 @@ class BusinessProfileController extends GetxController {
     helpSupportExpanded.value = !helpSupportExpanded.value;
   }
 
-  // ==================== CREATE ACCOUNT FUNCTIONALITY ====================
-
-  /// Create a new business account
   Future<void> createAccount() async {
     if (formKey.currentState?.validate() ?? false) {
       final name = nameController.text.trim();
@@ -545,15 +521,12 @@ class BusinessProfileController extends GetxController {
       isLoading.value = true;
 
       try {
-        // Create business in database using BusinessRepository
-        // Only business name is provided, phone number auto-filled from repo
         final business = await _businessRepository.createBusiness(
           businessName: name,
-          ownerName: null, // Owner name will be added later when editing
-          photoUrl: null, // TODO: Upload photo and get URL
+          ownerName: null,
+          photoUrl: null,
         );
 
-        // Verify business was created
         if (business.id.isEmpty) {
           throw Exception('Business creation failed: Invalid business ID');
         }
@@ -620,7 +593,6 @@ class BusinessProfileController extends GetxController {
     isLoading.value = true;
 
     try {
-      // Get current business from database
       final business = await _businessRepository.getBusinessById(
         businessId.value,
       );
@@ -634,10 +606,8 @@ class BusinessProfileController extends GetxController {
 
       await _businessRepository.updateBusiness(updatedBusiness);
 
-      // Reload business data from database to ensure UI is in sync
       await _loadBusinessFromDatabase(businessId.value);
 
-      // Refresh HomeController accounts list
       if (Get.isRegistered<HomeController>()) {
         final homeController = Get.find<HomeController>();
         await homeController.refreshBusinesses();

@@ -18,9 +18,9 @@ class TransactionEntryScreen extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
-                padding: .all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: .start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 16,
                   children: [
                     _buildAmountInput(controller),
@@ -47,48 +47,26 @@ class TransactionEntryScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: Obx(
-        () => Container(
-          margin: .all(8),
-          decoration: BoxDecoration(
-            color:
-                (controller.transactionType.value == 'give'
-                        ? Colors.red
-                        : Colors.green)
-                    .withValues(alpha: 0.1),
-            shape: BoxShape.circle,
+        () => IconButton(
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: controller.transactionType.value == 'give'
+                ? Colors.red.shade700
+                : Colors.green.shade700,
           ),
-          child: IconButton(
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              color: controller.transactionType.value == 'give'
-                  ? Colors.red.shade700
-                  : Colors.green.shade700,
-            ),
-            onPressed: () => Get.back(),
-          ),
+          onPressed: () => Get.back(),
         ),
       ),
       title: Obx(
-        () => Container(
-          padding: .symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color:
-                (controller.transactionType.value == 'give'
-                        ? Colors.red
-                        : Colors.green)
-                    .withValues(alpha: 0.1),
-            borderRadius: .circular(20),
-          ),
-          child: Text(
-            controller.transactionType.value == 'give' ? 'You Gave' : 'You Got',
-            style: TextStyle(
-              color: controller.transactionType.value == 'give'
-                  ? Colors.red.shade700
-                  : Colors.green.shade700,
-              fontSize: 14,
-              fontWeight: .bold,
-              letterSpacing: 0.5,
-            ),
+        () => Text(
+          controller.transactionType.value == 'give' ? 'You Gave' : 'You Got',
+          style: TextStyle(
+            color: controller.transactionType.value == 'give'
+                ? Colors.red.shade700
+                : Colors.green.shade700,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -98,16 +76,16 @@ class TransactionEntryScreen extends StatelessWidget {
   Widget _buildAmountInput(TransactionEntryController controller) {
     return Obx(
       () => Container(
-        padding: .all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: controller.transactionType.value == 'give'
                 ? [Colors.red.shade50, Colors.red.shade100]
                 : [Colors.green.shade50, Colors.green.shade100],
-            begin: .topLeft,
-            end: .bottomRight,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          borderRadius: .circular(20),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color:
@@ -121,95 +99,72 @@ class TransactionEntryScreen extends StatelessWidget {
           ],
         ),
         child: Column(
-          crossAxisAlignment: .start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: .symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color:
-                        (controller.transactionType.value == 'give'
-                                ? Colors.red
-                                : Colors.green)
-                            .withValues(alpha: 0.2),
-                    borderRadius: .circular(8),
-                  ),
-                  child: Text(
-                    controller.transactionType.value == 'give'
-                        ? 'YOU GAVE'
-                        : 'YOU GOT',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: .bold,
-                      color: controller.transactionType.value == 'give'
-                          ? Colors.red.shade700
-                          : Colors.green.shade700,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: .start,
-              children: [
-                Text(
-                  '₹',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: .bold,
+
+            GestureDetector(
+              onTap: () {
+                // Focus amount field when tapped to show calculator
+                controller.amountFocusNode.requestFocus();
+              },
+              child: TextFormField(
+                controller: controller.amountController,
+                focusNode: controller.amountFocusNode,
+                readOnly: true,
+                showCursor: true,
+                enableInteractiveSelection: true,
+                cursorColor: controller.transactionType.value == 'give'
+                    ? Colors.red.shade700
+                    : Colors.green.shade700,
+                cursorHeight: 32,
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: controller.transactionType.value == 'give'
+                      ? Colors.red.shade700
+                      : Colors.green.shade700,
+                  letterSpacing: 1,
+                ),
+                decoration: InputDecoration(
+                  contentPadding: EdgeInsets.zero,
+                  prefixIcon: Icon(
+                    Icons.currency_rupee,
                     color: controller.transactionType.value == 'give'
                         ? Colors.red.shade700
                         : Colors.green.shade700,
                   ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: TextField(
-                    controller: controller.amountController,
-                    focusNode: controller.amountFocusNode,
-                    readOnly: true,
-                    showCursor: true,
-                    enableInteractiveSelection: true,
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: .bold,
-                      color: controller.transactionType.value == 'give'
-                          ? Colors.red.shade700
-                          : Colors.green.shade700,
-                      letterSpacing: 1,
-                    ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '0',
-                      hintStyle: TextStyle(
-                        fontSize: 32,
-                        fontWeight: .bold,
-                        color:
-                            (controller.transactionType.value == 'give'
-                                    ? Colors.red
-                                    : Colors.green)
-                                .withValues(alpha: 0.3),
-                      ),
-                    ),
-                    textAlign: .left,
-                    onChanged: (value) {
-                      if (value.isEmpty) {
-                        controller.currentInput.value = '0';
-                      } else {
-                        controller.currentInput.value = value;
-                      }
-                    },
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  border: InputBorder.none,
+                  hintText: '0',
+                  hintStyle: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        (controller.transactionType.value == 'give'
+                                ? Colors.red
+                                : Colors.green)
+                            .withValues(alpha: 0.3),
                   ),
                 ),
-              ],
+                textAlign: TextAlign.left,
+                onChanged: (value) {
+                  if (value.isEmpty) {
+                    controller.currentInput.value = '0';
+                  } else {
+                    controller.currentInput.value = value;
+                  }
+                },
+              ),
             ),
+
             if (controller.calculationDisplay.value.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
-                padding: .symmetric(horizontal: 10, vertical: 4),
+                padding: const .symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.6),
                   borderRadius: .circular(8),
@@ -221,7 +176,7 @@ class TransactionEntryScreen extends StatelessWidget {
                     color: controller.transactionType.value == 'give'
                         ? Colors.red.shade700
                         : Colors.green.shade700,
-                    fontWeight: .w500,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -234,10 +189,10 @@ class TransactionEntryScreen extends StatelessWidget {
 
   Widget _buildDetailsInput(TransactionEntryController controller) {
     return Container(
-      padding: .all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: .circular(16),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -261,7 +216,7 @@ class TransactionEntryScreen extends StatelessWidget {
                 'Details',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: .w600,
+                  fontWeight: FontWeight.w600,
                   color: Colors.grey.shade700,
                 ),
               ),
@@ -276,7 +231,7 @@ class TransactionEntryScreen extends StatelessWidget {
               hintText: 'Enter details (Items, bill no., quantity, etc.)',
               hintStyle: TextStyle(color: Colors.grey.shade400),
               border: InputBorder.none,
-              contentPadding: .zero,
+              contentPadding: EdgeInsets.zero,
             ),
             maxLines: 3,
             style: const TextStyle(fontSize: 15),
@@ -299,10 +254,13 @@ class TransactionEntryScreen extends StatelessWidget {
                 () => InkWell(
                   onTap: () => controller.selectDate(context),
                   child: Container(
-                    padding: .symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: .circular(12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
@@ -337,10 +295,13 @@ class TransactionEntryScreen extends StatelessWidget {
               () => InkWell(
                 onTap: controller.onAttachBills,
                 child: Container(
-                  padding: .symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: .circular(12),
+                    borderRadius: BorderRadius.circular(12),
                     border: controller.billImageFile.value != null
                         ? Border.all(
                             color: controller.transactionType.value == 'give'
@@ -373,8 +334,8 @@ class TransactionEntryScreen extends StatelessWidget {
                               ? Colors.red
                               : Colors.green,
                           fontWeight: controller.billImageFile.value != null
-                              ? .w600
-                              : .normal,
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -387,12 +348,12 @@ class TransactionEntryScreen extends StatelessWidget {
         Obx(
           () => controller.billImageFile.value != null
               ? Padding(
-                  padding: .only(top: 12),
+                  padding: const EdgeInsets.only(top: 12),
                   child: Container(
                     height: 120,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: .circular(12),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: controller.transactionType.value == 'give'
                             ? Colors.red.shade200
@@ -403,7 +364,7 @@ class TransactionEntryScreen extends StatelessWidget {
                     child: Stack(
                       children: [
                         ClipRRect(
-                          borderRadius: .circular(12),
+                          borderRadius: BorderRadius.circular(12),
                           child: Image.file(
                             controller.billImageFile.value!,
                             width: double.infinity,
@@ -425,7 +386,7 @@ class TransactionEntryScreen extends StatelessWidget {
                               );
                             },
                             child: Container(
-                              padding: .all(6),
+                              padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
@@ -465,7 +426,7 @@ class TransactionEntryScreen extends StatelessWidget {
 
   Widget _buildCalculatorKeypad(TransactionEntryController controller) {
     return Container(
-      padding: .all(8),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -573,14 +534,14 @@ class TransactionEntryScreen extends StatelessWidget {
     List<_CalculatorButton> buttons,
   ) {
     return Padding(
-      padding: .symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: .spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: buttons
             .map(
               (button) => Expanded(
                 child: Padding(
-                  padding: .symmetric(horizontal: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: _buildCalculatorButton(controller, button),
                 ),
               ),
@@ -624,13 +585,13 @@ class TransactionEntryScreen extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: button.onTap,
-        borderRadius: .circular(12),
+        borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 100),
           height: 56,
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: .circular(12),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isEquals ? Colors.transparent : Colors.grey.shade200,
               width: 1,
@@ -660,7 +621,9 @@ class TransactionEntryScreen extends StatelessWidget {
               button.label,
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: isEquals || isOperator ? .bold : .w600,
+                fontWeight: isEquals || isOperator
+                    ? FontWeight.bold
+                    : FontWeight.w600,
                 color: textColor,
               ),
             ),

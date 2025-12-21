@@ -170,7 +170,7 @@ class HomeScreen extends StatelessWidget {
             ),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 spacing: 6,
                 children: [
                   Row(
@@ -187,7 +187,7 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.white.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w500,
+                          fontWeight: .w500,
                         ),
                       ),
                     ],
@@ -283,7 +283,7 @@ class HomeScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: .circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -307,9 +307,9 @@ class HomeScreen extends StatelessWidget {
                       },
                     );
                   },
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: .circular(12),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const .all(16),
                     child: Row(
                       children: [
                         Container(
@@ -326,7 +326,7 @@ class HomeScreen extends StatelessWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            shape: BoxShape.circle,
+                            shape: .circle,
                             boxShadow: [
                               BoxShadow(
                                 color: (isGive ? Colors.green : Colors.red)
@@ -342,7 +342,7 @@ class HomeScreen extends StatelessWidget {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 22,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: .bold,
                               ),
                             ),
                           ),
@@ -350,13 +350,13 @@ class HomeScreen extends StatelessWidget {
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: .start,
                             children: [
                               Text(
                                 name,
                                 style: const TextStyle(
                                   fontSize: 17,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: .w600,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -374,7 +374,7 @@ class HomeScreen extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w400,
+                                      fontWeight: .w400,
                                     ),
                                   ),
                                 ],
@@ -383,23 +383,23 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                          crossAxisAlignment: .end,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: const .symmetric(
                                 horizontal: 12,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
                                 color: (isGive ? Colors.green : Colors.red)
                                     .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: .circular(8),
                               ),
                               child: Text(
                                 '₹ ${_formatAmount(amount)}',
                                 style: TextStyle(
                                   fontSize: 17,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: .bold,
                                   color: isGive
                                       ? Colors.green.shade700
                                       : Colors.red.shade700,
@@ -409,7 +409,7 @@ class HomeScreen extends StatelessWidget {
                             if (hasRequest) ...[
                               const SizedBox(height: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(
+                                padding: const .symmetric(
                                   horizontal: 10,
                                   vertical: 4,
                                 ),
@@ -420,13 +420,13 @@ class HomeScreen extends StatelessWidget {
                                       AppColors.primaryDark,
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: .circular(6),
                                 ),
                                 child: const Text(
                                   'REQUEST',
                                   style: TextStyle(
                                     fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: .bold,
                                     color: Colors.white,
                                     letterSpacing: 0.5,
                                   ),
@@ -461,7 +461,7 @@ class HomeScreen extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: .circular(28),
             boxShadow: [
               BoxShadow(
                 color: (isCustomerTab ? const Color(0xFFE91E63) : Colors.green)
@@ -474,9 +474,7 @@ class HomeScreen extends StatelessWidget {
           child: CustomExtendedFAB(
             icon: Icons.person_add,
             label: isCustomerTab ? 'ADD CUSTOMER' : 'ADD SUPPLIER',
-            onPressed: () {
-              _handleAddParty(controller);
-            },
+            onPressed: () => _handleAddParty(controller),
             backgroundColor: Colors.transparent,
             foregroundColor: Colors.white,
           ),
@@ -501,34 +499,30 @@ class HomeScreen extends StatelessWidget {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                  topLeft: .circular(20),
+                  topRight: .circular(20),
                 ),
               ),
               child: Column(
                 children: [
                   Container(
-                    margin: const EdgeInsets.only(top: 12),
+                    margin: const .only(top: 12),
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: .circular(2),
                     ),
                   ),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
+                      padding: const .all(16),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: .start,
                         children: [
-                          const SizedBox(height: 16),
                           const Text(
                             'Filter by',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: TextStyle(fontSize: 16, fontWeight: .bold),
                           ),
                           const SizedBox(height: 12),
                           Wrap(
@@ -544,13 +538,10 @@ class HomeScreen extends StatelessWidget {
                               _buildFilterChip(controller, 'No Due Date'),
                             ],
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
                           const Text(
                             'Sort by',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: TextStyle(fontSize: 16, fontWeight: .bold),
                           ),
                           const SizedBox(height: 12),
                           _buildSortOption(controller, 'Most Recent'),
@@ -571,14 +562,14 @@ class HomeScreen extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const .symmetric(vertical: 16),
                       ),
                       child: const Text(
                         'VIEW RESULT',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: .bold,
                         ),
                       ),
                     ),
@@ -598,15 +589,13 @@ class HomeScreen extends StatelessWidget {
       return FilterChip(
         label: Text(label),
         selected: isSelected,
-        onSelected: (selected) {
-          controller.selectFilter(label);
-        },
+        onSelected: (_) => controller.selectFilter(label),
         selectedColor: AppColors.primary,
         labelStyle: TextStyle(
           color: isSelected ? Colors.white : AppColors.textPrimary,
           fontSize: 12,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const .symmetric(horizontal: 12, vertical: 8),
       );
     });
   }
@@ -615,19 +604,17 @@ class HomeScreen extends StatelessWidget {
     return Obx(() {
       final isSelected = controller.selectedSort.value == label;
       return InkWell(
-        onTap: () {
-          controller.selectSort(label);
-        },
+        onTap: () => controller.selectSort(label),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const .symmetric(vertical: 10),
           child: Row(
             children: [
               Container(
                 width: 20,
                 height: 20,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
+                  shape: .circle,
+                  border: .all(
                     color: isSelected
                         ? AppColors.primary
                         : Colors.grey.shade400,
@@ -659,7 +646,7 @@ class HomeScreen extends StatelessWidget {
       child: Container(
         color: Colors.black.withValues(alpha: 0.5),
         child: Align(
-          alignment: Alignment.bottomCenter,
+          alignment: .bottomCenter,
           child: GestureDetector(
             onTap: () {}, // Prevent closing when tapping inside modal
             child: Container(
@@ -668,39 +655,34 @@ class HomeScreen extends StatelessWidget {
               ),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                borderRadius: .only(
+                  topLeft: .circular(20),
+                  topRight: .circular(20),
                 ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    margin: const EdgeInsets.only(top: 12),
+                    margin: const .only(top: 12),
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: .circular(2),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const .all(16),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: .spaceBetween,
                       children: [
                         const Text(
                           'Select Account',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: .bold),
                         ),
                         IconButton(
-                          onPressed: () {
-                            controller.closeAccountModal();
-                          },
+                          onPressed: () => controller.closeAccountModal(),
                           icon: const Icon(Icons.close),
                         ),
                       ],
@@ -726,7 +708,7 @@ class HomeScreen extends StatelessWidget {
                               controller.selectAccount(index);
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: const .symmetric(
                                 horizontal: 16,
                                 vertical: 12,
                               ),
@@ -737,7 +719,7 @@ class HomeScreen extends StatelessWidget {
                                     height: 48,
                                     decoration: BoxDecoration(
                                       color: AppColors.primary,
-                                      shape: BoxShape.circle,
+                                      shape: .circle,
                                     ),
                                     child: Center(
                                       child: Text(
@@ -755,7 +737,7 @@ class HomeScreen extends StatelessWidget {
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: .bold,
                                         ),
                                       ),
                                     ),
@@ -763,21 +745,20 @@ class HomeScreen extends StatelessWidget {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: .start,
                                       children: [
                                         Text(
                                           name,
                                           style: const TextStyle(
                                             fontSize: 16,
-                                            fontWeight: FontWeight.w500,
+                                            fontWeight: .w500,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Row(
                                           children: [
                                             Text(
-                                              '$customerCount ${customerCount == 1 ? 'Customer' : 'Customers'}',
+                                              '$customerCount ${customerCount == 1 ? 'customer' : 'customers'}',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: AppColors.textSecondary,
@@ -791,7 +772,7 @@ class HomeScreen extends StatelessWidget {
                                               ),
                                             ),
                                             Text(
-                                              '$supplierCount ${supplierCount == 1 ? 'Supplier' : 'Suppliers'}',
+                                              '$supplierCount ${supplierCount == 1 ? 'supplier' : 'suppliers'}',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: AppColors.textSecondary,
@@ -813,7 +794,7 @@ class HomeScreen extends StatelessWidget {
                                       width: 24,
                                       height: 24,
                                       decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
+                                        shape: .circle,
                                         border: Border.all(
                                           color: Colors.grey.shade400,
                                           width: 2,
@@ -830,17 +811,14 @@ class HomeScreen extends StatelessWidget {
                   ),
                   Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.all(16),
+                    margin: const .all(16),
                     child: ActionButton(
                       label: 'CREATE NEW ACCOUNT',
                       icon: Icons.add,
-                      onPressed: () {
-                        controller.closeAccountModal();
-                        Get.toNamed(Routes.createAccount);
+                      onPressed: () => {
+                        controller.closeAccountModal(),
+                        Get.toNamed(Routes.createAccount),
                       },
-                      backgroundColor: AppColors.primary,
-                      height: 50,
-                      width: double.infinity,
                     ),
                   ),
                 ],

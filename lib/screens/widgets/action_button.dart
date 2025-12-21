@@ -25,7 +25,7 @@ class ActionButton extends StatelessWidget {
     this.isOutlined = false,
     this.width,
     this.height,
-    this.borderRadius = 12,
+    this.borderRadius = 10,
     this.padding,
   });
 
@@ -44,20 +44,14 @@ class ActionButton extends StatelessWidget {
           icon: Icon(icon, color: bgColor, size: 20),
           label: Text(
             label,
-            style: TextStyle(
-              color: bgColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: bgColor, fontSize: 14, fontWeight: .w600),
           ),
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: bgColor, width: 1.5),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRadius),
+              borderRadius: .circular(borderRadius),
             ),
-            padding:
-                padding ??
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: padding ?? const .symmetric(horizontal: 16, vertical: 12),
           ),
         ),
       );
@@ -71,22 +65,14 @@ class ActionButton extends StatelessWidget {
         icon: Icon(icon, color: icColor, size: 20),
         label: Text(
           label,
-          style: TextStyle(
-            color: fgColor,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: fgColor, fontSize: 14, fontWeight: .w600),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: bgColor,
           foregroundColor: fgColor,
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-          padding:
-              padding ??
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: .circular(borderRadius)),
+          padding: padding ?? .symmetric(horizontal: 16, vertical: 10),
         ),
       ),
     );

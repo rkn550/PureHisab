@@ -7,13 +7,10 @@ import 'package:purehisab/data/services/auth_service.dart';
 
 class LoginController extends GetxController {
   AuthService get _authService => Get.find<AuthService>();
-
   final phoneController = TextEditingController();
   final formKey = GlobalKey<FormState>();
-
   final RxBool isLoading = false.obs;
   final RxString phoneNumber = ''.obs;
-
   static const String countryCode = '+91';
   StreamSubscription<User?>? _authStateSubscription;
 
@@ -43,14 +40,11 @@ class LoginController extends GetxController {
 
   Future<void> onContinue() async {
     if (!formKey.currentState!.validate()) return;
-
     isLoading.value = true;
-
     try {
       final result = await _authService.sendOtp(
         '$countryCode${phoneNumber.value}',
       );
-
       Get.toNamed(
         Routes.otp,
         arguments: {
