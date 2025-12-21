@@ -18,14 +18,12 @@ class TransactionEntryController extends GetxController {
   final RxString customerId = ''.obs;
   final Rx<File?> billImageFile = Rx<File?>(null);
 
-  // Calculator state
   final RxString currentInput = '0'.obs;
   final RxString calculationDisplay = ''.obs;
   final RxDouble result = 0.0.obs;
   String? pendingOperation;
   double? previousValue;
 
-  // Transaction details
   final RxString details = ''.obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
   final detailsController = TextEditingController();
@@ -33,46 +31,48 @@ class TransactionEntryController extends GetxController {
   final amountController = TextEditingController();
   final amountFocusNode = FocusNode();
 
-  // Show/hide calculator keypad
-  final RxBool showCalculator = true.obs;
+  final RxBool showCalculator = false.obs;
+
+  late final VoidCallback _amountControllerListener;
+  late final VoidCallback _amountFocusNodeListener;
+  late final VoidCallback _detailsFocusNodeListener;
 
   @override
   void onInit() {
     super.onInit();
     _loadTransactionData();
-    // Initialize amount controller
     amountController.text = '0';
-    amountController.addListener(() {
+
+    _amountControllerListener = () {
       if (amountController.text.isEmpty) {
         currentInput.value = '0';
       } else {
         currentInput.value = amountController.text;
       }
-    });
+    };
+    amountController.addListener(_amountControllerListener);
 
-    // Handle focus changes to show/hide calculator
-    amountFocusNode.addListener(() {
+    _amountFocusNodeListener = () {
       if (amountFocusNode.hasFocus) {
         showCalculator.value = true;
-        // Unfocus details field if it's focused
         if (detailsFocusNode.hasFocus) {
           detailsFocusNode.unfocus();
         }
+      } else {
+        showCalculator.value = false;
       }
-    });
+    };
+    amountFocusNode.addListener(_amountFocusNodeListener);
 
-    detailsFocusNode.addListener(() {
+    _detailsFocusNodeListener = () {
       if (detailsFocusNode.hasFocus) {
         showCalculator.value = false;
-        // Unfocus amount field if it's focused
         if (amountFocusNode.hasFocus) {
           amountFocusNode.unfocus();
         }
-      } else {
-        // When details field loses focus, show calculator again
-        showCalculator.value = true;
       }
-    });
+    };
+    detailsFocusNode.addListener(_detailsFocusNodeListener);
   }
 
   void _loadTransactionData() {
@@ -84,7 +84,6 @@ class TransactionEntryController extends GetxController {
     }
   }
 
-  // Calculator functions
   void onNumberPressed(String number) {
     final currentText = amountController.text;
     if (currentText == '0' && number != '.') {
@@ -150,6 +149,8 @@ class TransactionEntryController extends GetxController {
     }
 
     result.value = calculatedResult;
+    previousValue =
+        calculatedResult; // Update previousValue with result for chaining
     final resultString = calculatedResult
         .toStringAsFixed(0)
         .replaceAllMapped(RegExp(r'\.0+$'), (match) => '');
@@ -333,16 +334,21 @@ class TransactionEntryController extends GetxController {
   }
 
   Future<void> onAttachBills() async {
+    // Unfocus all fields to prevent calculator from showing
+    amountFocusNode.unfocus();
+    detailsFocusNode.unfocus();
+    showCalculator.value = false;
+
     Get.bottomSheet(
       Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const .only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
         ),
-        padding: .symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -538,6 +544,9 @@ class TransactionEntryController extends GetxController {
 
   @override
   void onClose() {
+    amountController.removeListener(_amountControllerListener);
+    amountFocusNode.removeListener(_amountFocusNodeListener);
+    detailsFocusNode.removeListener(_detailsFocusNodeListener);
     detailsController.dispose();
     detailsFocusNode.dispose();
     amountController.dispose();

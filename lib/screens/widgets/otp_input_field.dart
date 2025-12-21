@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/utils/app_colors.dart';
 
-class OtpInputField extends StatelessWidget {
+class OtpInputField extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final int index;
@@ -25,63 +25,109 @@ class OtpInputField extends StatelessWidget {
   });
 
   @override
+  State<OtpInputField> createState() => _OtpInputFieldState();
+}
+
+class _OtpInputFieldState extends State<OtpInputField> {
+  String _previousValue = '';
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+    _previousValue = widget.controller.text;
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    final currentValue = widget.controller.text;
+    if (currentValue.isEmpty && _previousValue.isEmpty && widget.index > 0) {
+      if (widget.onChanged != null) {
+        widget.onChanged!('');
+      }
+    }
+    _previousValue = currentValue;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size + 10,
-      child: TextFormField(
-        controller: controller,
-        focusNode: focusNode,
-        textAlign: .center,
-        keyboardType: TextInputType.number,
-        textInputAction: index < totalFields - 1
-            ? TextInputAction.next
-            : TextInputAction.done,
-        onTapOutside: (_) => FocusScope.of(context).unfocus(),
-        maxLength: 1,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: .bold,
-          color: AppColors.textPrimary,
-        ),
-        cursorHeight: fontSize - 2,
-        decoration: InputDecoration(
-          counterText: '',
-          hintText: '0',
-          hintStyle: TextStyle(
-            fontSize: fontSize - 6,
-            fontWeight: .w500,
-            color: AppColors.textSecondary,
-          ),
-          contentPadding: .zero,
-          filled: true,
-          fillColor: AppColors.surface,
-          border: OutlineInputBorder(
-            borderRadius: .circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: .circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: .circular(8),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: .circular(8),
-            borderSide: BorderSide(color: AppColors.error, width: 1),
-          ),
-        ),
-        onChanged: (value) {
-          if (onChanged != null) {
-            onChanged!(value);
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.backspace &&
+            widget.controller.text.isEmpty &&
+            widget.index > 0) {
+          // Backspace pressed on empty field - trigger onChanged to move to previous
+          if (widget.onChanged != null) {
+            widget.onChanged!('');
           }
-          if (value.isNotEmpty) {
-            HapticFeedback.lightImpact();
-          }
-        },
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: SizedBox(
+        width: widget.size,
+        height: widget.size + 10,
+        child: TextFormField(
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          textAlign: TextAlign.center,
+          keyboardType: TextInputType.number,
+          textInputAction: widget.index < widget.totalFields - 1
+              ? TextInputAction.next
+              : TextInputAction.done,
+          onTapOutside: (_) => FocusScope.of(context).unfocus(),
+          maxLength: 1,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          style: TextStyle(
+            fontSize: widget.fontSize,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+          cursorHeight: widget.fontSize - 2,
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: '0',
+            hintStyle: TextStyle(
+              fontSize: widget.fontSize - 6,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+            contentPadding: EdgeInsets.zero,
+            filled: true,
+            fillColor: AppColors.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.error, width: 1),
+            ),
+          ),
+          onChanged: (value) {
+            if (widget.onChanged != null) {
+              widget.onChanged!(value);
+            }
+            if (value.isNotEmpty) {
+              HapticFeedback.lightImpact();
+            }
+            _previousValue = value;
+          },
+        ),
       ),
     );
   }

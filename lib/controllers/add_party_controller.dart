@@ -22,16 +22,13 @@ class AddPartyController extends GetxController {
     super.onInit();
     final args = Get.arguments;
     if (args != null && args is Map<String, dynamic>) {
-      // Set party type based on tab (0 = Customer, 1 = Supplier)
       initialPartyType = args['partyType'] as int?;
       if (initialPartyType == 1) {
         partyType.value = 'Supplier';
       } else {
-        // Explicitly set Customer if partyType is 0 or null
         partyType.value = 'Customer';
       }
 
-      // Pre-fill contact data if available
       if (args.containsKey('contactName')) {
         final contactName = args['contactName'] as String? ?? '';
         if (contactName.isNotEmpty && contactName != 'Unknown') {
@@ -41,7 +38,6 @@ class AddPartyController extends GetxController {
       if (args.containsKey('contactNumber')) {
         final contactNumber = args['contactNumber'] as String? ?? '';
         if (contactNumber.isNotEmpty) {
-          // Clean the number (remove non-digits) before setting
           final cleaned = contactNumber.replaceAll(RegExp(r'[^\d]'), '');
           mobileController.text = cleaned;
         }
@@ -148,7 +144,6 @@ class AddPartyController extends GetxController {
     return null;
   }
 
-  // Clear form fields
   void _clearForm() {
     partyNameController.clear();
     mobileController.clear();

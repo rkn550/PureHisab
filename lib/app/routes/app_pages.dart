@@ -1,7 +1,9 @@
 import 'package:get/get.dart';
 import 'package:purehisab/app/bindings/create_account_binding.dart';
-import 'package:purehisab/screens/login_screen.dart';
+import 'package:purehisab/screens/login_email_screen.dart';
 import 'package:purehisab/screens/otp_screen.dart';
+import 'package:purehisab/screens/forgot_password_screen.dart';
+import 'package:purehisab/screens/signup_screen.dart';
 import 'package:purehisab/screens/splash_screen.dart';
 import 'package:purehisab/screens/main_navigation_screen.dart';
 import 'package:purehisab/screens/create_account_screen.dart';
@@ -40,13 +42,18 @@ class AppPages {
     ),
     GetPage(
       name: Routes.login,
-      page: () => const LogInScreen(),
+      // page: () => const LogInScreen(),
+      page: () => const LoginEmailScreen(),
       binding: LoginBinding(),
     ),
     GetPage(
       name: Routes.otp,
       page: () => const OtpScreen(),
       binding: OtpBinding(),
+    ),
+    GetPage(
+      name: Routes.forgotPassword,
+      page: () => const ForgotPasswordScreen(),
     ),
     GetPage(
       name: Routes.home,
@@ -66,8 +73,8 @@ class AppPages {
       name: Routes.createAccount,
       page: () => const CreateAccountScreen(),
       binding: CreateAccountBinding(),
-      arguments: {'mode': 'create'},
     ),
+    GetPage(name: Routes.signup, page: () => const SignupScreen()),
     GetPage(
       name: Routes.addParty,
       page: () => const AddPartyScreen(),
@@ -125,6 +132,8 @@ class Routes {
   static const splash = '/';
   static const login = '/login';
   static const otp = '/otp';
+  static const forgotPassword = '/forgot-password';
+  static const signup = '/signup';
   static const home = '/home';
   static const createAccount = '/create-account';
   static const addParty = '/add-party';

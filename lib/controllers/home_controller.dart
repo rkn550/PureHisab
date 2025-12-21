@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/data/model/business_model.dart';
@@ -52,7 +53,8 @@ class HomeController extends GetxController {
     try {
       isSearchFocused.value = searchFocusNode.hasFocus;
     } catch (e) {
-      throw Exception('Error on focus change: $e');
+      // Silently handle focus change errors
+      debugPrint('Error on focus change: $e');
     }
   }
 
@@ -95,7 +97,7 @@ class HomeController extends GetxController {
         }
       }
     } catch (e) {
-      throw Exception('Error refreshing account counts: $e');
+      debugPrint('Error refreshing account counts: $e');
     }
   }
 
@@ -180,7 +182,14 @@ class HomeController extends GetxController {
 
       updateSummaryAmounts();
     } catch (e) {
-      throw Exception('Error loading parties from database: $e');
+      debugPrint('Error loading parties from database: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load parties',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
     }
   }
 
@@ -458,10 +467,12 @@ class HomeController extends GetxController {
     return list;
   }
 
+  Worker? _selectedTabWorker;
+
   @override
   void onReady() {
     super.onReady();
-    ever(selectedTab, (_) {
+    _selectedTabWorker = ever(selectedTab, (_) {
       updateSummaryAmounts();
     });
   }
@@ -541,6 +552,7 @@ class HomeController extends GetxController {
 
   @override
   void onClose() {
+    _selectedTabWorker?.dispose();
     searchFocusNode.removeListener(_onFocusChange);
     searchFocusNode.dispose();
     super.onClose();

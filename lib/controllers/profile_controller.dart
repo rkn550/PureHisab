@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,7 +20,7 @@ class ProfileController extends GetxController {
   final RxBool isLoading = false.obs;
 
   // SMS Settings
-  final RxBool smsEnabled = true.obs; // SMS will be sent on each entry
+  final RxBool smsEnabled = false.obs; // SMS will be sent on each entry
   final RxString smsLanguage = 'English'.obs; // 'English' or 'Hindi'
 
   @override
@@ -47,8 +48,8 @@ class ProfileController extends GetxController {
         customerPhone.value = party.phoneNumber ?? '';
         address.value = party.address ?? '';
         isCustomer.value = party.type == 'customer';
-
-        // Load photo if photoUrl exists
+        smsEnabled.value = party.smsSetting;
+        smsLanguage.value = party.smsLanguage ?? 'English';
         if (party.photoUrl != null && party.photoUrl!.isNotEmpty) {
           final photoFile = File(party.photoUrl!);
           if (await photoFile.exists()) {
@@ -57,7 +58,14 @@ class ProfileController extends GetxController {
         }
       }
     } catch (e) {
-      // Error handling
+      debugPrint('Error loading profile data: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load profile data',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
     } finally {
       isLoading.value = false;
     }
@@ -140,12 +148,67 @@ class ProfileController extends GetxController {
     }
   }
 
-  void toggleSmsEnabled() {
-    smsEnabled.value = !smsEnabled.value;
+  Future<void> toggleSmsEnabled() async {
+    if (customerId.value.isEmpty) return;
+
+    try {
+      final newValue = !smsEnabled.value;
+      final party = await _partyRepository.getPartyById(customerId.value);
+      if (party != null) {
+        await _partyRepository.updateParty(
+          party.copyWith(smsSetting: newValue),
+        );
+        smsEnabled.value = newValue;
+
+        Get.snackbar(
+          'Success',
+          'SMS settings updated',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to update SMS settings',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
   }
 
-  void setSmsLanguage(String language) {
-    smsLanguage.value = language;
+  Future<void> setSmsLanguage(String language) async {
+    if (customerId.value.isEmpty) return;
+
+    try {
+      final party = await _partyRepository.getPartyById(customerId.value);
+      if (party != null) {
+        await _partyRepository.updateParty(
+          party.copyWith(smsLanguage: language),
+        );
+        smsLanguage.value = language;
+
+        Get.snackbar(
+          'Success',
+          'SMS language updated to $language',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to update SMS language',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
   }
 
   Future<void> changeToCustomerOrSupplier() async {

@@ -13,6 +13,8 @@ class ContactListController extends GetxController {
   final RxBool showPermissionDialog = false.obs;
   final searchTextController = TextEditingController();
 
+  Worker? _searchQueryWorker;
+
   @override
   void onInit() {
     super.onInit();
@@ -22,7 +24,7 @@ class ContactListController extends GetxController {
     });
 
     // Listen to search query changes
-    ever(searchQuery, (_) => filterContacts());
+    _searchQueryWorker = ever(searchQuery, (_) => filterContacts());
 
     // Sync controller with search query
     searchTextController.addListener(() {
@@ -34,6 +36,7 @@ class ContactListController extends GetxController {
 
   @override
   void onClose() {
+    _searchQueryWorker?.dispose();
     searchTextController.dispose();
     super.onClose();
   }

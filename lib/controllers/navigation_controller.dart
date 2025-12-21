@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'business_profile_controller.dart';
 import 'home_controller.dart';
@@ -9,12 +10,14 @@ class NavigationController extends GetxController {
   final RxString userName = ''.obs;
   final RxString userEmail = ''.obs;
 
+  Worker? _currentIndexWorker;
+
   @override
   void onInit() {
     super.onInit();
     _getArguments();
 
-    ever(currentIndex, (index) {
+    _currentIndexWorker = ever(currentIndex, (index) {
       if (index == 2) {
         _loadSelectedBusinessProfile();
       } else if (index == 0) {
@@ -68,8 +71,14 @@ class NavigationController extends GetxController {
           }
         }
       } catch (e) {
-        throw Exception('Error loading selected business profile: $e');
+        debugPrint('Error loading selected business profile: $e');
       }
     }
+  }
+
+  @override
+  void onClose() {
+    _currentIndexWorker?.dispose();
+    super.onClose();
   }
 }

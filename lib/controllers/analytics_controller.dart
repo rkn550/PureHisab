@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/data/services/party_repo.dart';
 import 'package:purehisab/data/services/transaction_repo.dart';
+import 'package:purehisab/data/model/party_model.dart';
 import 'package:purehisab/controllers/home_controller.dart';
 
 class AnalyticsController extends GetxController {
@@ -15,23 +17,23 @@ class AnalyticsController extends GetxController {
   final RxInt totalCustomers = 0.obs;
   final RxInt totalSuppliers = 0.obs;
 
-  // Monthly stats
-  final RxDouble thisMonthIncome = 0.0.obs; // You Got
-  final RxDouble thisMonthExpense = 0.0.obs; // You Gave
-  final RxDouble thisMonthToGive = 0.0.obs; // Amount to give this month
-  final RxDouble thisMonthToGet = 0.0.obs; // Amount to get this month
+  final RxDouble thisMonthIncome = 0.0.obs;
+  final RxDouble thisMonthExpense = 0.0.obs;
+  final RxDouble thisMonthToGive = 0.0.obs;
+  final RxDouble thisMonthToGet = 0.0.obs;
   final RxInt thisMonthTransactions = 0.obs;
 
-  // Weekly stats
-  final RxDouble thisWeekIncome = 0.0.obs; // You Got
-  final RxDouble thisWeekExpense = 0.0.obs; // You Gave
+  final RxDouble thisWeekIncome = 0.0.obs;
+  final RxDouble thisWeekExpense = 0.0.obs;
   final RxInt thisWeekTransactions = 0.obs;
 
-  // Top customers/suppliers
   final RxList<Map<String, dynamic>> topCustomers =
       <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> topSuppliers =
       <Map<String, dynamic>>[].obs;
+
+  Worker? _homeControllerWorker;
+  bool _isLoading = false;
 
   @override
   void onReady() {
@@ -41,7 +43,7 @@ class AnalyticsController extends GetxController {
     });
     if (Get.isRegistered<HomeController>()) {
       final homeController = Get.find<HomeController>();
-      ever(homeController.selectedBusinessId, (_) {
+      _homeControllerWorker = ever(homeController.selectedBusinessId, (_) {
         if (homeController.selectedBusinessId.value.isNotEmpty) {
           _loadAnalyticsData();
         }
@@ -49,55 +51,84 @@ class AnalyticsController extends GetxController {
     }
   }
 
+  @override
+  void onClose() {
+    _homeControllerWorker?.dispose();
+    super.onClose();
+  }
+
   Future<void> refreshAnalytics() async {
     await _loadAnalyticsData();
   }
 
   Future<void> _loadAnalyticsData() async {
+    if (_isLoading) return;
     if (!Get.isRegistered<HomeController>()) {
       return;
     }
 
     try {
+      _isLoading = true;
       final homeController = Get.find<HomeController>();
       if (homeController.selectedBusinessId.value.isEmpty) {
+        _isLoading = false;
         return;
       }
 
       final businessId = homeController.selectedBusinessId.value;
 
+      // Load data in parallel where possible
       final parties = await _partyRepository.getPartiesByBusiness(businessId);
-      final customers = parties.where((p) => p.type == 'customer').toList();
-      final suppliers = parties.where((p) => p.type == 'supplier').toList();
-
-      totalCustomers.value = customers.length;
-      totalSuppliers.value = suppliers.length;
-
       final transactions = await _transactionRepository
           .getTransactionsByBusiness(businessId);
 
-      totalTransactions.value = transactions.length;
+      // Process data in batches to avoid blocking main thread
+      await Future.microtask(() {
+        final customers = parties.where((p) => p.type == 'customer').toList();
+        final suppliers = parties.where((p) => p.type == 'supplier').toList();
 
-      double give = 0.0;
-      double get = 0.0;
+        totalCustomers.value = customers.length;
+        totalSuppliers.value = suppliers.length;
+        totalTransactions.value = transactions.length;
 
-      for (var tx in transactions) {
-        if (tx.direction == 'gave') {
-          give += tx.amount;
-        } else {
-          get += tx.amount;
+        final partyBalances = <String, double>{};
+
+        for (var tx in transactions) {
+          final partyId = tx.partyId;
+          partyBalances[partyId] =
+              (partyBalances[partyId] ?? 0.0) +
+              (tx.direction == 'gave' ? -tx.amount : tx.amount);
         }
-      }
 
-      totalToGive.value = give;
-      totalToGet.value = get;
-      totalBalance.value = get - give;
+        double totalGive = 0.0;
+        double totalGet = 0.0;
 
-      _calculateThisMonthData(transactions);
-      _calculateThisWeekData(transactions);
-      _calculateTopParties(customers, suppliers, transactions);
+        for (var balance in partyBalances.values) {
+          if (balance < 0) {
+            totalGive += balance.abs();
+          } else {
+            totalGet += balance;
+          }
+        }
+
+        totalToGive.value = totalGive;
+        totalToGet.value = totalGet;
+        totalBalance.value = totalGet - totalGive;
+      });
+
+      // Calculate stats in separate microtasks to avoid blocking
+      await Future.microtask(() => _calculateThisMonthData(transactions));
+      await Future.microtask(() => _calculateThisWeekData(transactions));
+      await Future.microtask(() {
+        final customers = parties.where((p) => p.type == 'customer').toList();
+        final suppliers = parties.where((p) => p.type == 'supplier').toList();
+        _calculateTopParties(customers, suppliers, transactions);
+      });
     } catch (e) {
-      // Error handling
+      // Log error but don't crash
+      debugPrint('Error loading analytics data: $e');
+    } finally {
+      _isLoading = false;
     }
   }
 
@@ -116,7 +147,6 @@ class AnalyticsController extends GetxController {
         final txMonth = date.month;
         final txYear = date.year;
 
-        // Check if transaction is in current month
         if (txMonth == currentMonth && txYear == currentYear) {
           if (tx.direction == 'got') {
             income += tx.amount;
@@ -126,7 +156,8 @@ class AnalyticsController extends GetxController {
           transactionCount++;
         }
       } catch (e) {
-        // Error handling
+        // Skip invalid transaction
+        continue;
       }
     }
 
@@ -149,7 +180,6 @@ class AnalyticsController extends GetxController {
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-    // Normalize to start of day for comparison
     final weekStart = DateTime(
       startOfWeek.year,
       startOfWeek.month,
@@ -168,14 +198,14 @@ class AnalyticsController extends GetxController {
     double expense = 0.0;
     int transactionCount = 0;
 
+    final weekStartMs = weekStart.millisecondsSinceEpoch;
+    final weekEndMs = weekEnd.millisecondsSinceEpoch;
+
     for (var tx in transactions) {
       try {
         final date = DateTime.fromMillisecondsSinceEpoch(tx.date);
         final transactionDate = DateTime(date.year, date.month, date.day);
-
         final txMs = transactionDate.millisecondsSinceEpoch;
-        final weekStartMs = weekStart.millisecondsSinceEpoch;
-        final weekEndMs = weekEnd.millisecondsSinceEpoch;
 
         if (txMs >= weekStartMs && txMs <= weekEndMs) {
           if (tx.direction == 'got') {
@@ -186,7 +216,8 @@ class AnalyticsController extends GetxController {
           transactionCount++;
         }
       } catch (e) {
-        // Error handling
+        // Skip invalid transaction
+        continue;
       }
     }
 
@@ -196,54 +227,65 @@ class AnalyticsController extends GetxController {
   }
 
   void _calculateTopParties(List customers, List suppliers, List transactions) {
+    // Use Maps for O(1) lookup instead of firstWhere O(n)
+    final customerMap = <String, PartyModel>{};
+    final supplierMap = <String, PartyModel>{};
+
+    for (var customer in customers) {
+      customerMap[customer.id] = customer;
+    }
+    for (var supplier in suppliers) {
+      supplierMap[supplier.id] = supplier;
+    }
+
     final customerBalances = <String, double>{};
     final supplierBalances = <String, double>{};
 
     for (var tx in transactions) {
       final partyId = tx.partyId;
-      final customer = customers.firstWhere(
-        (c) => c.id == partyId,
-        orElse: () => null,
-      );
-      final supplier = suppliers.firstWhere(
-        (s) => s.id == partyId,
-        orElse: () => null,
-      );
 
-      if (customer != null) {
+      if (customerMap.containsKey(partyId)) {
         customerBalances[partyId] =
             (customerBalances[partyId] ?? 0.0) +
             (tx.direction == 'gave' ? tx.amount : -tx.amount);
-      } else if (supplier != null) {
+      } else if (supplierMap.containsKey(partyId)) {
         supplierBalances[partyId] =
             (supplierBalances[partyId] ?? 0.0) +
             (tx.direction == 'got' ? -tx.amount : tx.amount);
       }
     }
 
-    final topCustomersList =
-        customers.map((c) {
-            final balance = customerBalances[c.id]?.abs() ?? 0.0;
-            return {
-              'id': c.id,
-              'name': c.partyName,
-              'amount': balance,
-              'type': balance >= 0 ? 'give' : 'get',
-            };
-          }).toList()
-          ..sort((a, b) => (b['amount'] as num).compareTo(a['amount'] as num));
+    final topCustomersList = <Map<String, dynamic>>[];
+    for (var customer in customers) {
+      final balance = customerBalances[customer.id]?.abs() ?? 0.0;
+      if (balance > 0) {
+        topCustomersList.add({
+          'id': customer.id,
+          'name': customer.partyName,
+          'amount': balance,
+          'type': customerBalances[customer.id]! < 0 ? 'give' : 'get',
+        });
+      }
+    }
+    topCustomersList.sort(
+      (a, b) => (b['amount'] as num).compareTo(a['amount'] as num),
+    );
 
-    final topSuppliersList =
-        suppliers.map((s) {
-            final balance = supplierBalances[s.id]?.abs() ?? 0.0;
-            return {
-              'id': s.id,
-              'name': s.partyName,
-              'amount': balance,
-              'type': balance >= 0 ? 'get' : 'give',
-            };
-          }).toList()
-          ..sort((a, b) => (b['amount'] as num).compareTo(a['amount'] as num));
+    final topSuppliersList = <Map<String, dynamic>>[];
+    for (var supplier in suppliers) {
+      final balance = supplierBalances[supplier.id]?.abs() ?? 0.0;
+      if (balance > 0) {
+        topSuppliersList.add({
+          'id': supplier.id,
+          'name': supplier.partyName,
+          'amount': balance,
+          'type': supplierBalances[supplier.id]! < 0 ? 'give' : 'get',
+        });
+      }
+    }
+    topSuppliersList.sort(
+      (a, b) => (b['amount'] as num).compareTo(a['amount'] as num),
+    );
 
     topCustomers.value = topCustomersList.take(5).toList();
     topSuppliers.value = topSuppliersList.take(5).toList();

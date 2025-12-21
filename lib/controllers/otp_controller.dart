@@ -19,7 +19,6 @@ class OtpController extends GetxController {
   final RxInt resendTimer = 60.obs;
   final RxBool canResend = false.obs;
   final RxBool isResending = false.obs;
-
   final RxString verificationId = ''.obs;
   final RxInt resendToken = 0.obs;
 
@@ -65,11 +64,17 @@ class OtpController extends GetxController {
   }
 
   void updateOtp(String value, int index) {
-    otp.value = otpControllers.map((controller) => controller.text).join();
-    if (value.isNotEmpty && index < 5) {
-      focusNodes[index + 1].requestFocus();
-    } else if (value.isEmpty && index > 0) {
-      focusNodes[index - 1].requestFocus();
+    if (value.isNotEmpty) {
+      otp.value = otpControllers.map((controller) => controller.text).join();
+      if (index < 5) {
+        focusNodes[index + 1].requestFocus();
+      }
+    } else {
+      if (otpControllers[index].text.isEmpty && index > 0) {
+        otpControllers[index - 1].clear();
+        focusNodes[index - 1].requestFocus();
+      }
+      otp.value = otpControllers.map((controller) => controller.text).join();
     }
   }
 
@@ -131,9 +136,7 @@ class OtpController extends GetxController {
 
   Future<void> resendOtp() async {
     if (!canResend.value || isResending.value) return;
-
     isResending.value = true;
-
     try {
       for (var controller in otpControllers) {
         controller.clear();
@@ -142,15 +145,12 @@ class OtpController extends GetxController {
       for (var focusNode in focusNodes) {
         focusNode.unfocus();
       }
-
       final result = await _authService.sendOtp(
         phoneNumber.value,
         resendToken: resendToken.value == 0 ? null : resendToken.value,
       );
-
       verificationId.value = result['verificationId'] as String? ?? '';
       resendToken.value = result['resendToken'] as int? ?? 0;
-
       Get.snackbar(
         'OTP Resent',
         'A new OTP has been sent to ${phoneNumber.value}',
@@ -159,7 +159,6 @@ class OtpController extends GetxController {
         colorText: AppColors.success,
         icon: const Icon(Icons.check_circle, color: AppColors.success),
       );
-
       _startResendTimer();
     } catch (e) {
       Get.snackbar(
