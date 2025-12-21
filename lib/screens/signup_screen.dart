@@ -12,7 +12,7 @@ class SignupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SignupController());
+    final controller = Get.find<SignupController>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -96,15 +96,7 @@ class SignupScreen extends StatelessWidget {
           size: 24,
         ),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your name';
-        }
-        if (value.length < 2) {
-          return 'Name must be at least 2 characters';
-        }
-        return null;
-      },
+      validator: (value) => controller.validateName(value),
     );
   }
 
@@ -122,21 +114,13 @@ class SignupScreen extends StatelessWidget {
           size: 24,
         ),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your email';
-        }
-        if (!value.contains('@') || !value.contains('.')) {
-          return 'Please enter a valid email address';
-        }
-        return null;
-      },
+      validator: (value) => controller.validateEmail(value),
     );
   }
 
   Widget _buildPhoneInput(SignupController controller) {
     return CustomTextField(
-      controller: controller.phoneController,
+      controller: controller.phoneNumberController,
       label: 'Phone Number',
       hintText: 'Enter 10-digit mobile number',
       keyboardType: TextInputType.phone,
@@ -163,15 +147,7 @@ class SignupScreen extends StatelessWidget {
         ),
       ),
       prefixIconConstraints: const BoxConstraints(minWidth: 70, minHeight: 48),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your phone number';
-        }
-        if (value.length < 10) {
-          return 'Phone number must be 10 digits';
-        }
-        return null;
-      },
+      validator: (value) => controller.validatePhoneNumber(value),
     );
   }
 
@@ -181,7 +157,7 @@ class SignupScreen extends StatelessWidget {
         controller: controller.passwordController,
         label: 'Password',
         hintText: 'Enter your password',
-        obscureText: !controller.isPasswordVisible.value,
+        obscureText: !controller.isPasswordVisible,
         prefixIcon: const Padding(
           padding: EdgeInsets.all(12),
           child: Icon(
@@ -192,7 +168,7 @@ class SignupScreen extends StatelessWidget {
         ),
         suffixIcon: IconButton(
           icon: Icon(
-            controller.isPasswordVisible.value
+            controller.isPasswordVisible
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
             color: AppColors.textSecondary,
@@ -200,15 +176,7 @@ class SignupScreen extends StatelessWidget {
           ),
           onPressed: controller.togglePasswordVisibility,
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter your password';
-          }
-          if (value.length < 6) {
-            return 'Password must be at least 6 characters';
-          }
-          return null;
-        },
+        validator: (value) => controller.validatePassword(value),
       ),
     );
   }
@@ -219,7 +187,7 @@ class SignupScreen extends StatelessWidget {
         controller: controller.confirmPasswordController,
         label: 'Confirm Password',
         hintText: 'Re-enter your password',
-        obscureText: !controller.isConfirmPasswordVisible.value,
+        obscureText: !controller.isConfirmPasswordVisible,
         prefixIcon: const Padding(
           padding: EdgeInsets.all(12),
           child: Icon(
@@ -230,7 +198,7 @@ class SignupScreen extends StatelessWidget {
         ),
         suffixIcon: IconButton(
           icon: Icon(
-            controller.isConfirmPasswordVisible.value
+            controller.isConfirmPasswordVisible
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
             color: AppColors.textSecondary,
@@ -238,7 +206,7 @@ class SignupScreen extends StatelessWidget {
           ),
           onPressed: controller.toggleConfirmPasswordVisibility,
         ),
-        validator: controller.validateConfirmPassword,
+        validator: (value) => controller.validateConfirmPassword(value),
       ),
     );
   }
@@ -247,8 +215,8 @@ class SignupScreen extends StatelessWidget {
     return Obx(
       () => PrimaryButton(
         text: 'Sign Up',
-        onPressed: controller.isLoading.value ? null : controller.onSignup,
-        isLoading: controller.isLoading.value,
+        onPressed: controller.isLoading ? null : controller.onSignup,
+        isLoading: controller.isLoading,
       ),
     );
   }

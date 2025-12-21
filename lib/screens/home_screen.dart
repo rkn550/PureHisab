@@ -20,18 +20,24 @@ class HomeScreen extends StatelessWidget {
             children: [
               _buildTabs(controller),
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Obx(
-                        () => controller.isSearchFocused.value
-                            ? const SizedBox.shrink()
-                            : _buildSummaryCard(controller),
-                      ),
-                      _buildSearchAndFilters(controller),
-                      _buildCustomerSupplierList(controller),
-                      const SizedBox(height: 100), // Space for FAB
-                    ],
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await controller.refreshBusinesses();
+                    await controller.loadPartiesFromDatabase();
+                  },
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Obx(
+                          () => controller.isSearchFocused.value
+                              ? const SizedBox.shrink()
+                              : _buildSummaryCard(controller),
+                        ),
+                        _buildSearchAndFilters(controller),
+                        _buildCustomerSupplierList(controller),
+                        const SizedBox(height: 100), // Space for FAB
+                      ],
+                    ),
                   ),
                 ),
               ),

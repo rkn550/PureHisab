@@ -11,7 +11,7 @@ class LoginEmailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(LoginEmailController());
+    final controller = Get.find<LoginEmailController>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -102,7 +102,7 @@ class LoginEmailScreen extends StatelessWidget {
         controller: controller.passwordController,
         label: 'Password',
         hintText: 'Enter your password',
-        obscureText: !controller.isPasswordVisible.value,
+        obscureText: !controller.isPasswordVisible,
         prefixIcon: const Padding(
           padding: EdgeInsets.all(12),
           child: Icon(
@@ -113,7 +113,7 @@ class LoginEmailScreen extends StatelessWidget {
         ),
         suffixIcon: IconButton(
           icon: Icon(
-            controller.isPasswordVisible.value
+            controller.isPasswordVisible
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
             color: AppColors.textSecondary,
@@ -157,8 +157,8 @@ class LoginEmailScreen extends StatelessWidget {
     return Obx(
       () => PrimaryButton(
         text: 'Login',
-        onPressed: controller.isLoading.value ? null : controller.onLogin,
-        isLoading: controller.isLoading.value,
+        onPressed: controller.isLoading ? null : controller.onLogin,
+        isLoading: controller.isLoading,
       ),
     );
   }

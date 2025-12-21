@@ -36,12 +36,12 @@ class CustomerDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadCustomerData().then((_) {
+    loadCustomerData().then((_) {
       loadTransactions();
     });
   }
 
-  Future<void> _loadCustomerData() async {
+  Future<void> loadCustomerData() async {
     final args = Get.arguments;
     String? partyId;
 

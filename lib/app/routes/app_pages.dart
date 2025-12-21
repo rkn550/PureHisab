@@ -1,7 +1,9 @@
 import 'package:get/get.dart';
 import 'package:purehisab/app/bindings/create_account_binding.dart';
+import 'package:purehisab/app/bindings/forgot_password_binding.dart';
+import 'package:purehisab/app/bindings/login_email_binding.dart';
+import 'package:purehisab/app/bindings/signup_binding.dart';
 import 'package:purehisab/screens/login_email_screen.dart';
-import 'package:purehisab/screens/otp_screen.dart';
 import 'package:purehisab/screens/forgot_password_screen.dart';
 import 'package:purehisab/screens/signup_screen.dart';
 import 'package:purehisab/screens/splash_screen.dart';
@@ -18,8 +20,6 @@ import 'package:purehisab/screens/about_screen.dart';
 import 'package:purehisab/screens/privacy_policy_screen.dart';
 import 'package:purehisab/screens/terms_conditions_screen.dart';
 import '../bindings/splash_binding.dart';
-import '../bindings/login_binding.dart';
-import '../bindings/otp_binding.dart';
 import '../bindings/navigation_binding.dart';
 import '../bindings/add_party_binding.dart';
 import '../bindings/contact_list_binding.dart';
@@ -44,16 +44,17 @@ class AppPages {
       name: Routes.login,
       // page: () => const LogInScreen(),
       page: () => const LoginEmailScreen(),
-      binding: LoginBinding(),
+      binding: LoginEmailBinding(),
     ),
-    GetPage(
-      name: Routes.otp,
-      page: () => const OtpScreen(),
-      binding: OtpBinding(),
-    ),
+    // GetPage(
+    //   name: Routes.otp,
+    //   page: () => const OtpScreen(),
+    //   binding: OtpBinding(),
+    // ),
     GetPage(
       name: Routes.forgotPassword,
       page: () => const ForgotPasswordScreen(),
+      binding: ForgotPasswordBinding(),
     ),
     GetPage(
       name: Routes.home,
@@ -74,7 +75,11 @@ class AppPages {
       page: () => const CreateAccountScreen(),
       binding: CreateAccountBinding(),
     ),
-    GetPage(name: Routes.signup, page: () => const SignupScreen()),
+    GetPage(
+      name: Routes.signup,
+      page: () => const SignupScreen(),
+      binding: SignupBinding(),
+    ),
     GetPage(
       name: Routes.addParty,
       page: () => const AddPartyScreen(),
