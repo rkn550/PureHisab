@@ -21,13 +21,23 @@ class NavigationController extends GetxController {
       if (index == 2) {
         _loadSelectedBusinessProfile();
       } else if (index == 0) {
-        Future.delayed(const Duration(milliseconds: 100), () {
+        // Load analytics immediately when tab is selected
+        Future.microtask(() {
           if (Get.isRegistered<AnalyticsController>()) {
             Get.find<AnalyticsController>().refreshAnalytics();
           }
         });
       }
     });
+
+    // Load analytics immediately if initial tab is 0
+    if (currentIndex.value == 0) {
+      Future.microtask(() {
+        if (Get.isRegistered<AnalyticsController>()) {
+          Get.find<AnalyticsController>().refreshAnalytics();
+        }
+      });
+    }
   }
 
   void _getArguments() {

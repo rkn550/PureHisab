@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:purehisab/data/services/app_lock_service.dart';
+import 'package:purehisab/data/services/session_service.dart';
 import '../app/routes/app_pages.dart';
-import '../data/services/auth_service.dart';
-import '../data/services/app_lock_service.dart';
 
 class SplashController extends GetxController
     with GetSingleTickerProviderStateMixin {
   late AnimationController animationController;
   late Animation<double> fadeAnimation;
   late Animation<double> scaleAnimation;
-  AuthService get _authService => Get.find<AuthService>();
+  final _sessionService = Get.find<SessionService>();
+  final _appLockService = Get.find<AppLockService>();
 
   @override
   void onInit() {
@@ -46,18 +47,16 @@ class SplashController extends GetxController
 
   void _checkAuthAndNavigate() async {
     Future.delayed(const Duration(seconds: 3), () async {
-      final currentUser = _authService.currentUser;
-      if (currentUser != null) {
-        final appLockService = Get.find<AppLockService>();
-        final isLockEnabled = await appLockService.isLockEnabled();
-        if (isLockEnabled) {
-          Get.offNamed(Routes.appLock);
-        } else {
-          Get.offNamed(Routes.home, arguments: {'initialTab': 1});
-        }
-      } else {
-        Get.offNamed(Routes.login);
+      final isLockEnabled = await _appLockService.isLockEnabled();
+      if (isLockEnabled) {
+        Get.offNamed(Routes.appLock);
+        return;
       }
+      if (_sessionService.isLoggedIn) {
+        Get.offNamed(Routes.home, arguments: {'initialTab': 1});
+        return;
+      }
+      Get.offNamed(Routes.login);
     });
   }
 

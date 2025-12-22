@@ -36,19 +36,46 @@ class AnalyticsController extends GetxController {
   bool _isLoading = false;
 
   @override
-  void onReady() {
-    super.onReady();
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _loadAnalyticsData();
-    });
-    if (Get.isRegistered<HomeController>()) {
-      final homeController = Get.find<HomeController>();
-      _homeControllerWorker = ever(homeController.selectedBusinessId, (_) {
+  void onInit() {
+    super.onInit();
+    // Start loading data immediately when controller is initialized
+    _setupHomeControllerListener();
+    // Load data immediately if HomeController is ready
+    Future.microtask(() {
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
         if (homeController.selectedBusinessId.value.isNotEmpty) {
           _loadAnalyticsData();
         }
-      });
-    }
+      }
+    });
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // Refresh data when screen is ready to ensure latest data is shown
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        if (homeController.selectedBusinessId.value.isNotEmpty) {
+          _loadAnalyticsData();
+        }
+      }
+    });
+  }
+
+  void _setupHomeControllerListener() {
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (Get.isRegistered<HomeController>()) {
+        final homeController = Get.find<HomeController>();
+        _homeControllerWorker = ever(homeController.selectedBusinessId, (_) {
+          if (homeController.selectedBusinessId.value.isNotEmpty) {
+            _loadAnalyticsData();
+          }
+        });
+      }
+    });
   }
 
   @override

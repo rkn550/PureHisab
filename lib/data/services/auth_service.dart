@@ -1,79 +1,104 @@
-import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:purehisab/data/model/user_model.dart';
 
 class AuthService extends GetxService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<Map<String, dynamic>> sendOtp(
-    String phoneNumber, {
-    int? resendToken,
+  Future<UserModel?> createUser({
+    required String name,
+    required String email,
+    required String phoneNumber,
+    required String password,
   }) async {
     try {
-      final Completer<Map<String, dynamic>> completer =
-          Completer<Map<String, dynamic>>();
-      String? verificationId;
-      int? resendTokenValue;
+      final UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
-      await _auth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        timeout: const Duration(seconds: 60),
-        forceResendingToken: resendToken,
+      final user = userCredential.user;
+      if (user == null) return null;
 
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          await _auth.signInWithCredential(credential);
-          if (!completer.isCompleted) {
-            completer.completeError(Exception('Auto-verification completed'));
-          }
-        },
+      final userData = {
+        'uid': user.uid,
+        'name': name.trim(),
+        'email': email.trim(),
+        'phoneNumber': phoneNumber.trim(),
+        'createdAt': Timestamp.now(),
+        'updatedAt': Timestamp.now(),
+        'isDeleted': false,
+      };
 
-        verificationFailed: (FirebaseAuthException e) {
-          if (!completer.isCompleted) {
-            completer.completeError(
-              Exception(e.message ?? 'OTP verification failed'),
-            );
-          }
-        },
+      await _db.collection('users').doc(user.uid).set(userData);
 
-        codeSent: (String vId, int? token) {
-          verificationId = vId;
-          resendTokenValue = token;
-          if (!completer.isCompleted) {
-            completer.complete({'verificationId': vId, 'resendToken': token});
-          }
-        },
+      final userDoc = await _db.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('Failed to create user document in Firestore');
+      }
 
-        codeAutoRetrievalTimeout: (String vId) {
-          verificationId = vId;
-          if (!completer.isCompleted && verificationId != null) {
-            completer.complete({
-              'verificationId': vId,
-              'resendToken': resendTokenValue,
-            });
-          }
-        },
-      );
-
-      return completer.future;
+      final userDocData = userDoc.data() as Map<String, dynamic>;
+      return UserModel.fromMap(userDocData, user.uid);
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_mapAuthError(e));
     } catch (e) {
-      rethrow;
+      throw Exception('Failed to create user: $e');
     }
   }
 
-  Future<UserCredential> verifyOtp({
-    required String verificationId,
-    required String smsCode,
+  Future<UserModel> loginUser({
+    required String email,
+    required String password,
   }) async {
     try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
-      return await _auth.signInWithCredential(credential);
+      final UserCredential userCredential = await _auth
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      final user = userCredential.user;
+      if (user == null) throw Exception('User not found');
+
+      final userData = await _db.collection('users').doc(user.uid).get();
+      if (!userData.exists) {
+        throw Exception('User data not found');
+      }
+
+      final userDoc = userData.data() as Map<String, dynamic>;
+      final userModel = UserModel.fromMap(userDoc, userData.id);
+
+      if (userModel.isDeleted) {
+        throw Exception('User is deleted');
+      }
+
+      return userModel;
     } catch (e) {
-      throw Exception('Invalid OTP');
+      throw Exception('Failed to login user: $e');
     }
   }
 
-  User? get currentUser => _auth.currentUser;
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_mapAuthError(e));
+    } catch (e) {
+      throw Exception('Failed to send password reset email: $e');
+    }
+  }
+
+  String _mapAuthError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'Email already registered';
+      case 'invalid-email':
+        return 'Invalid email address';
+      case 'weak-password':
+        return 'Password is too weak';
+      case 'user-not-found':
+        return 'No user found with this email';
+      case 'wrong-password':
+        return 'Incorrect password';
+      default:
+        return 'Authentication failed';
+    }
+  }
 }

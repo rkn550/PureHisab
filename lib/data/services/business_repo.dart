@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:purehisab/data/local/local_db.dart';
 import 'package:purehisab/data/model/business_model.dart';
+import 'package:purehisab/data/services/session_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
@@ -9,6 +10,7 @@ class BusinessRepository extends GetxService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Uuid _uuid = const Uuid();
+  SessionService get _sessionService => Get.find<SessionService>();
 
   Future<BusinessModel> createBusiness({
     required String businessName,
@@ -21,15 +23,22 @@ class BusinessRepository extends GetxService {
         throw Exception('User not authenticated. Please login first.');
       }
 
+      // Get user data from session to get name and phone number
+      final userModel = await _sessionService.getSession();
+      final userName = userModel?.name ?? '';
+      final userPhoneNumber = userModel?.phoneNumber ?? '';
+
       final db = await _dbHelper.database;
       final now = DateTime.now().millisecondsSinceEpoch;
-      final phoneNumber = currentUser.phoneNumber ?? '';
 
       final business = BusinessModel(
         id: _uuid.v4(),
         businessName: businessName,
-        ownerName: ownerName,
-        phoneNumber: phoneNumber,
+        ownerName:
+            ownerName ?? userName, // Use user's name if ownerName not provided
+        phoneNumber: userPhoneNumber.isNotEmpty
+            ? userPhoneNumber
+            : (currentUser.phoneNumber ?? ''),
         photoUrl: photoUrl,
         userId: currentUser.uid,
         isDeleted: false,

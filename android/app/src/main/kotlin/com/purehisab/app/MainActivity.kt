@@ -1,5 +1,6 @@
-package com.example.purehisab
+package com.purehisab.app
 
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity : FlutterActivity()
+

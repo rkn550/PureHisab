@@ -9,7 +9,7 @@ class ForgotPasswordScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ForgotPasswordController());
+    final controller = Get.find<ForgotPasswordController>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -99,10 +99,8 @@ class ForgotPasswordScreen extends StatelessWidget {
     return Obx(
       () => PrimaryButton(
         text: 'Send Reset Link',
-        onPressed: controller.isLoading.value
-            ? null
-            : controller.onResetPassword,
-        isLoading: controller.isLoading.value,
+        onPressed: controller.isLoading ? null : controller.onResetPassword,
+        isLoading: controller.isLoading,
       ),
     );
   }

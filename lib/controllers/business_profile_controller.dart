@@ -38,6 +38,20 @@ class BusinessProfileController extends GetxController {
     _setupHomeControllerListener();
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    // Refresh business data when screen is ready to ensure latest data is shown
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (businessId.value.isNotEmpty) {
+        _loadBusinessFromDatabase(businessId.value);
+      } else {
+        // If businessId is empty, try to load from HomeController
+        _loadBusinessData();
+      }
+    });
+  }
+
   void _setupHomeControllerListener() {
     Future.delayed(const Duration(milliseconds: 200), () {
       if (Get.isRegistered<HomeController>()) {
@@ -544,6 +558,13 @@ class BusinessProfileController extends GetxController {
         if (Get.isRegistered<HomeController>()) {
           final homeController = Get.find<HomeController>();
           await homeController.addNewAccountFromBusiness(business);
+
+          // Refresh business profile data if screen is open
+          if (businessId.value == business.id || businessId.value.isEmpty) {
+            // Load the newly created business data
+            await Future.delayed(const Duration(milliseconds: 300));
+            await _loadBusinessFromDatabase(business.id);
+          }
         }
 
         // Show success message after state update

@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "583497923220",
-    "project_id": "purehisab-21cf8",
-    "storage_bucket": "purehisab-21cf8.firebasestorage.app"
+    "project_number": "755385050738",
+    "project_id": "purehisab-43e69",
+    "storage_bucket": "purehisab-43e69.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:583497923220:android:dd7c10dd8df71744929281",
+        "mobilesdk_app_id": "1:755385050738:android:fa945241e439b2b40ac4eb",
         "android_client_info": {
-          "package_name": "com.example.purehisab"
+          "package_name": "com.purehisab.app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCcrcQoUCUQoO4Gj19m1Ob5lBKsznY6xTY"
+          "current_key": "AIzaSyA6MdJi0MjarJnPbxOgKXDzRhUYOaVO2YA"
         }
       ],
       "services": {

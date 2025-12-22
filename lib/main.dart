@@ -1,22 +1,29 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:purehisab/firebase_options.dart';
 import 'package:purehisab/controllers/app_lifecycle_controller.dart';
 import 'package:purehisab/data/services/app_lock_service.dart';
 import 'package:purehisab/data/services/auth_service.dart';
 import 'package:purehisab/data/services/business_repo.dart';
 import 'package:purehisab/data/services/party_repo.dart';
+import 'package:purehisab/data/services/session_service.dart';
 import 'package:purehisab/data/services/transaction_repo.dart';
 import 'package:purehisab/data/services/reminder_notification_service.dart';
+import 'package:purehisab/firebase_options.dart';
+import 'package:get_storage/get_storage.dart';
 import 'app/routes/app_pages.dart';
 import 'app/utils/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
+    );
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
     );
     debugPrint('Firebase initialized successfully');
   } catch (e) {
@@ -30,6 +37,7 @@ void _initServices() {
   Get.put(AppLifecycleController());
   Get.put(AppLockService(), permanent: true);
   Get.put(AuthService(), permanent: true);
+  Get.put(SessionService(), permanent: true);
   Get.put(BusinessRepository(), permanent: true);
   Get.put(PartyRepository(), permanent: true);
   Get.put(TransactionRepository(), permanent: true);
@@ -66,7 +74,7 @@ class MyApp extends StatelessWidget {
           color: AppColors.surface,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: .circular(12),
+            borderRadius: BorderRadius.circular(12),
             side: const BorderSide(color: AppColors.border, width: 1),
           ),
         ),

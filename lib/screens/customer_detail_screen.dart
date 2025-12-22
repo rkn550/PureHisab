@@ -15,14 +15,20 @@ class CustomerDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(controller),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildSummaryCard(controller),
-            _buildActionButtons(controller),
-            _buildTransactionHistory(controller),
-            const SizedBox(height: 100), // Space for bottom buttons
-          ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await controller.loadCustomerData();
+          await controller.loadTransactions();
+        },
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildSummaryCard(controller),
+              _buildActionButtons(controller),
+              _buildTransactionHistory(controller),
+              const SizedBox(height: 100), // Space for bottom buttons
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomActionButtons(controller),
