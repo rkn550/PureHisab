@@ -33,9 +33,10 @@ class AppLockController extends GetxController {
   }
 
   Future<void> _tryBiometricAuth() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+
     if (!showBiometric.value) return;
 
-    await Future.delayed(const Duration(milliseconds: 500));
     final authenticated = await _appLockService.authenticateWithBiometrics();
     if (authenticated) {
       onUnlockSuccess();

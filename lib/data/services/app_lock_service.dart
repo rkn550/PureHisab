@@ -39,9 +39,14 @@ class AppLockService extends GetxService {
 
   Future<bool> isBiometricAvailable() async {
     try {
-      final isAvailable = await _localAuth.canCheckBiometrics;
       final isDeviceSupported = await _localAuth.isDeviceSupported();
-      return isAvailable || isDeviceSupported;
+      if (!isDeviceSupported) return false;
+
+      final isAvailable = await _localAuth.canCheckBiometrics;
+      if (!isAvailable) return false;
+
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      return availableBiometrics.isNotEmpty;
     } catch (e) {
       return false;
     }
