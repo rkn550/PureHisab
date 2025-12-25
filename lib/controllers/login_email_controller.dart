@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/app/routes/app_pages.dart';
+import 'package:purehisab/app/utils/snacks_bar.dart';
 import 'package:purehisab/data/services/auth_service.dart';
 import 'package:purehisab/data/services/session_service.dart';
 
@@ -24,27 +25,18 @@ class LoginEmailController extends GetxController {
   set isPasswordVisible(bool value) => _isPasswordVisible.value = value;
   set isLoading(bool value) => _isLoading.value = value;
 
-  bool _isDisposed = false;
-
   @override
   void onInit() {
     super.onInit();
-    // Delay the check to ensure UI is fully built
     Future.delayed(const Duration(milliseconds: 100), () {
-      if (!_isDisposed) {
-        _checkIfAlreadyLoggedIn();
-      }
+      _checkIfAlreadyLoggedIn();
     });
   }
 
   void _checkIfAlreadyLoggedIn() {
-    // Check if user is already logged in
-    if (!_isDisposed && _sessionService.isLoggedIn) {
-      // Navigate directly to home page
+    if (_sessionService.isLoggedIn) {
       Future.microtask(() {
-        if (!_isDisposed) {
-          Get.offAllNamed(Routes.home, arguments: {'initialTab': 1});
-        }
+        Get.offAllNamed(Routes.home, arguments: {'initialTab': 1});
       });
     }
   }
@@ -83,48 +75,36 @@ class LoginEmailController extends GetxController {
       );
 
       await _sessionService.saveSession(user);
-
-      Get.snackbar(
-        'Login Successful',
-        'Welcome back, ${user.name}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
-        duration: const Duration(seconds: 2),
+      resetForm();
+      SnacksBar.showSnackbar(
+        title: 'Login Successful',
+        message: 'Welcome back, ${user.name}',
+        type: SnacksBarType.SUCCESS,
       );
-
       Future.microtask(() {
         Get.offAllNamed(Routes.home, arguments: {'initialTab': 1});
       });
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: e.toString().replaceAll('Exception: ', ''),
+        type: SnacksBarType.ERROR,
       );
     } finally {
       isLoading = false;
     }
   }
 
+  void resetForm() {
+    emailController.clear();
+    passwordController.clear();
+    formKey.currentState!.reset();
+  }
+
   @override
   void onClose() {
-    _isDisposed = true;
-    // Dispose controllers safely
-    try {
-      _emailController.dispose();
-    } catch (e) {
-      // Controller already disposed or error occurred
-      debugPrint('Error disposing emailController: $e');
-    }
-    try {
-      _passwordController.dispose();
-    } catch (e) {
-      // Controller already disposed or error occurred
-      debugPrint('Error disposing passwordController: $e');
-    }
+    _emailController.dispose();
+    _passwordController.dispose();
     super.onClose();
   }
 }

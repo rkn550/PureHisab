@@ -10,14 +10,11 @@ class AppLockController extends GetxController {
   final FocusNode pinFocusNode = FocusNode();
   final RxString enteredPin = ''.obs;
   final RxBool isAuthenticating = false.obs;
-  final RxBool showBiometric = false.obs;
   final RxString errorMessage = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
-    _checkBiometricAvailability();
-    _tryBiometricAuth();
   }
 
   @override
@@ -25,22 +22,6 @@ class AppLockController extends GetxController {
     pinController.dispose();
     pinFocusNode.dispose();
     super.onClose();
-  }
-
-  Future<void> _checkBiometricAvailability() async {
-    final isAvailable = await _appLockService.isBiometricAvailable();
-    showBiometric.value = isAvailable;
-  }
-
-  Future<void> _tryBiometricAuth() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!showBiometric.value) return;
-
-    final authenticated = await _appLockService.authenticateWithBiometrics();
-    if (authenticated) {
-      onUnlockSuccess();
-    }
   }
 
   void onPinDigitTap(String digit) {
@@ -75,17 +56,6 @@ class AppLockController extends GetxController {
     } else {
       enteredPin.value = '';
       errorMessage.value = 'Incorrect PIN. Please try again.';
-      isAuthenticating.value = false;
-    }
-  }
-
-  Future<void> onBiometricTap() async {
-    isAuthenticating.value = true;
-
-    final authenticated = await _appLockService.authenticateWithBiometrics();
-    if (authenticated) {
-      onUnlockSuccess();
-    } else {
       isAuthenticating.value = false;
     }
   }

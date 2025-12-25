@@ -68,33 +68,6 @@ class AppLockScreen extends StatelessWidget {
                       : const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 48),
-                Obx(
-                  () =>
-                      controller.showBiometric.value &&
-                          !controller.isAuthenticating.value
-                      ? Column(
-                          children: [
-                            IconButton(
-                              onPressed: controller.onBiometricTap,
-                              icon: const Icon(
-                                Icons.fingerprint_rounded,
-                                size: 48,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Use biometric',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
                 _buildKeypad(controller),
                 const SizedBox(height: 40),
               ],

@@ -12,7 +12,6 @@ class ContactListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<ContactListController>();
 
-    // Get party type from arguments
     final args = Get.arguments;
     final partyType = args != null && args is Map<String, dynamic>
         ? (args['partyType'] as int? ?? 0)
@@ -22,7 +21,6 @@ class ContactListScreen extends StatelessWidget {
         ? 'Add Customer from Contacts'
         : 'Add Supplier from Contacts';
 
-    // Listen to permission dialog state and show dialog when needed
     ever(controller.showPermissionDialog, (bool show) {
       if (show) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -140,11 +138,9 @@ class ContactListScreen extends StatelessWidget {
               );
             }
 
-            // Check if we have contacts but search returned empty
             if (controller.filteredContacts.isEmpty) {
               if (controller.hasContacts &&
                   controller.searchQuery.value.isNotEmpty) {
-                // Search returned no results
                 return Center(
                   child: Column(
                     mainAxisAlignment: .center,
@@ -175,7 +171,6 @@ class ContactListScreen extends StatelessWidget {
                   ),
                 );
               } else {
-                // No contacts at all
                 return Center(
                   child: Column(
                     mainAxisAlignment: .center,
@@ -241,13 +236,12 @@ class ContactListScreen extends StatelessWidget {
                     final cleanedNumber = controller.getCleanedPhoneNumber(
                       contact,
                     );
-                    final originalArgs = Get.arguments ?? <String, dynamic>{};
                     Get.toNamed(
                       Routes.addParty,
                       arguments: {
-                        'partyType': originalArgs['partyType'] ?? 0,
-                        'contactName': name.isEmpty ? '' : name,
-                        'contactNumber': cleanedNumber,
+                        'partyType': isCustomer ? 'customer' : 'supplier',
+                        'partyName': name.isEmpty ? '' : name,
+                        'mobile': cleanedNumber,
                       },
                     );
                   },
@@ -296,9 +290,13 @@ class ContactListScreen extends StatelessWidget {
                       onPressed: () {
                         Get.back();
                         controller.showPermissionDialog.value = false;
-                        final args = Get.arguments;
                         Get.back();
-                        Get.toNamed(Routes.addParty, arguments: args);
+                        Get.toNamed(
+                          Routes.addParty,
+                          arguments: {
+                            'partyType': isCustomer ? 'customer' : 'supplier',
+                          },
+                        );
                       },
                       textColor: Colors.white70,
                     ),

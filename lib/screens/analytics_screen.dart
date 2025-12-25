@@ -13,192 +13,190 @@ class AnalyticsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await controller.refreshAnalytics();
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Summary Cards Section
-                Padding(
-                  padding: .all(16),
-                  child: Column(
-                    children: [
-                      _buildSummaryCard(controller),
-                      const SizedBox(height: 16),
-                      Row(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildSummaryCard(controller),
+                    const SizedBox(height: 16),
+                    Obx(
+                      () => Row(
                         children: [
                           Expanded(
                             child: _buildMiniCard(
-                              'To Give',
-                              controller.totalToGive.value,
-                              Icons.arrow_upward,
-                              Colors.red,
+                              title: 'To Give',
+                              value: controller.totalToGive,
+                              icon: Icons.arrow_upward,
+                              color: Colors.red,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildMiniCard(
-                              'To Get',
-                              controller.totalToGet.value,
-                              Icons.arrow_downward,
-                              Colors.green,
+                              title: 'To Get',
+                              value: controller.totalToGet,
+                              icon: Icons.arrow_downward,
+                              color: Colors.green,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
 
-                // Monthly & Weekly Stats
-                Padding(
-                  padding: .symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: .start,
-                    children: [
-                      const Text(
-                        'This Month',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: .bold,
-                          color: AppColors.textPrimary,
-                        ),
+              Padding(
+                padding: .symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: .start,
+                  children: [
+                    const Text(
+                      'This Month',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: .bold,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 12),
-                      Row(
+                    ),
+                    const SizedBox(height: 12),
+                    Obx(
+                      () => Row(
                         children: [
                           Expanded(
                             child: _buildMiniCard(
-                              'To Give',
-                              controller.thisMonthToGive.value,
-                              Icons.arrow_upward,
-                              Colors.red,
+                              title: 'To Give',
+                              value: controller.thisMonthToGive,
+                              icon: Icons.arrow_upward,
+                              color: Colors.red,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildMiniCard(
-                              'To Get',
-                              controller.thisMonthToGet.value,
-                              Icons.arrow_downward,
-                              AppColors.success,
+                              title: 'To Get',
+                              value: controller.thisMonthToGet,
+                              icon: Icons.arrow_downward,
+                              color: AppColors.success,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      _buildStatsCard(
-                        'Total Transactions',
-                        controller.thisMonthTransactions.value.toDouble(),
-                        Icons.receipt_long,
-                        AppColors.primary,
+                    ),
+                    const SizedBox(height: 12),
+                    Obx(
+                      () => _buildStatsCard(
+                        title: 'Total Transactions',
+                        value: controller.thisMonthTransactions.toDouble(),
+                        icon: Icons.receipt_long,
+                        color: AppColors.primary,
                         isCount: true,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-                // Weekly Stats
-                Padding(
-                  padding: .symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: .start,
-                    children: [
-                      const Text(
-                        'This Week',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: .bold,
-                          color: AppColors.textPrimary,
-                        ),
+              Padding(
+                padding: .symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: .start,
+                  children: [
+                    const Text(
+                      'This Week',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: .bold,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 12),
-                      Row(
+                    ),
+                    const SizedBox(height: 12),
+                    Obx(
+                      () => Row(
                         children: [
                           Expanded(
                             child: _buildMiniCard(
-                              'You Got',
-                              controller.thisWeekIncome.value,
-                              Icons.arrow_downward,
-                              AppColors.success,
+                              title: 'You Got',
+                              value: controller.thisWeekIncome,
+                              icon: Icons.arrow_downward,
+                              color: AppColors.success,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildMiniCard(
-                              'You Gave',
-                              controller.thisWeekExpense.value,
-                              Icons.arrow_upward,
-                              Colors.red,
+                              title: 'You Gave',
+                              value: controller.thisWeekExpense,
+                              icon: Icons.arrow_upward,
+                              color: Colors.red,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      _buildStatsCard(
-                        'Total Transactions',
-                        controller.thisWeekTransactions.value.toDouble(),
-                        Icons.receipt_long,
-                        AppColors.primary,
+                    ),
+                    const SizedBox(height: 12),
+                    Obx(
+                      () => _buildStatsCard(
+                        title: 'Total Transactions',
+                        value: controller.thisWeekTransactions.toDouble(),
+                        icon: Icons.receipt_long,
+                        color: AppColors.primary,
                         isCount: true,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+              ),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-                // Top Customers
-                Padding(
-                  padding: .symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: .start,
-                    children: [
-                      const Text(
-                        'Top Customers',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: .bold,
-                          color: AppColors.textPrimary,
-                        ),
+              Padding(
+                padding: .symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: .start,
+                  children: [
+                    const Text(
+                      'Top Customers',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: .bold,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 12),
-                      _buildTopList(controller.topCustomers),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 12),
+                    Obx(() => _buildTopList(controller.topCustomers)),
+                  ],
                 ),
-
-                const SizedBox(height: 24),
-
-                // Top Suppliers
-                Padding(
-                  padding: .symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: .start,
-                    children: [
-                      const Text(
-                        'Top Suppliers',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: .bold,
-                          color: AppColors.textPrimary,
-                        ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: .symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: .start,
+                  children: [
+                    const Text(
+                      'Top Suppliers',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: .bold,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 12),
-                      _buildTopList(controller.topSuppliers),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 12),
+                    Obx(() => _buildTopList(controller.topSuppliers)),
+                  ],
                 ),
+              ),
 
-                const SizedBox(height: 32),
-              ],
-            ),
+              const SizedBox(height: 32),
+            ],
           ),
         ),
       ),
@@ -237,7 +235,7 @@ class AnalyticsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              controller.formatAmountFull(controller.totalBalance.value),
+              controller.formatAmountFull(controller.totalBalance),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 32,
@@ -245,30 +243,32 @@ class AnalyticsScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildBalanceItem(
-                    'Customers',
-                    controller.totalCustomers.value.toString(),
-                    Icons.people_outline,
+            Obx(
+              () => Row(
+                children: [
+                  Expanded(
+                    child: _buildBalanceItem(
+                      label: 'Customers',
+                      value: controller.totalCustomers.toString(),
+                      icon: Icons.people_outline,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _buildBalanceItem(
-                    'Suppliers',
-                    controller.totalSuppliers.value.toString(),
-                    Icons.business_outlined,
+                  Expanded(
+                    child: _buildBalanceItem(
+                      label: 'Suppliers',
+                      value: controller.totalSuppliers.toString(),
+                      icon: Icons.business_outlined,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _buildBalanceItem(
-                    'Transactions',
-                    controller.totalTransactions.value.toString(),
-                    Icons.receipt_long,
+                  Expanded(
+                    child: _buildBalanceItem(
+                      label: 'Transactions',
+                      value: controller.totalTransactions.toString(),
+                      icon: Icons.receipt_long,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -276,7 +276,11 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceItem(String label, String value, IconData icon) {
+  Widget _buildBalanceItem({
+    required String label,
+    required String value,
+    required IconData icon,
+  }) {
     return Column(
       children: [
         Icon(icon, color: Colors.white70, size: 20),
@@ -297,12 +301,12 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMiniCard(
-    String title,
-    double value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildMiniCard({
+    required String title,
+    required double value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
       padding: .all(16),
       decoration: BoxDecoration(
@@ -349,11 +353,11 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsCard(
-    String title,
-    double value,
-    IconData icon,
-    Color color, {
+  Widget _buildStatsCard({
+    required String title,
+    required double value,
+    required IconData icon,
+    required Color color,
     bool isCount = false,
   }) {
     return Container(
@@ -403,91 +407,89 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopList(RxList<Map<String, dynamic>> items) {
-    return Obx(
-      () => Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: .circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          children: items.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            final isLast = index == items.length - 1;
+  Widget _buildTopList(List<Map<String, dynamic>> items) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: .circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final isLast = index == items.length - 1;
 
-            return Container(
-              padding: .symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                border: isLast
-                    ? null
-                    : Border(
-                        bottom: BorderSide(color: AppColors.border, width: 1),
+          return Container(
+            padding: .symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: isLast
+                  ? null
+                  : Border(
+                      bottom: BorderSide(color: AppColors.border, width: 1),
+                    ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color:
+                        (item['type'] == 'give'
+                                ? Colors.red
+                                : AppColors.success)
+                            .withValues(alpha: 0.1),
+                    borderRadius: .circular(8),
+                  ),
+                  child: Icon(
+                    item['type'] == 'give'
+                        ? Icons.arrow_upward
+                        : Icons.arrow_downward,
+                    color: item['type'] == 'give'
+                        ? Colors.red
+                        : AppColors.success,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: .start,
+                    children: [
+                      Text(
+                        item['name'] as String,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: .w600,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color:
-                          (item['type'] == 'give'
-                                  ? Colors.red
-                                  : AppColors.success)
-                              .withValues(alpha: 0.1),
-                      borderRadius: .circular(8),
-                    ),
-                    child: Icon(
-                      item['type'] == 'give'
-                          ? Icons.arrow_upward
-                          : Icons.arrow_downward,
-                      color: item['type'] == 'give'
-                          ? Colors.red
-                          : AppColors.success,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: .start,
-                      children: [
-                        Text(
-                          item['name'] as String,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: .w600,
-                            color: AppColors.textPrimary,
-                          ),
+                      const SizedBox(height: 2),
+                      Text(
+                        item['type'] == 'give' ? 'You gave' : 'You got',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          item['type'] == 'give' ? 'You gave' : 'You got',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    _formatAmount((item['amount'] as num).toDouble()),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: .bold,
-                      color: item['type'] == 'give'
-                          ? Colors.red
-                          : AppColors.success,
-                    ),
+                ),
+                Text(
+                  _formatAmount((item['amount'] as num).toDouble()),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: .bold,
+                    color: item['type'] == 'give'
+                        ? Colors.red
+                        : AppColors.success,
                   ),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }

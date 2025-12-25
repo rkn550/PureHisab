@@ -50,7 +50,7 @@ class TransactionEntryScreen extends StatelessWidget {
         () => IconButton(
           icon: Icon(
             Icons.arrow_back_rounded,
-            color: controller.transactionType.value == 'give'
+            color: controller.transactionType == 'give'
                 ? Colors.red.shade700
                 : Colors.green.shade700,
           ),
@@ -59,9 +59,9 @@ class TransactionEntryScreen extends StatelessWidget {
       ),
       title: Obx(
         () => Text(
-          controller.transactionType.value == 'give' ? 'You Gave' : 'You Got',
+          controller.transactionType == 'give' ? 'You Gave' : 'You Got',
           style: TextStyle(
-            color: controller.transactionType.value == 'give'
+            color: controller.transactionType == 'give'
                 ? Colors.red.shade700
                 : Colors.green.shade700,
             fontSize: 18,
@@ -79,7 +79,7 @@ class TransactionEntryScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: controller.transactionType.value == 'give'
+            colors: controller.transactionType == 'give'
                 ? [Colors.red.shade50, Colors.red.shade100]
                 : [Colors.green.shade50, Colors.green.shade100],
             begin: Alignment.topLeft,
@@ -89,7 +89,7 @@ class TransactionEntryScreen extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color:
-                  (controller.transactionType.value == 'give'
+                  (controller.transactionType == 'give'
                           ? Colors.red
                           : Colors.green)
                       .withValues(alpha: 0.2),
@@ -105,7 +105,6 @@ class TransactionEntryScreen extends StatelessWidget {
 
             GestureDetector(
               onTap: () {
-                // Focus amount field when tapped to show calculator
                 controller.amountFocusNode.requestFocus();
               },
               child: TextFormField(
@@ -114,14 +113,14 @@ class TransactionEntryScreen extends StatelessWidget {
                 readOnly: true,
                 showCursor: true,
                 enableInteractiveSelection: true,
-                cursorColor: controller.transactionType.value == 'give'
+                cursorColor: controller.transactionType == 'give'
                     ? Colors.red.shade700
                     : Colors.green.shade700,
                 cursorHeight: 32,
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: controller.transactionType.value == 'give'
+                  color: controller.transactionType == 'give'
                       ? Colors.red.shade700
                       : Colors.green.shade700,
                   letterSpacing: 1,
@@ -130,7 +129,7 @@ class TransactionEntryScreen extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   prefixIcon: Icon(
                     Icons.currency_rupee,
-                    color: controller.transactionType.value == 'give'
+                    color: controller.transactionType == 'give'
                         ? Colors.red.shade700
                         : Colors.green.shade700,
                   ),
@@ -144,7 +143,7 @@ class TransactionEntryScreen extends StatelessWidget {
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color:
-                        (controller.transactionType.value == 'give'
+                        (controller.transactionType == 'give'
                                 ? Colors.red
                                 : Colors.green)
                             .withValues(alpha: 0.3),
@@ -173,7 +172,7 @@ class TransactionEntryScreen extends StatelessWidget {
                   controller.calculationDisplay.value,
                   style: TextStyle(
                     fontSize: 14,
-                    color: controller.transactionType.value == 'give'
+                    color: controller.transactionType == 'give'
                         ? Colors.red.shade700
                         : Colors.green.shade700,
                     fontWeight: FontWeight.w500,
@@ -280,7 +279,7 @@ class TransactionEntryScreen extends StatelessWidget {
                         const Spacer(),
                         Icon(
                           Icons.arrow_drop_down,
-                          color: controller.transactionType.value == 'give'
+                          color: controller.transactionType == 'give'
                               ? Colors.red
                               : Colors.green,
                         ),
@@ -304,7 +303,7 @@ class TransactionEntryScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: controller.billImageFile.value != null
                         ? Border.all(
-                            color: controller.transactionType.value == 'give'
+                            color: controller.transactionType == 'give'
                                 ? Colors.red
                                 : Colors.green,
                             width: 2,
@@ -319,7 +318,7 @@ class TransactionEntryScreen extends StatelessWidget {
                             ? Icons.attach_file
                             : Icons.camera_alt,
                         size: 20,
-                        color: controller.transactionType.value == 'give'
+                        color: controller.transactionType == 'give'
                             ? Colors.red
                             : Colors.green,
                       ),
@@ -330,7 +329,7 @@ class TransactionEntryScreen extends StatelessWidget {
                             : 'Attach bills',
                         style: TextStyle(
                           fontSize: 14,
-                          color: controller.transactionType.value == 'give'
+                          color: controller.transactionType == 'give'
                               ? Colors.red
                               : Colors.green,
                           fontWeight: controller.billImageFile.value != null
@@ -347,61 +346,67 @@ class TransactionEntryScreen extends StatelessWidget {
         ),
         Obx(
           () => controller.billImageFile.value != null
-              ? Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Container(
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: controller.transactionType.value == 'give'
-                            ? Colors.red.shade200
-                            : Colors.green.shade200,
-                        width: 1,
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            controller.billImageFile.value!,
-                            width: double.infinity,
-                            height: 120,
-                            fit: BoxFit.cover,
+              ? Row(
+                  mainAxisAlignment: .end,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Container(
+                        height: 70,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: controller.transactionType == 'give'
+                                ? Colors.red.shade200
+                                : Colors.green.shade200,
+                            width: 1,
                           ),
                         ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: InkWell(
-                            onTap: () {
-                              controller.billImageFile.value = null;
-                              Get.snackbar(
-                                'Success',
-                                'Bill removed',
-                                snackPosition: SnackPosition.BOTTOM,
-                                duration: const Duration(seconds: 2),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 18,
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                controller.billImageFile.value!,
+                                width: double.infinity,
+                                height: 70,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          ),
+                            Positioned(
+                              top: 5,
+                              right: 5,
+                              child: InkWell(
+                                onTap: () {
+                                  controller.billImageFile.value = null;
+                                  Get.snackbar(
+                                    'Success',
+                                    'Bill removed',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                    duration: const Duration(seconds: 2),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 )
               : const SizedBox.shrink(),
         ),
@@ -416,7 +421,7 @@ class TransactionEntryScreen extends StatelessWidget {
         onPressed: controller.saveTransaction,
         height: 56,
         fontSize: 18,
-        backgroundColor: controller.transactionType.value == 'give'
+        backgroundColor: controller.transactionType == 'give'
             ? Colors.red
             : Colors.green,
         foregroundColor: Colors.white,
@@ -445,11 +450,6 @@ class TransactionEntryScreen extends StatelessWidget {
             _CalculatorButton('M-', onTap: controller.onMemoryMinus),
             _CalculatorButton('⌫', onTap: controller.onBackspacePressed),
             _CalculatorButton(
-              '÷',
-              isOperator: true,
-              onTap: () => controller.onOperatorPressed('÷'),
-            ),
-            _CalculatorButton(
               '%',
               isOperator: true,
               onTap: () => controller.onOperatorPressed('%'),
@@ -469,9 +469,9 @@ class TransactionEntryScreen extends StatelessWidget {
               onTap: () => controller.onNumberPressed('9'),
             ),
             _CalculatorButton(
-              '×',
+              '÷',
               isOperator: true,
-              onTap: () => controller.onOperatorPressed('×'),
+              onTap: () => controller.onOperatorPressed('÷'),
             ),
           ]),
           _buildCalculatorRow(controller, [
@@ -488,9 +488,9 @@ class TransactionEntryScreen extends StatelessWidget {
               onTap: () => controller.onNumberPressed('6'),
             ),
             _CalculatorButton(
-              '-',
+              '×',
               isOperator: true,
-              onTap: () => controller.onOperatorPressed('-'),
+              onTap: () => controller.onOperatorPressed('×'),
             ),
           ]),
           _buildCalculatorRow(controller, [
@@ -507,9 +507,9 @@ class TransactionEntryScreen extends StatelessWidget {
               onTap: () => controller.onNumberPressed('3'),
             ),
             _CalculatorButton(
-              '+',
+              '-',
               isOperator: true,
-              onTap: () => controller.onOperatorPressed('+'),
+              onTap: () => controller.onOperatorPressed('-'),
             ),
           ]),
           _buildCalculatorRow(controller, [
@@ -522,6 +522,11 @@ class TransactionEntryScreen extends StatelessWidget {
               '=',
               isEquals: true,
               onTap: controller.onEqualsPressed,
+            ),
+            _CalculatorButton(
+              '+',
+              isOperator: true,
+              onTap: () => controller.onOperatorPressed('+'),
             ),
           ]),
         ],
@@ -561,7 +566,7 @@ class TransactionEntryScreen extends StatelessWidget {
     bool isOperator = button.isOperator;
 
     if (isEquals) {
-      backgroundColor = controller.transactionType.value == 'give'
+      backgroundColor = controller.transactionType == 'give'
           ? Colors.red.shade600
           : Colors.green.shade600;
       textColor = Colors.white;
@@ -600,7 +605,7 @@ class TransactionEntryScreen extends StatelessWidget {
                 ? [
                     BoxShadow(
                       color:
-                          (controller.transactionType.value == 'give'
+                          (controller.transactionType == 'give'
                                   ? Colors.red
                                   : Colors.green)
                               .withValues(alpha: 0.3),

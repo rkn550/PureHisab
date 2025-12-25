@@ -1,29 +1,23 @@
 import 'package:get/get.dart';
-import 'package:purehisab/data/local/local_db.dart';
-import 'package:purehisab/data/model/party_model.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
+
+import '../local/local_db.dart';
+import '../model/party_model.dart';
 
 class PartyRepository extends GetxService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final Uuid _uuid = const Uuid();
 
   Future<PartyModel> createParty({
     required String businessId,
     required String partyName,
     required String type,
-    String? phoneNumber,
+    required String phoneNumber,
     String? address,
-    String? photoUrl,
+    String? partiesPhotoUrl,
   }) async {
     try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) {
-        throw Exception('User not authenticated. Please login first.');
-      }
-
       final db = await _dbHelper.database;
       final now = DateTime.now().millisecondsSinceEpoch;
 
@@ -34,27 +28,21 @@ class PartyRepository extends GetxService {
         type: type,
         phoneNumber: phoneNumber,
         address: address,
-        photoUrl: photoUrl,
+        partiesPhotoUrl: partiesPhotoUrl,
         createdAt: now,
         updatedAt: now,
+        isSynced: false,
       );
 
-      await db.insert(
-        'parties',
-        party.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-
-      final savedParty = await getPartyById(party.id);
-      if (savedParty == null) {
-        throw Exception('Party was not saved to database');
-      }
-
-      return savedParty;
+      await db.transaction((txn) async {
+        await txn.insert(
+          'parties',
+          party.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.abort,
+        );
+      });
+      return party;
     } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
       throw Exception('Failed to create party: $e');
     }
   }
@@ -72,10 +60,10 @@ class PartyRepository extends GetxService {
     return result.map(PartyModel.fromMap).toList();
   }
 
-  Future<List<PartyModel>> getPartiesByType(
-    String businessId,
-    String type,
-  ) async {
+  Future<List<PartyModel>> getPartiesByType({
+    required String businessId,
+    required String type,
+  }) async {
     final db = await _dbHelper.database;
 
     final result = await db.query(
@@ -98,76 +86,38 @@ class PartyRepository extends GetxService {
       limit: 1,
     );
 
-    if (result.isEmpty) return null;
-    return PartyModel.fromMap(result.first);
+    return result.isEmpty ? null : PartyModel.fromMap(result.first);
   }
 
   Future<void> updateParty(PartyModel party) async {
     final db = await _dbHelper.database;
 
-    await db.update(
-      'parties',
-      party
-          .copyWith(
-            updatedAt: DateTime.now().millisecondsSinceEpoch,
-            isSynced: false,
-          )
-          .toMap(),
-      where: 'id = ?',
-      whereArgs: [party.id],
-    );
+    final data = party
+        .copyWith(
+          updatedAt: DateTime.now().millisecondsSinceEpoch,
+          isSynced: false,
+        )
+        .toMap();
+
+    await db.transaction((txn) async {
+      await txn.update('parties', data, where: 'id = ?', whereArgs: [party.id]);
+    });
   }
 
   Future<void> deleteParty(String partyId) async {
     final db = await _dbHelper.database;
 
-    await db.update(
-      'parties',
-      {
-        'is_deleted': 1,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-        'is_synced': 0,
-      },
-      where: 'id = ?',
-      whereArgs: [partyId],
-    );
-  }
-}
-
-extension PartyModelCopyWith on PartyModel {
-  PartyModel copyWith({
-    String? partyName,
-    String? phoneNumber,
-    String? address,
-    String? photoUrl,
-    String? type,
-    int? reminderDate,
-    String? reminderType,
-    bool? smsSetting,
-    String? smsLanguage,
-    bool? isDeleted,
-    bool? isSynced,
-    int? updatedAt,
-    int? firebaseUpdatedAt,
-    bool clearPhotoUrl = false,
-  }) {
-    return PartyModel(
-      id: id,
-      businessId: businessId,
-      partyName: partyName ?? this.partyName,
-      type: type ?? this.type,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      address: address ?? this.address,
-      photoUrl: clearPhotoUrl ? null : (photoUrl ?? this.photoUrl),
-      reminderDate: reminderDate ?? this.reminderDate,
-      reminderType: reminderType ?? this.reminderType,
-      smsSetting: smsSetting ?? this.smsSetting,
-      smsLanguage: smsLanguage ?? this.smsLanguage,
-      isDeleted: isDeleted ?? this.isDeleted,
-      isSynced: isSynced ?? this.isSynced,
-      createdAt: createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      firebaseUpdatedAt: firebaseUpdatedAt ?? this.firebaseUpdatedAt,
-    );
+    await db.transaction((txn) async {
+      await txn.update(
+        'parties',
+        {
+          'is_deleted': 1,
+          'updated_at': DateTime.now().millisecondsSinceEpoch,
+          'is_synced': 0,
+        },
+        where: 'id = ?',
+        whereArgs: [partyId],
+      );
+    });
   }
 }

@@ -4,7 +4,7 @@ class BusinessModel {
   final String userId;
   final String? ownerName;
   final String? phoneNumber;
-  final String? photoUrl;
+  final String? businessPhotoUrl;
   final bool isDeleted;
   final bool isSynced;
   final int createdAt;
@@ -15,17 +15,16 @@ class BusinessModel {
     required this.id,
     required this.businessName,
     required this.userId,
-    this.ownerName,
-    this.phoneNumber,
-    this.photoUrl,
-    this.isDeleted = false,
-    this.isSynced = false,
     required this.createdAt,
     required this.updatedAt,
+    this.ownerName,
+    this.phoneNumber,
+    this.businessPhotoUrl,
+    this.isDeleted = false,
+    this.isSynced = false,
     this.firebaseUpdatedAt,
   });
 
-  /// SQLite → Object
   factory BusinessModel.fromMap(Map<String, dynamic> map) {
     return BusinessModel(
       id: map['id'],
@@ -33,7 +32,7 @@ class BusinessModel {
       userId: map['user_id'],
       ownerName: map['owner_name'],
       phoneNumber: map['phone_number'],
-      photoUrl: map['photo_url'],
+      businessPhotoUrl: map['business_photo_url'],
       isDeleted: map['is_deleted'] == 1,
       isSynced: map['is_synced'] == 1,
       createdAt: map['created_at'],
@@ -42,30 +41,28 @@ class BusinessModel {
     );
   }
 
-  /// Object → SQLite
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'business_name': businessName,
+      'user_id': userId,
       'owner_name': ownerName,
       'phone_number': phoneNumber,
-      'photo_url': photoUrl,
+      'business_photo_url': businessPhotoUrl,
       'is_deleted': isDeleted ? 1 : 0,
+      'is_synced': isSynced ? 1 : 0,
       'created_at': createdAt,
       'updated_at': updatedAt,
-      'user_id': userId,
-      'is_synced': isSynced ? 1 : 0,
       'firebase_updated_at': firebaseUpdatedAt,
     };
   }
 
-  /// Object → Firebase
   Map<String, dynamic> toFirebase() {
     return {
       'businessName': businessName,
       'ownerName': ownerName,
       'phoneNumber': phoneNumber,
-      'photoUrl': photoUrl,
+      'photoUrl': businessPhotoUrl,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'isDeleted': isDeleted,
@@ -76,7 +73,7 @@ class BusinessModel {
     String? businessName,
     String? ownerName,
     String? phoneNumber,
-    String? photoUrl,
+    String? businessPhotoUrl,
     bool? isDeleted,
     bool? isSynced,
     int? updatedAt,
@@ -88,7 +85,7 @@ class BusinessModel {
       userId: userId,
       ownerName: ownerName ?? this.ownerName,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      photoUrl: photoUrl ?? this.photoUrl,
+      businessPhotoUrl: businessPhotoUrl ?? this.businessPhotoUrl,
       isDeleted: isDeleted ?? this.isDeleted,
       isSynced: isSynced ?? this.isSynced,
       createdAt: createdAt,

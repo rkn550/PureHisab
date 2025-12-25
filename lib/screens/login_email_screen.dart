@@ -84,15 +84,7 @@ class LoginEmailScreen extends StatelessWidget {
           size: 24,
         ),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your email';
-        }
-        if (!value.contains('@') || !value.contains('.')) {
-          return 'Please enter a valid email address';
-        }
-        return null;
-      },
+      validator: controller.validateEmail,
     );
   }
 
@@ -121,15 +113,7 @@ class LoginEmailScreen extends StatelessWidget {
           ),
           onPressed: controller.togglePasswordVisibility,
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter your password';
-          }
-          if (value.length < 6) {
-            return 'Password must be at least 6 characters';
-          }
-          return null;
-        },
+        validator: controller.validatePassword,
       ),
     );
   }

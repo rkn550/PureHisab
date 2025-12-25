@@ -1,124 +1,117 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:purehisab/controllers/navigation_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:purehisab/app/utils/snacks_bar.dart';
 import 'package:purehisab/data/services/party_repo.dart';
 import 'package:purehisab/data/services/transaction_repo.dart';
 import 'package:purehisab/data/services/reminder_notification_service.dart';
-import 'home_controller.dart';
 import '../app/routes/app_pages.dart';
 
-class CustomerDetailController extends GetxController {
+class PartiesDetailController extends GetxController {
   PartyRepository get _partyRepository => Get.find<PartyRepository>();
   TransactionRepository get _transactionRepository =>
       Get.find<TransactionRepository>();
   ReminderNotificationService get _reminderNotificationService =>
       Get.find<ReminderNotificationService>();
 
-  final RxString customerName = ''.obs;
-  final RxString customerPhone = ''.obs;
-  final RxString customerId = ''.obs;
-  final RxBool isCustomer = true.obs;
-
-  final RxDouble amountToGive = 0.0.obs;
-  final RxDouble amountToGet = 0.0.obs;
-
-  final RxString collectionReminderDate = ''.obs;
-  final RxBool hasReminder = false.obs;
-
-  final RxString storeName = ''.obs;
-
-  final RxString smsLanguage = 'English'.obs;
-
-  final RxList<Map<String, dynamic>> transactions =
+  final RxBool _isLoading = false.obs;
+  final RxString _partyId = ''.obs;
+  final RxString _partyName = ''.obs;
+  final RxString _partyPhone = ''.obs;
+  final RxString _partyType = ''.obs;
+  final RxString _smsLanguage = 'english'.obs;
+  final RxBool _hasReminder = false.obs;
+  final RxString _collectionReminderDate = ''.obs;
+  final RxBool _smsSetting = false.obs;
+  final RxString _businessId = ''.obs;
+  final RxDouble _amountToGet = 0.0.obs;
+  final RxDouble _amountToGive = 0.0.obs;
+  final RxList<Map<String, dynamic>> _transactions =
       <Map<String, dynamic>>[].obs;
+
+  bool get isLoading => _isLoading.value;
+  String get partyId => _partyId.value;
+  String get partyName => _partyName.value;
+  String get partyPhone => _partyPhone.value;
+  String get partyType => _partyType.value;
+  String get smsLanguage => _smsLanguage.value;
+  bool get hasReminder => _hasReminder.value;
+  String get collectionReminderDate => _collectionReminderDate.value;
+  bool get smsSetting => _smsSetting.value;
+  String get businessId => _businessId.value;
+  double get amountToGet => _amountToGet.value;
+  double get amountToGive => _amountToGive.value;
+  List<Map<String, dynamic>> get transactions => _transactions;
 
   @override
   void onInit() {
     super.onInit();
-    loadCustomerData().then((_) {
-      loadTransactions();
-    });
+    loadPartyIdFromArguments();
+    Future.microtask(() => reloadPartyData());
   }
 
-  Future<void> loadCustomerData() async {
+  void loadPartyIdFromArguments() {
     final args = Get.arguments;
-    String? partyId;
-
     if (args != null && args is Map<String, dynamic>) {
-      partyId = args['id']?.toString();
+      _partyId.value =
+          args['partyId']?.toString() ?? args['id']?.toString() ?? '';
     }
+  }
 
-    if (partyId == null || partyId.isEmpty) {
-      return;
-    }
-
+  Future<void> loadPartyData() async {
+    if (partyId.isEmpty) return;
     try {
       final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
-        customerId.value = party.id;
-        customerName.value = party.partyName;
-        customerPhone.value = party.phoneNumber ?? '';
-        isCustomer.value = party.type == 'customer';
-
-        smsLanguage.value = party.smsLanguage ?? 'English';
-
-        if (party.reminderDate != null) {
-          final reminderDateTime = DateTime.fromMillisecondsSinceEpoch(
-            party.reminderDate!,
-          );
-          collectionReminderDate.value = _formatDateKey(reminderDateTime);
-          hasReminder.value = true;
-        } else {
-          collectionReminderDate.value = '';
-          hasReminder.value = false;
-        }
+        _partyName.value = party.partyName;
+        _partyPhone.value = party.phoneNumber;
+        _partyType.value = party.type;
+        _smsLanguage.value = party.smsLanguage ?? 'english';
+        _hasReminder.value = party.reminderDate != null;
+        _smsSetting.value = party.smsSetting;
+        _businessId.value = party.businessId;
+        _collectionReminderDate.value = party.reminderDate != null
+            ? _formatDateKey(
+                DateTime.fromMillisecondsSinceEpoch(party.reminderDate!),
+              )
+            : '';
       }
-    } catch (e) {
-      debugPrint('Error loading customer data: $e');
-    }
+    } catch (e) {}
+  }
 
-    if (Get.isRegistered<HomeController>()) {
-      try {
-        final homeController = Get.find<HomeController>();
-        storeName.value = homeController.storeName.value;
-      } catch (e) {
-        debugPrint('Error loading store name: $e');
-      }
-    }
+  Future<void> reloadPartyData() async {
+    _isLoading.value = true;
+    await loadPartyData();
+    await loadTransactions();
+    _isLoading.value = false;
   }
 
   Future<void> loadTransactions() async {
-    if (customerId.value.isEmpty) return;
-
+    if (partyId.isEmpty) return;
     try {
-      final txList = await _transactionRepository.getTransactionsByParty(
-        customerId.value,
+      final txList = await _transactionRepository.getTransactionsByPartyId(
+        partyId,
       );
-
-      transactions.clear();
-
+      _transactions.clear();
       for (var tx in txList) {
-        transactions.add({
+        _transactions.add({
           'id': tx.id,
           'amount': tx.amount,
           'type': tx.direction == 'gave' ? 'give' : 'get',
           'date': DateTime.fromMillisecondsSinceEpoch(tx.date),
+          'transaction_photo_url': tx.transactionPhotoUrl,
           'description': tx.description,
           'balance': 0.0,
         });
       }
 
-      transactions.sort((a, b) {
+      _transactions.sort((a, b) {
         final dateA = a['date'] as DateTime;
         final dateB = b['date'] as DateTime;
         return dateB.compareTo(dateA);
       });
-
       calculateSummary();
-    } catch (e) {
-      debugPrint('Error loading transactions: $e');
-    }
+    } catch (e) {}
   }
 
   void calculateSummary() {
@@ -137,20 +130,18 @@ class CustomerDetailController extends GetxController {
         get += (transaction['amount'] as num).toDouble();
       }
     }
-
     final netBalance = get - give;
-
     if (netBalance > 0) {
-      amountToGet.value = netBalance;
-      amountToGive.value = 0.0;
+      _amountToGet.value = netBalance;
+      _amountToGive.value = 0.0;
     } else {
-      amountToGive.value = netBalance.abs();
-      amountToGet.value = 0.0;
+      _amountToGive.value = netBalance.abs();
+      _amountToGet.value = 0.0;
     }
   }
 
   void _calculateBalances() {
-    final sortedTransactions = List<Map<String, dynamic>>.from(transactions);
+    final sortedTransactions = List<Map<String, dynamic>>.from(_transactions);
     sortedTransactions.sort((a, b) {
       final dateA = a['date'] as DateTime;
       final dateB = b['date'] as DateTime;
@@ -158,7 +149,6 @@ class CustomerDetailController extends GetxController {
     });
 
     double runningBalance = 0.0;
-
     for (var transaction in sortedTransactions) {
       if (transaction['type'] == 'give') {
         runningBalance -= (transaction['amount'] as num).toDouble();
@@ -167,8 +157,16 @@ class CustomerDetailController extends GetxController {
       }
       transaction['balance'] = runningBalance.abs();
     }
+    for (var sortedTx in sortedTransactions) {
+      final index = _transactions.indexWhere(
+        (tx) => tx['id'] == sortedTx['id'],
+      );
+      if (index != -1) {
+        _transactions[index]['balance'] = sortedTx['balance'];
+      }
+    }
 
-    transactions.sort((a, b) {
+    _transactions.sort((a, b) {
       final dateA = a['date'] as DateTime;
       final dateB = b['date'] as DateTime;
       return dateB.compareTo(dateA);
@@ -241,10 +239,10 @@ class CustomerDetailController extends GetxController {
   }
 
   Future<void> setCollectionReminder(DateTime date) async {
-    if (customerId.value.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     try {
-      final party = await _partyRepository.getPartyById(customerId.value);
+      final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
         final reminderTimestamp = date.millisecondsSinceEpoch;
         final updatedParty = party.copyWith(
@@ -252,149 +250,143 @@ class CustomerDetailController extends GetxController {
           reminderType: 'collection',
         );
         await _partyRepository.updateParty(updatedParty);
+        await loadPartyData();
 
-        collectionReminderDate.value = _formatDateKey(date);
-        hasReminder.value = true;
+        _collectionReminderDate.value = _formatDateKey(date);
+        _hasReminder.value = true;
 
-        final amount = amountToGet.value > 0
-            ? amountToGet.value
-            : amountToGive.value;
-        final type = amountToGet.value > 0 ? 'get' : 'give';
-        final notificationId = customerId.value.hashCode.abs() % 2147483647;
+        final amount = amountToGet > 0 ? amountToGet : amountToGive;
+        final type = amountToGet > 0 ? 'get' : 'give';
+        final notificationId = partyId.hashCode.abs() % 2147483647;
 
         await _reminderNotificationService.scheduleReminderNotification(
           notificationId: notificationId,
-          partyId: customerId.value,
-          partyName: customerName.value,
+          partyId: partyId,
+          partyName: partyName,
           reminderDate: date,
           amount: amount,
           type: type,
         );
 
-        Get.snackbar(
-          'Reminder Set',
-          'You will receive a notification on ${_formatDateForMessage(date)}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-          duration: const Duration(seconds: 2),
+        SnacksBar.showSnackbar(
+          title: 'Reminder Set',
+          message:
+              'You will receive a notification on ${_formatDateForMessage(date)}',
+          type: SnacksBarType.SUCCESS,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to set reminder. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to set reminder. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 
   Future<void> removeCollectionReminder() async {
-    if (customerId.value.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     try {
-      final party = await _partyRepository.getPartyById(customerId.value);
+      final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
         final updatedParty = party.copyWith(
           reminderDate: null,
           reminderType: null,
         );
         await _partyRepository.updateParty(updatedParty);
-
-        collectionReminderDate.value = '';
-        hasReminder.value = false;
-
-        final notificationId = customerId.value.hashCode.abs() % 2147483647;
+        await loadPartyData();
+        _collectionReminderDate.value = '';
+        _hasReminder.value = false;
+        final notificationId = partyId.hashCode.abs() % 2147483647;
         await _reminderNotificationService.cancelReminderNotification(
           notificationId,
         );
-
-        Get.snackbar(
-          'Reminder Removed',
-          'Notification has been cancelled',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade900,
-          duration: const Duration(seconds: 2),
+        SnacksBar.showSnackbar(
+          title: 'Reminder Removed',
+          message: 'Notification has been cancelled',
+          type: SnacksBarType.SUCCESS,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to remove reminder. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to remove reminder. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 
   void onReportTap() {
-    Get.snackbar('Report', 'Generating report...');
+    SnacksBar.showSnackbar(
+      title: 'Report',
+      message: 'Generating report...',
+      type: SnacksBarType.INFO,
+    );
   }
 
   void onReminderTap() {
-    Get.snackbar('Reminder', 'Sending reminder...');
+    SnacksBar.showSnackbar(
+      title: 'Reminder',
+      message: 'Sending reminder...',
+      type: SnacksBarType.INFO,
+    );
   }
 
   String _getPaymentReminderMessage() {
-    final amount = amountToGet.value > 0
-        ? amountToGet.value
-        : amountToGive.value;
+    final amount = amountToGet > 0 ? amountToGet : amountToGive;
     final formattedAmount = _formatAmount(amount);
 
     String dateText;
-    if (hasReminder.value && collectionReminderDate.value.isNotEmpty) {
+    if (hasReminder && collectionReminderDate.isNotEmpty) {
       try {
-        final parts = collectionReminderDate.value.split('-');
+        final parts = collectionReminderDate.split('-');
         if (parts.length == 3) {
           final year = int.parse(parts[0]);
           final month = int.parse(parts[1]);
           final day = int.parse(parts[2]);
           final date = DateTime(year, month, day);
-          dateText = smsLanguage.value == 'Hindi'
+          dateText = smsLanguage.toLowerCase() == 'hindi'
               ? _formatDateForMessageHindi(date)
               : _formatDateForMessage(date);
         } else {
-          dateText = smsLanguage.value == 'Hindi'
+          dateText = smsLanguage.toLowerCase() == 'hindi'
               ? _formatDateForMessageHindi(DateTime.now())
               : _formatDateForMessage(DateTime.now());
         }
       } catch (e) {
-        dateText = smsLanguage.value == 'Hindi'
+        dateText = smsLanguage.toLowerCase() == 'hindi'
             ? _formatDateForMessageHindi(DateTime.now())
             : _formatDateForMessage(DateTime.now());
       }
     } else {
-      dateText = smsLanguage.value == 'Hindi'
+      dateText = smsLanguage.toLowerCase() == 'hindi'
           ? _formatDateForMessageHindi(DateTime.now())
           : _formatDateForMessage(DateTime.now());
     }
 
-    String storePhone = '';
-    if (Get.isRegistered<HomeController>()) {
+    final messageType = amountToGet > 0 ? 'payment' : 'collection';
+    String ownerName = '';
+    String ownerPhone = '';
+    if (Get.isRegistered<NavigationController>()) {
       try {
-        final homeController = Get.find<HomeController>();
-        if (homeController.selectedBusinessId.value.isNotEmpty) {}
+        final navController = Get.find<NavigationController>();
+        final business = navController.businesses
+            .where((b) => b.id == businessId)
+            .firstOrNull;
+        ownerName = business?.ownerName ?? '';
+        ownerPhone = business?.phoneNumber ?? '';
       } catch (e) {
-        debugPrint('Error getting store phone: $e');
+        ownerName = '';
+        ownerPhone = '';
       }
     }
 
-    final phoneText = storePhone.isNotEmpty ? ' ($storePhone)' : '';
-
-    final messageType = amountToGet.value > 0 ? 'payment' : 'collection';
-
-    if (smsLanguage.value == 'Hindi') {
-      if (messageType == 'payment') {
-        return '$storeName$phoneText ने ₹ $formattedAmount की राशि का भुगतान $dateText को करने का अनुरोध किया है। विवरण देखने के लिए कृपया https://purehisab.com/payment पर जाएं।';
-      } else {
-        return '$storeName$phoneText ने ₹ $formattedAmount की राशि की वसूली $dateText को करने का अनुरोध किया है। विवरण देखने के लिए कृपया https://purehisab.com/payment पर जाएं।';
-      }
+    if (smsLanguage.toLowerCase() == 'hindi') {
+      final messageTypeHindi = messageType == 'payment' ? 'भुगतान' : 'वसूली';
+      return '$ownerName ने ₹ $formattedAmount की राशि की $messageTypeHindi $dateText को करने का अनुरोध किया है। अधिक जानकारी के लिए कृपया $ownerPhone पर कॉल करें।';
     } else {
-      return '$storeName$phoneText has requested a $messageType of ₹ $formattedAmount on $dateText. Please visit https://purehisab.com/payment to view details';
+      return '$ownerName has requested a $messageType of ₹ $formattedAmount on $dateText. Please call at $ownerPhone to know more details.';
     }
   }
 
@@ -447,16 +439,16 @@ class CustomerDetailController extends GetxController {
   }
 
   Future<void> onSMSTap() async {
-    if (customerPhone.value.isEmpty) {
-      Get.snackbar(
-        'No Phone Number',
-        'Phone number is not available for this contact',
-        snackPosition: SnackPosition.BOTTOM,
+    if (partyPhone.isEmpty) {
+      SnacksBar.showSnackbar(
+        title: 'No Phone Number',
+        message: 'Phone number is not available for this contact',
+        type: SnacksBarType.WARNING,
       );
       return;
     }
 
-    final cleanedPhone = customerPhone.value.replaceAll(RegExp(r'[^\d+]'), '');
+    final cleanedPhone = partyPhone.replaceAll(RegExp(r'[^\d+]'), '');
 
     final phoneNumber = cleanedPhone.startsWith('+')
         ? cleanedPhone
@@ -477,29 +469,27 @@ class CustomerDetailController extends GetxController {
       );
 
       if (!launched) {
-        Get.snackbar(
-          'SMS',
-          'Could not open SMS app. Phone: $phoneNumber',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 3),
+        SnacksBar.showSnackbar(
+          title: 'SMS',
+          message: 'Could not open SMS app. Phone: $phoneNumber',
+          type: SnacksBarType.WARNING,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'SMS',
-        'Could not open SMS app. Phone: $phoneNumber',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'SMS',
+        message: 'Could not open SMS app. Phone: $phoneNumber',
+        type: SnacksBarType.WARNING,
       );
     }
   }
 
   Future<void> onWhatsAppTap() async {
-    if (customerPhone.value.isEmpty) {
-      Get.snackbar(
-        'No Phone Number',
-        'Phone number is not available for this contact',
-        snackPosition: SnackPosition.BOTTOM,
+    if (partyPhone.isEmpty) {
+      SnacksBar.showSnackbar(
+        title: 'No Phone Number',
+        message: 'Phone number is not available for this contact',
+        type: SnacksBarType.WARNING,
       );
       return;
     }
@@ -507,26 +497,25 @@ class CustomerDetailController extends GetxController {
     try {
       await _sharePaymentCardToWhatsApp();
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Could not share card. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Could not share card. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 
   Future<void> _sharePaymentCardToWhatsApp() async {
-    if (customerPhone.value.isEmpty) {
-      Get.snackbar(
-        'No Phone Number',
-        'Phone number is not available for this contact',
-        snackPosition: SnackPosition.BOTTOM,
+    if (partyPhone.isEmpty) {
+      SnacksBar.showSnackbar(
+        title: 'No Phone Number',
+        message: 'Phone number is not available for this contact',
+        type: SnacksBarType.WARNING,
       );
       return;
     }
 
-    String cleanedPhone = customerPhone.value.replaceAll(RegExp(r'[^\d+]'), '');
+    String cleanedPhone = partyPhone.replaceAll(RegExp(r'[^\d+]'), '');
 
     if (!cleanedPhone.startsWith('+')) {
       if (cleanedPhone.startsWith('0')) {
@@ -553,9 +542,7 @@ class CustomerDetailController extends GetxController {
         if (launched) {
           return;
         }
-      } catch (e) {
-        debugPrint('Error opening WhatsApp: $e');
-      }
+      } catch (e) {}
 
       final webUri = Uri.parse('https://wa.me/$phoneNumber?text=$message');
       final launched = await launchUrl(
@@ -564,70 +551,49 @@ class CustomerDetailController extends GetxController {
       );
 
       if (!launched) {
-        Get.snackbar(
-          'WhatsApp',
-          'WhatsApp not installed. Phone: +$phoneNumber',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 3),
+        SnacksBar.showSnackbar(
+          title: 'WhatsApp',
+          message: 'WhatsApp not installed. Phone: +$phoneNumber',
+          type: SnacksBarType.WARNING,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'WhatsApp',
-        'Could not open WhatsApp. Phone: +$phoneNumber\nPlease install WhatsApp or try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 4),
+      SnacksBar.showSnackbar(
+        title: 'WhatsApp',
+        message:
+            'Could not open WhatsApp. Phone: +$phoneNumber\nPlease install WhatsApp or try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 
-  void onYouGaveTap() {
-    Get.toNamed(
+  void onYouGaveTap() async {
+    await Get.toNamed(
       Routes.transactionEntry,
-      arguments: {
-        'type': 'give',
-        'customerName': customerName.value,
-        'customerId': customerId.value,
-      },
-    )?.then((result) {
-      if (result != null &&
-          result is Map<String, dynamic> &&
-          result['success'] == true) {
-        loadTransactions();
-        _calculateSummary();
-      }
-    });
+      arguments: {'type': 'give', 'partyId': partyId, 'businessId': businessId},
+    );
+    await reloadPartyData();
   }
 
-  void onYouGotTap() {
-    Get.toNamed(
+  void onYouGotTap() async {
+    await Get.toNamed(
       Routes.transactionEntry,
-      arguments: {
-        'type': 'get',
-        'customerName': customerName.value,
-        'customerId': customerId.value,
-      },
-    )?.then((result) {
-      if (result != null &&
-          result is Map<String, dynamic> &&
-          result['success'] == true) {
-        loadTransactions();
-        _calculateSummary();
-      }
-    });
+      arguments: {'type': 'get', 'partyId': partyId, 'businessId': businessId},
+    );
+    await reloadPartyData();
   }
 
   Future<void> makePhoneCall() async {
-    if (customerPhone.value.isEmpty) {
-      Get.snackbar(
-        'No Phone Number',
-        'Phone number is not available for this contact',
-        snackPosition: SnackPosition.BOTTOM,
+    if (partyPhone.isEmpty) {
+      SnacksBar.showSnackbar(
+        title: 'No Phone Number',
+        message: 'Phone number is not available for this contact',
+        type: SnacksBarType.WARNING,
       );
       return;
     }
 
-    final cleanedPhone = customerPhone.value.replaceAll(RegExp(r'[^\d+]'), '');
+    final cleanedPhone = partyPhone.replaceAll(RegExp(r'[^\d+]'), '');
 
     final phoneNumber = cleanedPhone.startsWith('+')
         ? cleanedPhone
@@ -642,19 +608,19 @@ class CustomerDetailController extends GetxController {
       );
 
       if (!launched) {
-        Get.snackbar(
-          'Phone Dialer',
-          'Phone number: $phoneNumber\n(Note: May not work in emulator)',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 3),
+        SnacksBar.showSnackbar(
+          title: 'Phone Dialer',
+          message:
+              'Phone number: $phoneNumber\n(Note: May not work in emulator)',
+          type: SnacksBarType.INFO,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Phone Dialer',
-        'Could not open dialer. Phone: $phoneNumber\n(Note: Emulators may not support phone calls)',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 4),
+      SnacksBar.showSnackbar(
+        title: 'Phone Dialer',
+        message:
+            'Could not open dialer. Phone: $phoneNumber\n(Note: Emulators may not support phone calls)',
+        type: SnacksBarType.WARNING,
       );
     }
   }

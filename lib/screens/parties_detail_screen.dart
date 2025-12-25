@@ -1,41 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/customer_detail_controller.dart';
+import 'package:purehisab/controllers/parties_detail_controller.dart';
 import '../app/utils/app_colors.dart';
 import '../app/routes/app_pages.dart';
 import 'widgets/widgets.dart';
 
-class CustomerDetailScreen extends StatelessWidget {
-  const CustomerDetailScreen({super.key});
+class PartiesDetailScreen extends StatelessWidget {
+  const PartiesDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<CustomerDetailController>();
+    final controller = Get.find<PartiesDetailController>();
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(controller),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await controller.loadCustomerData();
-          await controller.loadTransactions();
-        },
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildSummaryCard(controller),
-              _buildActionButtons(controller),
-              _buildTransactionHistory(controller),
-              const SizedBox(height: 100), // Space for bottom buttons
-            ],
-          ),
-        ),
-      ),
+      body: Obx(() {
+        if (controller.isLoading) {
+          return const Center(child: CustomLoadingIndicator());
+        }
+        return Column(
+          children: [
+            _buildSummaryCard(controller),
+            _buildActionButtons(controller),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await controller.reloadPartyData();
+                },
+                child: _buildTransactionHistory(controller),
+              ),
+            ),
+          ],
+        );
+      }),
       bottomNavigationBar: _buildBottomActionButtons(controller),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(CustomerDetailController controller) {
+  PreferredSizeWidget _buildAppBar(PartiesDetailController controller) {
     return AppBar(
       backgroundColor: AppColors.primaryDark,
       elevation: 0,
@@ -58,9 +61,9 @@ class CustomerDetailScreen extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  controller.customerName.value.isNotEmpty
-                      ? controller.customerName.value[0].toUpperCase()
-                      : '?',
+                  controller.partyName.isNotEmpty
+                      ? controller.partyName[0].toUpperCase()
+                      : 'C',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -79,7 +82,7 @@ class CustomerDetailScreen extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          controller.customerName.value,
+                          controller.partyName,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -97,7 +100,7 @@ class CustomerDetailScreen extends StatelessWidget {
                             borderRadius: .circular(12),
                           ),
                           child: Text(
-                            controller.isCustomer.value
+                            controller.partyType == 'customer'
                                 ? 'Customer'
                                 : 'Supplier',
                             style: const TextStyle(
@@ -112,16 +115,15 @@ class CustomerDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   GestureDetector(
-                    onTap: () {
-                      Get.toNamed(
-                        Routes.profile,
+                    onTap: () async {
+                      await Get.toNamed(
+                        Routes.partiesProfile,
                         arguments: {
-                          'name': controller.customerName.value,
-                          'phone': controller.customerPhone.value,
-                          'id': controller.customerId.value,
-                          'isCustomer': controller.isCustomer.value,
+                          'partyId': controller.partyId,
+                          'partyType': controller.partyType,
                         },
                       );
+                      await controller.reloadPartyData();
                     },
                     child: const Text(
                       'View settings',
@@ -138,14 +140,14 @@ class CustomerDetailScreen extends StatelessWidget {
         Obx(
           () => CustomIconButton(
             icon: Icons.phone,
-            onPressed: controller.customerPhone.value.isNotEmpty
+            onPressed: controller.partyPhone.isNotEmpty
                 ? () => controller.makePhoneCall()
                 : null,
             iconColor: Colors.white,
             size: 48,
             backgroundColor: Colors.transparent,
-            tooltip: controller.customerPhone.value.isNotEmpty
-                ? 'Call ${controller.customerPhone.value}'
+            tooltip: controller.partyPhone.isNotEmpty
+                ? 'Call ${controller.partyPhone}'
                 : 'No phone number available',
           ),
         ),
@@ -153,7 +155,7 @@ class CustomerDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(CustomerDetailController controller) {
+  Widget _buildSummaryCard(PartiesDetailController controller) {
     return Container(
       margin: .fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
@@ -174,10 +176,10 @@ class CustomerDetailScreen extends StatelessWidget {
       child: Padding(
         padding: .all(16),
         child: Obx(() {
-          final willGet = controller.amountToGet.value > 0;
+          final willGet = controller.amountToGet > 0;
           final amount = willGet
-              ? controller.amountToGet.value
-              : controller.amountToGive.value;
+              ? controller.amountToGet
+              : controller.amountToGive;
 
           return Column(
             crossAxisAlignment: .start,
@@ -214,7 +216,7 @@ class CustomerDetailScreen extends StatelessWidget {
 
               Obx(
                 () => InkWell(
-                  onTap: controller.hasReminder.value
+                  onTap: controller.hasReminder
                       ? null
                       : () => _showDatePicker(controller),
                   borderRadius: BorderRadius.circular(12),
@@ -249,7 +251,7 @@ class CustomerDetailScreen extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                controller.hasReminder.value
+                                controller.hasReminder
                                     ? 'Reminder Set'
                                     : 'Set Reminder',
                                 style: TextStyle(
@@ -258,19 +260,17 @@ class CustomerDetailScreen extends StatelessWidget {
                                   fontWeight: .w600,
                                 ),
                               ),
-                              if (controller.hasReminder.value) ...[
+                              if (controller.hasReminder) ...[
                                 const SizedBox(height: 2),
                                 Obx(() {
                                   if (controller
                                       .collectionReminderDate
-                                      .value
                                       .isEmpty) {
                                     return const SizedBox.shrink();
                                   }
                                   try {
                                     final parts = controller
                                         .collectionReminderDate
-                                        .value
                                         .split('-');
                                     if (parts.length == 3) {
                                       final year = int.parse(parts[0]);
@@ -307,7 +307,7 @@ class CustomerDetailScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (controller.hasReminder.value)
+                        if (controller.hasReminder)
                           CustomIconButton(
                             icon: Icons.close_rounded,
                             onPressed: () {
@@ -338,18 +338,18 @@ class CustomerDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(CustomerDetailController controller) {
+  Widget _buildActionButtons(PartiesDetailController controller) {
     return Container(
       margin: .symmetric(horizontal: 16),
       child: Row(
         mainAxisAlignment: .spaceAround,
         children: [
           Obx(() {
-            final hasPhone = controller.customerPhone.value.isNotEmpty;
+            final hasPhone = controller.partyPhone.isNotEmpty;
             final hasAmount =
-                controller.amountToGet.value > 0 ||
-                controller.amountToGive.value > 0;
-            final isEnabled = hasPhone && hasAmount;
+                controller.amountToGet > 0 || controller.amountToGive > 0;
+            final isSmsEnabled = controller.smsSetting;
+            final isEnabled = hasPhone && hasAmount && isSmsEnabled;
 
             return _buildActionButton(
               icon: Icons.message,
@@ -359,11 +359,11 @@ class CustomerDetailScreen extends StatelessWidget {
             );
           }),
           Obx(() {
-            final hasPhone = controller.customerPhone.value.isNotEmpty;
+            final hasPhone = controller.partyPhone.isNotEmpty;
             final hasAmount =
-                controller.amountToGet.value > 0 ||
-                controller.amountToGive.value > 0;
-            final isEnabled = hasPhone && hasAmount;
+                controller.amountToGet > 0 || controller.amountToGive > 0;
+            final isSmsEnabled = controller.smsSetting;
+            final isEnabled = hasPhone && hasAmount && isSmsEnabled;
 
             return _buildActionButton(
               icon: Icons.chat,
@@ -421,32 +421,37 @@ class CustomerDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionHistory(CustomerDetailController controller) {
+  Widget _buildTransactionHistory(PartiesDetailController controller) {
     return Obx(() {
       final grouped = controller.getGroupedTransactions();
       final sortedDates = grouped.keys.toList()
         ..sort((a, b) => b.compareTo(a)); // Most recent first
 
       if (grouped.isEmpty) {
-        return Container(
-          margin: .all(32),
-          child: Column(
-            children: [
-              Icon(Icons.receipt_long, size: 60, color: Colors.grey.shade300),
-              const SizedBox(height: 16),
-              Text(
-                'No transactions yet',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-              ),
-            ],
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Container(
+            margin: .all(32),
+            child: Column(
+              children: [
+                Icon(Icons.receipt_long, size: 60, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                Text(
+                  'No transactions yet',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }
 
-      return Column(
-        crossAxisAlignment: .start,
+      return ListView(
+        padding: EdgeInsets.zero,
         children: [
-          // Column headers
           Container(
             margin: .symmetric(horizontal: 16),
             padding: .symmetric(vertical: 8),
@@ -489,7 +494,6 @@ class CustomerDetailScreen extends StatelessWidget {
               ],
             ),
           ),
-          // Transactions grouped by date
           ...sortedDates.map((dateKey) {
             final transactions = grouped[dateKey]!;
             final firstTransaction = transactions.first;
@@ -516,20 +520,21 @@ class CustomerDetailScreen extends StatelessWidget {
               ],
             );
           }),
+          const SizedBox(height: 16),
         ],
       );
     });
   }
 
   Widget _buildTransactionItem(
-    CustomerDetailController controller,
+    PartiesDetailController controller,
     Map<String, dynamic> transaction,
   ) {
     final date = transaction['date'] as DateTime;
     final type = transaction['type'] as String;
     final amount = (transaction['amount'] as num).toDouble();
     final balance = (transaction['balance'] as num).toDouble();
-    final note = transaction['note']?.toString() ?? '';
+    final note = transaction['description']?.toString() ?? '';
     final isGive = type == 'give';
     final time = controller.formatTransactionTime(date);
 
@@ -622,7 +627,7 @@ class CustomerDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomActionButtons(CustomerDetailController controller) {
+  Widget _buildBottomActionButtons(PartiesDetailController controller) {
     return Container(
       padding: .all(16),
       decoration: BoxDecoration(
@@ -693,7 +698,7 @@ class CustomerDetailScreen extends StatelessWidget {
     return formatted.split('').reversed.join();
   }
 
-  Future<void> _showDatePicker(CustomerDetailController controller) async {
+  Future<void> _showDatePicker(PartiesDetailController controller) async {
     final picked = await showDatePicker(
       context: Get.context!,
       initialDate: DateTime.now(),

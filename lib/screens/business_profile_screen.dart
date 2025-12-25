@@ -3,35 +3,88 @@ import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../controllers/business_profile_controller.dart';
+import '../controllers/navigation_controller.dart';
 import '../app/utils/app_colors.dart';
 import '../app/routes/app_pages.dart';
 import 'widgets/widgets.dart';
 
-class BusinessProfileScreen extends StatelessWidget {
+class BusinessProfileScreen extends StatefulWidget {
   const BusinessProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<BusinessProfileScreen> createState() => _BusinessProfileScreenState();
+}
+
+class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
+  late BusinessProfileController controller;
+  String? _lastBusinessId;
+
+  @override
+  void initState() {
+    super.initState();
     if (!Get.isRegistered<BusinessProfileController>()) {
       Get.put(BusinessProfileController());
     }
-    final controller = Get.find<BusinessProfileController>();
+    controller = Get.find<BusinessProfileController>();
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildProfileSection(controller),
-            _buildDetailsSection(controller, context),
-            _buildSettingsSection(controller),
-            _buildHelpSupportSection(controller),
-            _buildAboutSection(controller),
-            _buildVersionAndShareSection(controller),
-          ],
+    controller.showPinSetupDialog = showPinSetupDialog;
+    controller.showPinVerificationDialog = showPinVerificationDialog;
+    controller.showDisableAppLockDialog = showDisableAppLockDialog;
+    controller.showManageAppLockDialog = () =>
+        showManageAppLockDialog(controller);
+    controller.showPhotoSelectionBottomSheet = () =>
+        showPhotoSelectionBottomSheet(controller);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if business has changed and refresh data
+    if (Get.isRegistered<NavigationController>()) {
+      final navController = Get.find<NavigationController>();
+      final currentBusinessId = navController.businessId;
+      if (currentBusinessId.isNotEmpty &&
+          currentBusinessId != _lastBusinessId) {
+        _lastBusinessId = currentBusinessId;
+        controller.refreshBusinessData();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Watch for businessId changes and refresh
+    return Obx(() {
+      if (Get.isRegistered<NavigationController>()) {
+        final navController = Get.find<NavigationController>();
+        // Watch the RxString directly
+        final currentBusinessId = navController.businessIdRx.value;
+        if (currentBusinessId.isNotEmpty &&
+            currentBusinessId != _lastBusinessId) {
+          _lastBusinessId = currentBusinessId;
+          // Refresh business data when businessId changes
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            controller.refreshBusinessData();
+          });
+        }
+      }
+
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildProfileSection(controller),
+              _buildDetailsSection(controller, context),
+              _buildSettingsSection(controller),
+              _buildHelpSupportSection(controller),
+              _buildAboutSection(controller),
+              _buildVersionAndShareSection(controller),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildProfileSection(BusinessProfileController controller) {
@@ -45,7 +98,7 @@ class BusinessProfileScreen extends StatelessWidget {
               Obx(
                 () => AvatarWidget(
                   imagePath: controller.profileImageFile.value?.path,
-                  name: controller.businessName.value,
+                  name: controller.businessName,
                   size: 100,
                   backgroundColor: Colors.grey.shade300,
                   fallbackIcon: Icons.business,
@@ -96,7 +149,7 @@ class BusinessProfileScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Obx(
             () => Text(
-              controller.businessName.value,
+              controller.businessName,
               style: TextStyle(
                 color: AppColors.primary,
                 fontSize: 24,
@@ -121,18 +174,15 @@ class BusinessProfileScreen extends StatelessWidget {
           _buildDetailItem(
             icon: Icons.person_outlined,
             label: 'Owner Name',
-            value: controller.ownerName.value.isEmpty
+            value: controller.ownerName.isEmpty
                 ? 'Not set'
-                : controller.ownerName.value,
+                : controller.ownerName,
             onTap: () => _showEditDialog(
               context,
-              'Edit Owner Name',
-              controller.ownerName.value,
-              (value) async {
-                controller.updateOwnerName(value);
-                if (controller.businessId.value.isNotEmpty) {
-                  await controller.updateBusinessProfile();
-                }
+              title: 'Edit Owner Name',
+              initialValue: controller.ownerName,
+              onSave: (value) async {
+                await controller.updateOwnerName(value);
               },
             ),
           ),
@@ -140,9 +190,9 @@ class BusinessProfileScreen extends StatelessWidget {
           _buildDetailItem(
             icon: Icons.phone_outlined,
             label: 'Mobile Number',
-            value: controller.businessPhone.value.isEmpty
+            value: controller.businessPhone.isEmpty
                 ? 'Not set'
-                : controller.businessPhone.value,
+                : controller.businessPhone,
           ),
         ],
       ),
@@ -286,16 +336,12 @@ class BusinessProfileScreen extends StatelessWidget {
                         _buildSettingsItem(
                           icon: Icons.wechat_sharp,
                           title: 'Help on WhatsApp',
-                          onTap: () {
-                            controller.openWhatsApp();
-                          },
+                          onTap: () => controller.openWhatsApp(),
                         ),
                         _buildSettingsItem(
                           icon: Icons.email_outlined,
                           title: 'Email Us',
-                          onTap: () {
-                            controller.sendEmail();
-                          },
+                          onTap: () => controller.sendEmail(),
                         ),
                       ],
                     ),
@@ -738,10 +784,10 @@ class BusinessProfileScreen extends StatelessWidget {
   }
 
   void _showEditDialog(
-    BuildContext context,
-    String title,
-    String initialValue,
-    Function(String) onSave, {
+    BuildContext context, {
+    required String title,
+    String initialValue = '',
+    void Function(String)? onSave,
     int maxLines = 1,
   }) {
     final textController = TextEditingController(text: initialValue);
@@ -821,7 +867,7 @@ class BusinessProfileScreen extends StatelessWidget {
                       text: 'Save',
                       onPressed: () {
                         if (formKey.currentState!.validate()) {
-                          onSave(textController.text.trim());
+                          onSave?.call(textController.text.trim());
                           Get.back();
                         }
                       },
@@ -836,6 +882,284 @@ class BusinessProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  static Future<String?> showPinVerificationDialog(String title) async {
+    String? pin;
+    await Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                obscureText: true,
+                textAlign: TextAlign.center,
+                autofocus: true,
+                style: const TextStyle(fontSize: 24, letterSpacing: 8),
+                decoration: const InputDecoration(
+                  hintText: '0000',
+                  counterText: '',
+                ),
+                onChanged: (value) {
+                  pin = value;
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (pin != null && pin!.length == 4) {
+                        Get.back();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Verify'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return pin;
+  }
+
+  static Future<String?> showPinSetupDialog(String title) async {
+    String? pin;
+    await Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Enter a 4-digit PIN', textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              TextField(
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                obscureText: true,
+                textAlign: TextAlign.center,
+                autofocus: true,
+                style: const TextStyle(fontSize: 24, letterSpacing: 8),
+                decoration: const InputDecoration(
+                  hintText: '0000',
+                  counterText: '',
+                ),
+                onChanged: (value) {
+                  pin = value;
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (pin != null && pin!.length == 4) {
+                        Get.back();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Set PIN'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return pin;
+  }
+
+  static Future<bool?> showDisableAppLockDialog() async {
+    return await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Disable App Lock'),
+        content: const Text('Are you sure you want to disable app lock?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Future<void> showManageAppLockDialog(
+    BusinessProfileController controller,
+  ) async {
+    await Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Manage App Lock',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.lock_outline,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Change PIN'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  Get.back();
+                  await controller.changePin();
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void showPhotoSelectionBottomSheet(
+    BusinessProfileController controller,
+  ) {
+    Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Text(
+                  'Select Photo',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                leading: const Icon(
+                  Icons.camera_alt,
+                  color: AppColors.primaryDark,
+                ),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Get.back();
+                  await controller.pickImageFromCamera();
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: AppColors.primaryDark,
+                ),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Get.back();
+                  await controller.pickImageFromGallery();
+                },
+              ),
+              Obx(
+                () => controller.profileImageFile.value != null
+                    ? ListTile(
+                        leading: const Icon(Icons.delete, color: Colors.red),
+                        title: const Text('Remove Photo'),
+                        onTap: () async {
+                          Get.back();
+                          await controller.removePhoto();
+                        },
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
     );
   }
 }

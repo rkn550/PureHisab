@@ -1,258 +1,250 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:purehisab/app/utils/snacks_bar.dart';
 import 'package:purehisab/data/services/party_repo.dart';
-import 'package:purehisab/controllers/home_controller.dart';
+import 'package:purehisab/controllers/parties_detail_controller.dart';
 import '../app/utils/app_colors.dart';
 
-class ProfileController extends GetxController {
+class PartiesProfileController extends GetxController {
   PartyRepository get _partyRepository => Get.find<PartyRepository>();
+  final RxBool _isLoading = false.obs;
+  final RxString _partyId = ''.obs;
+  final RxString _partyName = ''.obs;
+  final RxString _partyPhoneNumber = ''.obs;
+  final RxString _partyType = 'customer'.obs;
+  final RxString _address = ''.obs;
+  final Rx<File?> _profileImageFile = Rx<File?>(null);
+  final RxBool _smsEnabled = false.obs;
+  final RxString _smsLanguage = 'english'.obs;
 
-  final RxString customerName = ''.obs;
-  final RxString customerPhone = ''.obs;
-  final RxString customerId = ''.obs;
-  final RxBool isCustomer = true.obs;
-  final RxString address = ''.obs;
-  final Rx<File?> profileImageFile = Rx<File?>(null);
-  final RxBool isLoading = false.obs;
-
-  // SMS Settings
-  final RxBool smsEnabled = false.obs; // SMS will be sent on each entry
-  final RxString smsLanguage = 'English'.obs; // 'English' or 'Hindi'
+  bool get isLoading => _isLoading.value;
+  String get partyId => _partyId.value;
+  String get partyName => _partyName.value;
+  String get partyPhoneNumber => _partyPhoneNumber.value;
+  String get partyType => _partyType.value;
+  String get address => _address.value;
+  File? get profileImageFile => _profileImageFile.value;
+  bool get smsEnabled => _smsEnabled.value;
+  String get smsLanguage => _smsLanguage.value;
 
   @override
   void onInit() {
     super.onInit();
-    _loadProfileData();
+    loadArgumentData();
+  }
+
+  Future<void> loadArgumentData() async {
+    final args = Get.arguments;
+    if (args != null && args is Map<String, dynamic>) {
+      _partyId.value =
+          args['partyId']?.toString() ?? args['id']?.toString() ?? '';
+      _partyType.value = args['partyType']?.toString() ?? 'customer';
+    }
+    await _loadProfileData();
   }
 
   Future<void> _loadProfileData() async {
-    final args = Get.arguments;
-    String? partyId;
-
-    if (args != null && args is Map<String, dynamic>) {
-      partyId = args['id']?.toString();
-    }
-
-    if (partyId == null || partyId.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     try {
-      isLoading.value = true;
+      _isLoading.value = true;
       final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
-        customerId.value = party.id;
-        customerName.value = party.partyName;
-        customerPhone.value = party.phoneNumber ?? '';
-        address.value = party.address ?? '';
-        isCustomer.value = party.type == 'customer';
-        smsEnabled.value = party.smsSetting;
-        smsLanguage.value = party.smsLanguage ?? 'English';
-        if (party.photoUrl != null && party.photoUrl!.isNotEmpty) {
-          final photoFile = File(party.photoUrl!);
+        _partyName.value = party.partyName;
+        _partyPhoneNumber.value = party.phoneNumber;
+        _address.value = party.address ?? '';
+        _smsEnabled.value = party.smsSetting;
+        _smsLanguage.value = party.smsLanguage ?? 'english';
+        _partyType.value = party.type;
+        if (party.partiesPhotoUrl != null &&
+            party.partiesPhotoUrl!.isNotEmpty) {
+          final photoFile = File(party.partiesPhotoUrl!);
           if (await photoFile.exists()) {
-            profileImageFile.value = photoFile;
+            _profileImageFile.value = photoFile;
+          } else {
+            _profileImageFile.value = null;
           }
+        } else {
+          _profileImageFile.value = null;
         }
+      } else {
+        SnacksBar.showSnackbar(
+          title: 'Error',
+          message: 'Party not found',
+          type: SnacksBarType.ERROR,
+        );
       }
     } catch (e) {
-      debugPrint('Error loading profile data: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load profile data',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to load profile data: ${e.toString()}',
+        type: SnacksBarType.ERROR,
       );
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
   Future<void> updateName(String name) async {
-    if (customerId.value.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     try {
-      isLoading.value = true;
-      final party = await _partyRepository.getPartyById(customerId.value);
+      _isLoading.value = true;
+      final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
         await _partyRepository.updateParty(party.copyWith(partyName: name));
-        customerName.value = name;
-
-        if (Get.isRegistered<HomeController>()) {
-          await Get.find<HomeController>().loadPartiesFromDatabase();
-        }
+        await _loadProfileData();
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update name',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to update name',
+        type: SnacksBarType.ERROR,
       );
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
   Future<void> updatePhone(String phone) async {
-    if (customerId.value.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     try {
-      isLoading.value = true;
-      final party = await _partyRepository.getPartyById(customerId.value);
+      _isLoading.value = true;
+      final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
         await _partyRepository.updateParty(party.copyWith(phoneNumber: phone));
-        customerPhone.value = phone;
-
-        if (Get.isRegistered<HomeController>()) {
-          await Get.find<HomeController>().loadPartiesFromDatabase();
-        }
+        await _loadProfileData();
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update phone',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to update phone',
+        type: SnacksBarType.ERROR,
       );
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
   Future<void> updateAddress(String newAddress) async {
-    if (customerId.value.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     try {
-      isLoading.value = true;
-      final party = await _partyRepository.getPartyById(customerId.value);
+      _isLoading.value = true;
+      final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
         await _partyRepository.updateParty(party.copyWith(address: newAddress));
-        address.value = newAddress;
+        await _loadProfileData();
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update address',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to update address',
+        type: SnacksBarType.ERROR,
       );
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
   Future<void> toggleSmsEnabled() async {
-    if (customerId.value.isEmpty) return;
-
+    if (partyId.isEmpty) return;
     try {
-      final newValue = !smsEnabled.value;
-      final party = await _partyRepository.getPartyById(customerId.value);
+      final newValue = !smsEnabled;
+      final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
         await _partyRepository.updateParty(
           party.copyWith(smsSetting: newValue),
         );
-        smsEnabled.value = newValue;
-
-        Get.snackbar(
-          'Success',
-          'SMS settings updated',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-          duration: const Duration(seconds: 2),
+        await _loadProfileData();
+        if (Get.isRegistered<PartiesDetailController>()) {
+          final detailController = Get.find<PartiesDetailController>();
+          await detailController.reloadPartyData();
+        }
+        SnacksBar.showSnackbar(
+          title: 'Success',
+          message: 'SMS settings updated',
+          type: SnacksBarType.SUCCESS,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update SMS settings',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to update SMS settings',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 
   Future<void> setSmsLanguage(String language) async {
-    if (customerId.value.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     try {
-      final party = await _partyRepository.getPartyById(customerId.value);
+      final party = await _partyRepository.getPartyById(partyId);
       if (party != null) {
         await _partyRepository.updateParty(
           party.copyWith(smsLanguage: language),
         );
-        smsLanguage.value = language;
+        await _loadProfileData();
 
-        Get.snackbar(
-          'Success',
-          'SMS language updated to $language',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-          duration: const Duration(seconds: 2),
+        if (Get.isRegistered<PartiesDetailController>()) {
+          final detailController = Get.find<PartiesDetailController>();
+          await detailController.reloadPartyData();
+        }
+
+        SnacksBar.showSnackbar(
+          title: 'Success',
+          message: 'SMS language updated to $language',
+          type: SnacksBarType.SUCCESS,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update SMS language',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to update SMS language',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 
   Future<void> changeToCustomerOrSupplier() async {
-    if (customerId.value.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     Get.bottomSheet(
       _ChangeTypeBottomSheet(
-        customerName: customerName.value,
-        customerPhone: customerPhone.value,
-        isCurrentlyCustomer: isCustomer.value,
+        partyName: partyName,
+        partyPhoneNumber: partyPhoneNumber,
+        partyType: partyType,
+        photoUrl: profileImageFile?.path,
         onConfirm: () async {
           try {
-            isLoading.value = true;
-            final party = await _partyRepository.getPartyById(customerId.value);
+            final party = await _partyRepository.getPartyById(partyId);
             if (party != null) {
               final newType = party.type == 'customer'
                   ? 'supplier'
                   : 'customer';
               await _partyRepository.updateParty(party.copyWith(type: newType));
-              isCustomer.value = newType == 'customer';
-
-              if (Get.isRegistered<HomeController>()) {
-                await Get.find<HomeController>().loadPartiesFromDatabase();
-              }
-
+              await _loadProfileData();
               Get.back();
-              Get.snackbar(
-                'Success',
-                '${customerName.value} has been changed to ${isCustomer.value ? "Customer" : "Supplier"}',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.green.shade100,
-                colorText: Colors.green.shade900,
+              SnacksBar.showSnackbar(
+                title: 'Success',
+                message:
+                    '$partyName has been changed to ${partyType == 'customer' ? "Customer" : "Supplier"}',
+                type: SnacksBarType.SUCCESS,
               );
             }
           } catch (e) {
-            Get.snackbar(
-              'Error',
-              'Failed to change type',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.red.shade100,
-              colorText: Colors.red.shade900,
+            SnacksBar.showSnackbar(
+              title: 'Error',
+              message: 'Failed to change type',
+              type: SnacksBarType.ERROR,
             );
           } finally {
-            isLoading.value = false;
+            _isLoading.value = false;
           }
         },
       ),
@@ -263,7 +255,7 @@ class ProfileController extends GetxController {
   }
 
   Future<void> deleteCustomerOrSupplier() async {
-    if (customerId.value.isEmpty) return;
+    if (partyId.isEmpty) return;
 
     Get.bottomSheet(
       Container(
@@ -296,7 +288,7 @@ class ProfileController extends GetxController {
               ),
             ),
             Text(
-              'Delete ${customerName.value}?',
+              'Delete $partyName?',
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: .bold,
@@ -305,7 +297,7 @@ class ProfileController extends GetxController {
             ),
             const SizedBox(height: 16),
             Text(
-              'This will delete the ${isCustomer.value ? 'customer' : 'supplier'} from your book.',
+              'This will delete the ${partyType == 'customer' ? 'customer' : 'supplier'} from your book.',
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.grey.shade700,
@@ -344,36 +336,25 @@ class ProfileController extends GetxController {
                   child: ElevatedButton(
                     onPressed: () async {
                       try {
-                        isLoading.value = true;
-                        await _partyRepository.deleteParty(customerId.value);
-
-                        if (Get.isRegistered<HomeController>()) {
-                          await Get.find<HomeController>()
-                              .loadPartiesFromDatabase();
-                        }
-
+                        _isLoading.value = true;
+                        await _partyRepository.deleteParty(partyId);
                         Get.back();
                         Get.back();
-                        Get.snackbar(
-                          isCustomer.value
+                        SnacksBar.showSnackbar(
+                          title: partyType == 'customer'
                               ? 'Customer Deleted'
                               : 'Supplier Deleted',
-                          '${customerName.value} has been deleted',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: Colors.green.shade100,
-                          colorText: Colors.green.shade900,
-                          duration: const Duration(seconds: 2),
+                          message: '$partyName has been deleted',
+                          type: SnacksBarType.SUCCESS,
                         );
                       } catch (e) {
-                        Get.snackbar(
-                          'Error',
-                          'Failed to delete',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: Colors.red.shade100,
-                          colorText: Colors.red.shade900,
+                        SnacksBar.showSnackbar(
+                          title: 'Error',
+                          message: 'Failed to delete',
+                          type: SnacksBarType.ERROR,
                         );
                       } finally {
-                        isLoading.value = false;
+                        _isLoading.value = false;
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -406,19 +387,9 @@ class ProfileController extends GetxController {
     );
   }
 
-  void shareBusinessCard() {
-    // TODO: Implement business card sharing
-    Get.snackbar(
-      'Share Business Card',
-      'Business card sharing feature coming soon',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-  }
-
   Future<void> addPhoto() async {
     final ImagePicker picker = ImagePicker();
 
-    // Show bottom sheet with options
     Get.bottomSheet(
       Container(
         decoration: BoxDecoration(
@@ -433,7 +404,6 @@ class ProfileController extends GetxController {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Container(
                 width: 40,
                 height: 4,
@@ -443,7 +413,6 @@ class ProfileController extends GetxController {
                   borderRadius: .circular(2),
                 ),
               ),
-              // Title
               const Padding(
                 padding: .symmetric(horizontal: 24, vertical: 8),
                 child: Text(
@@ -456,7 +425,6 @@ class ProfileController extends GetxController {
                 ),
               ),
               const SizedBox(height: 16),
-              // Camera option
               ListTile(
                 leading: Icon(Icons.camera_alt, color: AppColors.primaryDark),
                 title: const Text('Take Photo'),
@@ -465,7 +433,6 @@ class ProfileController extends GetxController {
                   await _pickImageFromCamera(picker);
                 },
               ),
-              // Gallery option
               ListTile(
                 leading: Icon(
                   Icons.photo_library,
@@ -477,42 +444,40 @@ class ProfileController extends GetxController {
                   await _pickImageFromGallery(picker);
                 },
               ),
-              // Remove photo option (if photo exists)
               Obx(
-                () => profileImageFile.value != null
+                () => _profileImageFile.value != null
                     ? ListTile(
                         leading: Icon(Icons.delete, color: Colors.red),
                         title: const Text('Remove Photo'),
                         onTap: () async {
-                          Get.back(); // Close bottom sheet
+                          Get.back();
 
-                          // Remove photoUrl from database
-                          if (customerId.value.isNotEmpty) {
+                          if (partyId.isNotEmpty) {
                             try {
                               final party = await _partyRepository.getPartyById(
-                                customerId.value,
+                                partyId,
                               );
                               if (party != null) {
                                 await _partyRepository.updateParty(
-                                  party.copyWith(clearPhotoUrl: true),
+                                  party.copyWith(clearPartyPhotoUrl: true),
                                 );
 
-                                if (Get.isRegistered<HomeController>()) {
-                                  await Get.find<HomeController>()
-                                      .loadPartiesFromDatabase();
-                                }
+                                await _loadProfileData();
                               }
                             } catch (e) {
-                              // Error handling
+                              SnacksBar.showSnackbar(
+                                title: 'Error',
+                                message: 'Failed to remove photo',
+                                type: SnacksBarType.ERROR,
+                              );
                             }
                           }
 
-                          profileImageFile.value = null;
-                          Get.snackbar(
-                            'Success',
-                            'Photo removed',
-                            snackPosition: SnackPosition.BOTTOM,
-                            duration: const Duration(seconds: 2),
+                          _profileImageFile.value = null;
+                          SnacksBar.showSnackbar(
+                            title: 'Success',
+                            message: 'Photo removed',
+                            type: SnacksBarType.SUCCESS,
                           );
                         },
                       )
@@ -531,18 +496,14 @@ class ProfileController extends GetxController {
 
   Future<void> _pickImageFromCamera(ImagePicker picker) async {
     try {
-      // Check camera permission
       final cameraStatus = await Permission.camera.status;
       if (!cameraStatus.isGranted) {
         final result = await Permission.camera.request();
         if (!result.isGranted) {
-          Get.snackbar(
-            'Permission Denied',
-            'Camera permission is required to take photos',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.orange.shade50,
-            colorText: Colors.orange.shade900,
-            duration: const Duration(seconds: 3),
+          SnacksBar.showSnackbar(
+            title: 'Permission Denied',
+            message: 'Camera permission is required to take photos',
+            type: SnacksBarType.ERROR,
           );
           return;
         }
@@ -555,87 +516,73 @@ class ProfileController extends GetxController {
         maxHeight: 800,
       );
       if (image != null) {
-        final imageFile = File(image.path);
-        profileImageFile.value = imageFile;
-
-        // Save photoUrl to database
-        if (customerId.value.isNotEmpty) {
+        if (partyId.isNotEmpty) {
           try {
-            final party = await _partyRepository.getPartyById(customerId.value);
+            final party = await _partyRepository.getPartyById(partyId);
             if (party != null) {
               await _partyRepository.updateParty(
-                party.copyWith(photoUrl: image.path),
+                party.copyWith(partyPhotoUrl: image.path),
               );
-
-              if (Get.isRegistered<HomeController>()) {
-                await Get.find<HomeController>().loadPartiesFromDatabase();
+              final imageFile = File(image.path);
+              if (await imageFile.exists()) {
+                _profileImageFile.value = imageFile;
               }
+              await _loadProfileData();
+              SnacksBar.showSnackbar(
+                title: 'Success',
+                message: 'Photo added successfully',
+                type: SnacksBarType.SUCCESS,
+              );
             }
           } catch (e) {
-            // Error handling
+            SnacksBar.showSnackbar(
+              title: 'Error',
+              message: 'Failed to save photo',
+              type: SnacksBarType.ERROR,
+            );
+            return;
           }
         }
-
-        Get.snackbar(
-          'Success',
-          'Photo added successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade50,
-          colorText: Colors.green.shade900,
-          duration: const Duration(seconds: 2),
-        );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to take photo. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to take photo. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 
   Future<void> _pickImageFromGallery(ImagePicker picker) async {
     try {
-      // Note: image_picker handles permissions automatically on most platforms
-      // But we can still check and request if needed
       PermissionStatus? photoStatus;
 
       if (Platform.isAndroid) {
-        // Try photos permission first (Android 13+)
         try {
           photoStatus = await Permission.photos.status;
           if (!photoStatus.isGranted) {
             photoStatus = await Permission.photos.request();
           }
         } catch (e) {
-          // Fallback to storage permission for older Android
           photoStatus = await Permission.storage.status;
           if (!photoStatus.isGranted) {
             photoStatus = await Permission.storage.request();
           }
         }
       } else if (Platform.isIOS) {
-        // For iOS
         photoStatus = await Permission.photos.status;
         if (!photoStatus.isGranted) {
           photoStatus = await Permission.photos.request();
         }
       }
 
-      // If permission is denied, show message but still try (image_picker may handle it)
       if (photoStatus != null &&
           !photoStatus.isGranted &&
           photoStatus.isPermanentlyDenied) {
-        Get.snackbar(
-          'Permission Denied',
-          'Please enable photo library permission in settings',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade50,
-          colorText: Colors.orange.shade900,
-          duration: const Duration(seconds: 3),
+        SnacksBar.showSnackbar(
+          title: 'Permission Denied',
+          message: 'Please enable photo library permission in settings',
+          type: SnacksBarType.ERROR,
         );
         return;
       }
@@ -647,66 +594,66 @@ class ProfileController extends GetxController {
         maxHeight: 800,
       );
       if (image != null) {
-        final imageFile = File(image.path);
-        profileImageFile.value = imageFile;
-
-        // Save photoUrl to database
-        if (customerId.value.isNotEmpty) {
+        if (partyId.isNotEmpty) {
           try {
-            final party = await _partyRepository.getPartyById(customerId.value);
+            final party = await _partyRepository.getPartyById(partyId);
             if (party != null) {
               await _partyRepository.updateParty(
-                party.copyWith(photoUrl: image.path),
+                party.copyWith(partyPhotoUrl: image.path),
               );
 
-              if (Get.isRegistered<HomeController>()) {
-                await Get.find<HomeController>().loadPartiesFromDatabase();
+              final imageFile = File(image.path);
+              if (await imageFile.exists()) {
+                _profileImageFile.value = imageFile;
               }
+
+              await _loadProfileData();
+
+              SnacksBar.showSnackbar(
+                title: 'Success',
+                message: 'Photo added successfully',
+                type: SnacksBarType.SUCCESS,
+              );
             }
           } catch (e) {
-            // Error handling
+            SnacksBar.showSnackbar(
+              title: 'Error',
+              message: 'Failed to save photo',
+              type: SnacksBarType.ERROR,
+            );
+            return;
           }
         }
-
-        Get.snackbar(
-          'Success',
-          'Photo added successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade50,
-          colorText: Colors.green.shade900,
-          duration: const Duration(seconds: 2),
-        );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to pick photo. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to pick photo. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 }
 
 class _ChangeTypeBottomSheet extends StatelessWidget {
-  final String customerName;
-  final String customerPhone;
-  final bool isCurrentlyCustomer;
+  final String partyName;
+  final String partyPhoneNumber;
+  final String partyType;
+  final String? photoUrl;
   final VoidCallback onConfirm;
 
   const _ChangeTypeBottomSheet({
-    required this.customerName,
-    required this.customerPhone,
-    required this.isCurrentlyCustomer,
+    required this.partyName,
+    required this.partyPhoneNumber,
+    required this.partyType,
+    required this.photoUrl,
     required this.onConfirm,
   });
 
   @override
   Widget build(BuildContext context) {
-    final newType = isCurrentlyCustomer ? 'Supplier' : 'Customer';
-    final currentType = isCurrentlyCustomer ? 'Customer' : 'Supplier';
+    final newType = partyType == 'customer' ? 'supplier' : 'customer';
+    final currentType = partyType == 'customer' ? 'customer' : 'supplier';
 
     return Container(
       decoration: BoxDecoration(
@@ -726,7 +673,6 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: .start,
         children: [
-          // Drag handle
           Center(
             child: Container(
               width: 40,
@@ -738,9 +684,8 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-          // Title
           Text(
-            'Change $customerName to $newType?',
+            'Change $partyName to $newType?',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: .bold,
@@ -749,10 +694,8 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-          // Profile Information
           Row(
             children: [
-              // Circular Avatar with teal color
               Container(
                 width: 60,
                 height: 60,
@@ -762,9 +705,7 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    customerName.isNotEmpty
-                        ? customerName[0].toUpperCase()
-                        : '?',
+                    partyName.isNotEmpty ? partyName[0].toUpperCase() : '?',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 26,
@@ -774,13 +715,12 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              // Name and Phone
               Expanded(
                 child: Column(
                   crossAxisAlignment: .start,
                   children: [
                     Text(
-                      customerName,
+                      partyName,
                       style: const TextStyle(
                         fontSize: 19,
                         fontWeight: .w600,
@@ -789,8 +729,8 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      customerPhone.isNotEmpty
-                          ? customerPhone
+                      partyPhoneNumber.isNotEmpty
+                          ? partyPhoneNumber
                           : 'No phone number',
                       style: TextStyle(
                         fontSize: 15,
@@ -804,9 +744,8 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 28),
-          // Description
           Text(
-            'All entries of $customerName will be safely transferred from $currentType to $newType section',
+            'All entries of $partyName will be safely transferred from $currentType to $newType section',
             style: TextStyle(
               fontSize: 15,
               color: Colors.grey.shade700,
@@ -815,7 +754,6 @@ class _ChangeTypeBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          // Change Button - Green and prominent
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/app/routes/app_pages.dart';
+import 'package:purehisab/app/utils/snacks_bar.dart';
 import 'package:purehisab/data/services/auth_service.dart';
 
 class SignupController extends GetxController {
@@ -99,6 +100,15 @@ class SignupController extends GetxController {
     return null;
   }
 
+  void resetForm() {
+    nameController.clear();
+    emailController.clear();
+    phoneNumberController.clear();
+    passwordController.clear();
+    confirmPasswordController.clear();
+    formKey.currentState!.reset();
+  }
+
   Future<void> onSignup() async {
     if (!formKey.currentState!.validate()) return;
     isLoading = true;
@@ -111,39 +121,30 @@ class SignupController extends GetxController {
       );
 
       if (user != null) {
-        // Show success message
-        Get.snackbar(
-          'Success',
-          'Account Created Successfully. Please login to continue.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-          duration: const Duration(seconds: 2),
+        resetForm();
+        SnacksBar.showSnackbar(
+          title: 'Success',
+          message: 'Account Created Successfully. Please login to continue.',
+          type: SnacksBarType.SUCCESS,
         );
 
-        // Navigate to login screen - user needs to login manually
-        // Use Future.delayed to ensure UI is ready before navigation
         Future.delayed(const Duration(milliseconds: 100), () {
           if (Get.isRegistered<SignupController>()) {
             Get.offAllNamed(Routes.login);
           }
         });
       } else {
-        Get.snackbar(
-          'Signup Failed',
-          'Failed to create account',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
+        SnacksBar.showSnackbar(
+          title: 'Signup Failed',
+          message: 'Failed to create account',
+          type: SnacksBarType.ERROR,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: e.toString().replaceAll('Exception: ', ''),
+        type: SnacksBarType.ERROR,
       );
     } finally {
       isLoading = false;
@@ -152,32 +153,11 @@ class SignupController extends GetxController {
 
   @override
   void onClose() {
-    // Dispose controllers safely
-    try {
-      _nameController.dispose();
-    } catch (e) {
-      // Controller already disposed
-    }
-    try {
-      _emailController.dispose();
-    } catch (e) {
-      // Controller already disposed
-    }
-    try {
-      _phoneNumberController.dispose();
-    } catch (e) {
-      // Controller already disposed
-    }
-    try {
-      _passwordController.dispose();
-    } catch (e) {
-      // Controller already disposed
-    }
-    try {
-      _confirmPasswordController.dispose();
-    } catch (e) {
-      // Controller already disposed
-    }
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneNumberController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.onClose();
   }
 }

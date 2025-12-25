@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/app/routes/app_pages.dart';
@@ -20,46 +21,32 @@ class HomeScreen extends StatelessWidget {
             children: [
               _buildTabs(controller),
               Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    await controller.refreshBusinesses();
-                    await controller.loadPartiesFromDatabase();
-                  },
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        Obx(
-                          () => controller.isSearchFocused.value
-                              ? const SizedBox.shrink()
-                              : _buildSummaryCard(controller),
-                        ),
-                        _buildSearchAndFilters(controller),
-                        _buildCustomerSupplierList(controller),
-                        const SizedBox(height: 100), // Space for FAB
-                      ],
-                    ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Obx(
+                        () => controller.isSearchFocused
+                            ? const SizedBox.shrink()
+                            : _buildSummaryCard(controller),
+                      ),
+                      _buildSearchAndFilters(controller),
+                      _buildCustomerSupplierList(controller),
+                      const SizedBox(height: 100), // Space for FAB
+                    ],
                   ),
                 ),
               ),
             ],
           ),
           Obx(
-            () => controller.showFilterModal.value
+            () => controller.showFilterModal
                 ? _buildFilterModal(context, controller)
-                : const SizedBox.shrink(),
-          ),
-          Obx(
-            () => controller.showAccountModal.value
-                ? _buildAccountModal(context, controller)
                 : const SizedBox.shrink(),
           ),
         ],
       ),
       floatingActionButton: Obx(
-        () =>
-            (controller.showFilterModal.value ||
-                controller.showAccountModal.value ||
-                controller.isSearchFocused.value)
+        () => (controller.showFilterModal || controller.isSearchFocused)
             ? const SizedBox.shrink()
             : _buildFloatingActionButton(controller),
       ),
@@ -92,7 +79,7 @@ class HomeScreen extends StatelessWidget {
     return Obx(
       () => CustomTabWidget(
         label: label,
-        isSelected: controller.selectedTab.value == index,
+        isSelected: controller.selectedTabIndex == index,
         onTap: () => controller.changeTab(index),
       ),
     );
@@ -146,7 +133,7 @@ class HomeScreen extends StatelessWidget {
 
                   Obx(
                     () => Text(
-                      '₹ ${_formatAmount(controller.amountToGive.value)}',
+                      '₹ ${_formatAmount(controller.amountToGive)}',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: .bold,
@@ -200,7 +187,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   Obx(
                     () => Text(
-                      '₹ ${_formatAmount(controller.amountToGet.value)}',
+                      '₹ ${_formatAmount(controller.amountToGet)}',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: .bold,
@@ -227,10 +214,8 @@ class HomeScreen extends StatelessWidget {
             child: CustomSearchBar(
               focusNode: controller.searchFocusNode,
               hintText: 'Name, Mobile no.',
-              searchQuery: controller.searchQuery,
-              onChanged: (value) {
-                controller.updateSearchQuery(value);
-              },
+              searchQuery: controller.searchQuery.obs,
+              onChanged: controller.updateSearchQuery,
               onClear: () {
                 controller.updateSearchQuery('');
                 controller.searchFocusNode.unfocus();
@@ -241,7 +226,7 @@ class HomeScreen extends StatelessWidget {
           Obx(
             () => FilterButton(
               onTap: () => controller.toggleFilterModal(),
-              isActive: controller.showFilterModal.value,
+              isActive: controller.showFilterModal,
             ),
           ),
         ],
@@ -256,7 +241,7 @@ class HomeScreen extends StatelessWidget {
       if (items.isEmpty) {
         return EmptyState(
           icon: Icons.person,
-          message: controller.selectedTab.value == 0
+          message: controller.selectedTabIndex == 0
               ? 'Add supplier and manage your purchases'
               : 'Add customer and manage your sales',
         );
@@ -301,57 +286,22 @@ class HomeScreen extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () {
-                    Get.toNamed(
-                      Routes.customerDetail,
-                      arguments: {
-                        'name': name,
-                        'phone': item['phone']?.toString() ?? '',
-                        'id': item['id']?.toString() ?? name,
-                        'isCustomer': controller.selectedTab.value == 0,
-                        'storeName': controller.storeName.value,
-                      },
+                  onTap: () async {
+                    await Get.toNamed(
+                      Routes.partiesDetails,
+                      arguments: {'partyId': item['id']},
                     );
+                    controller.refreshData();
                   },
                   borderRadius: .circular(12),
                   child: Padding(
                     padding: const .all(16),
                     child: Row(
                       children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: isGive
-                                  ? [
-                                      Colors.green.shade400,
-                                      Colors.green.shade600,
-                                    ]
-                                  : [Colors.red.shade400, Colors.red.shade600],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            shape: .circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: (isGive ? Colors.green : Colors.red)
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : '?',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: .bold,
-                              ),
-                            ),
-                          ),
+                        _buildPartyAvatar(
+                          photoUrl: item['photoUrl']?.toString(),
+                          name: name,
+                          isGive: isGive,
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -455,7 +405,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildFloatingActionButton(HomeController controller) {
     return Obx(() {
-      final isCustomerTab = controller.selectedTab.value == 0;
+      final isCustomerTab = controller.selectedTabIndex == 0;
       return Container(
         margin: const EdgeInsets.only(bottom: 16, right: 16),
         child: Container(
@@ -591,7 +541,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildFilterChip(HomeController controller, String label) {
     return Obx(() {
-      final isSelected = controller.selectedFilter.value == label;
+      final isSelected = controller.selectedFilter == label;
       return FilterChip(
         label: Text(label),
         selected: isSelected,
@@ -608,7 +558,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildSortOption(HomeController controller, String label) {
     return Obx(() {
-      final isSelected = controller.selectedSort.value == label;
+      final isSelected = controller.selectedSort == label;
       return InkWell(
         onTap: () => controller.selectSort(label),
         child: Container(
@@ -644,199 +594,6 @@ class HomeScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildAccountModal(BuildContext context, HomeController controller) {
-    return GestureDetector(
-      onTap: () {
-        controller.closeAccountModal();
-      },
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.5),
-        child: Align(
-          alignment: .bottomCenter,
-          child: GestureDetector(
-            onTap: () {}, // Prevent closing when tapping inside modal
-            child: Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.7,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: .only(
-                  topLeft: .circular(20),
-                  topRight: .circular(20),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    margin: const .only(top: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: .circular(2),
-                    ),
-                  ),
-                  Padding(
-                    padding: const .all(16),
-                    child: Row(
-                      mainAxisAlignment: .spaceBetween,
-                      children: [
-                        const Text(
-                          'Select Account',
-                          style: TextStyle(fontSize: 18, fontWeight: .bold),
-                        ),
-                        IconButton(
-                          onPressed: () => controller.closeAccountModal(),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Flexible(
-                    child: Obx(
-                      () => ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: controller.accountsList.length,
-                        itemBuilder: (context, index) {
-                          final account = controller.accountsList[index];
-                          final name = account['name']?.toString() ?? '';
-                          final customerCount =
-                              account['customerCount'] as int? ?? 0;
-                          final supplierCount =
-                              account['supplierCount'] as int? ?? 0;
-                          final isSelected =
-                              account['isSelected'] as bool? ?? false;
-
-                          return InkWell(
-                            onTap: () {
-                              controller.selectAccount(index);
-                            },
-                            child: Container(
-                              padding: const .symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      shape: .circle,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        name.isNotEmpty
-                                            ? name
-                                                  .split(' ')
-                                                  .map(
-                                                    (word) => word.isNotEmpty
-                                                        ? word[0].toUpperCase()
-                                                        : '',
-                                                  )
-                                                  .take(2)
-                                                  .join()
-                                            : '?',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: .bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: .start,
-                                      children: [
-                                        Text(
-                                          name,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: .w500,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              '$customerCount ${customerCount == 1 ? 'customer' : 'customers'}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                            Text(
-                                              ' • ',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                            Text(
-                                              '$supplierCount ${supplierCount == 1 ? 'supplier' : 'suppliers'}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Icon(
-                                      Icons.check_circle,
-                                      color: AppColors.primary,
-                                      size: 24,
-                                    )
-                                  else
-                                    Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        shape: .circle,
-                                        border: Border.all(
-                                          color: Colors.grey.shade400,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    margin: const .all(16),
-                    child: ActionButton(
-                      label: 'CREATE NEW ACCOUNT',
-                      icon: Icons.add,
-                      onPressed: () => {
-                        controller.closeAccountModal(),
-                        Get.toNamed(Routes.createAccount),
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Helper method to format amount with commas
   String _formatAmount(double amount) {
     final formatter = amount.toStringAsFixed(0);
     final parts = formatter.split('.');
@@ -850,11 +607,75 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> _handleAddParty(HomeController controller) async {
-    final partyType = controller.selectedTab.value;
+    final partyType = controller.selectedTabIndex;
     final arguments = {'partyType': partyType};
-
-    // Navigate directly to contact list screen
-    // Permission dialog will be shown on the contact list screen
     await Get.toNamed(Routes.contactList, arguments: arguments);
+  }
+
+  Widget _buildPartyAvatar({
+    String? photoUrl,
+    required String name,
+    required bool isGive,
+  }) {
+    final gradientColors = isGive
+        ? [Colors.green.shade400, Colors.green.shade600]
+        : [Colors.red.shade400, Colors.red.shade600];
+
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      final photoFile = File(photoUrl);
+      if (photoFile.existsSync()) {
+        return Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: (isGive ? Colors.green : Colors.red).withValues(
+                  alpha: 0.3,
+                ),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 28,
+            backgroundImage: FileImage(photoFile),
+            backgroundColor: gradientColors[0],
+          ),
+        );
+      }
+    }
+
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: (isGive ? Colors.green : Colors.red).withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : '?',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
   }
 }

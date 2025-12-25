@@ -2,46 +2,39 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:purehisab/controllers/app_lifecycle_controller.dart';
-import 'package:purehisab/data/services/app_lock_service.dart';
-import 'package:purehisab/data/services/auth_service.dart';
-import 'package:purehisab/data/services/business_repo.dart';
-import 'package:purehisab/data/services/party_repo.dart';
-import 'package:purehisab/data/services/session_service.dart';
-import 'package:purehisab/data/services/transaction_repo.dart';
-import 'package:purehisab/data/services/reminder_notification_service.dart';
-import 'package:purehisab/firebase_options.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:purehisab/app/bindings/initial_binding.dart';
+
+import 'firebase_options.dart';
 import 'app/routes/app_pages.dart';
 import 'app/utils/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await GetStorage.init();
+
+  await _initFirebase();
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+  };
+
+  runApp(const MyApp());
+}
+
+Future<void> _initFirebase() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
     FirebaseFirestore.instance.settings = const Settings(
       persistenceEnabled: true,
     );
-    debugPrint('Firebase initialized successfully');
   } catch (e) {
-    debugPrint('Firebase initialization failed: $e');
+    rethrow;
   }
-  _initServices();
-  runApp(const MyApp());
-}
-
-void _initServices() {
-  Get.put(AppLifecycleController());
-  Get.put(AppLockService(), permanent: true);
-  Get.put(AuthService(), permanent: true);
-  Get.put(SessionService(), permanent: true);
-  Get.put(BusinessRepository(), permanent: true);
-  Get.put(PartyRepository(), permanent: true);
-  Get.put(TransactionRepository(), permanent: true);
-  Get.put(ReminderNotificationService(), permanent: true);
 }
 
 class MyApp extends StatelessWidget {
@@ -52,35 +45,31 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'PureHisab',
       debugShowCheckedModeBanner: false,
+
+      initialBinding: InitialBinding(),
+
+      initialRoute: AppPages.initial,
+      getPages: AppPages.routes,
+
       theme: ThemeData(
+        useMaterial3: true,
+
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           brightness: Brightness.light,
-          primary: AppColors.primary,
-          secondary: AppColors.secondary,
-          surface: AppColors.surface,
         ),
-        useMaterial3: true,
-        primaryColor: AppColors.primary,
+
         scaffoldBackgroundColor: AppColors.background,
+        primaryColor: AppColors.primary,
         cardColor: AppColors.surface,
         dividerColor: AppColors.divider,
+
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.background,
           foregroundColor: AppColors.textPrimary,
           elevation: 0,
         ),
-        cardTheme: CardThemeData(
-          color: AppColors.surface,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: AppColors.border, width: 1),
-          ),
-        ),
       ),
-      initialRoute: AppPages.initial,
-      getPages: AppPages.routes,
     );
   }
 }

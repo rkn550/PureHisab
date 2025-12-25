@@ -1,125 +1,108 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:purehisab/app/routes/app_pages.dart';
+import 'package:purehisab/app/utils/snacks_bar.dart';
+import 'package:purehisab/controllers/navigation_controller.dart';
+import 'package:purehisab/controllers/home_controller.dart';
 import 'package:purehisab/data/services/party_repo.dart';
-import 'home_controller.dart';
 
 class AddPartyController extends GetxController {
   PartyRepository get _partyRepository => Get.find<PartyRepository>();
 
-  final partyNameController = TextEditingController();
-  final mobileController = TextEditingController();
-  final addressController = TextEditingController();
+  final _partyNameController = TextEditingController();
+  final _mobileController = TextEditingController();
+  final _addressController = TextEditingController();
+  TextEditingController get partyNameController => _partyNameController;
+  TextEditingController get mobileController => _mobileController;
+  TextEditingController get addressController => _addressController;
 
-  final formKey = GlobalKey<FormState>();
-  final RxBool isLoading = false.obs;
-  final RxString partyType = 'Customer'.obs;
-  final RxBool showGstinAddress = false.obs;
-
-  int? initialPartyType;
+  final _formKey = GlobalKey<FormState>();
+  GlobalKey<FormState> get formKey => _formKey;
+  final RxBool _isLoading = false.obs;
+  bool get isLoading => _isLoading.value;
+  final RxString _partyType = 'customer'.obs;
+  String get partyType => _partyType.value;
+  final RxBool _showGstinAddress = false.obs;
+  bool get showGstinAddress => _showGstinAddress.value;
 
   @override
   void onInit() {
     super.onInit();
-    final args = Get.arguments;
-    if (args != null && args is Map<String, dynamic>) {
-      initialPartyType = args['partyType'] as int?;
-      if (initialPartyType == 1) {
-        partyType.value = 'Supplier';
-      } else {
-        partyType.value = 'Customer';
-      }
-
-      if (args.containsKey('contactName')) {
-        final contactName = args['contactName'] as String? ?? '';
-        if (contactName.isNotEmpty && contactName != 'Unknown') {
-          partyNameController.text = contactName;
-        }
-      }
-      if (args.containsKey('contactNumber')) {
-        final contactNumber = args['contactNumber'] as String? ?? '';
-        if (contactNumber.isNotEmpty) {
-          final cleaned = contactNumber.replaceAll(RegExp(r'[^\d]'), '');
-          mobileController.text = cleaned;
-        }
-      }
-    }
+    getArguments();
   }
 
   @override
   void onClose() {
-    partyNameController.dispose();
-    mobileController.dispose();
-    addressController.dispose();
+    _partyNameController.dispose();
+    _mobileController.dispose();
+    _addressController.dispose();
     super.onClose();
   }
 
+  void getArguments() {
+    final args = Get.arguments;
+    if (args != null && args is Map<String, dynamic>) {
+      _partyType.value = args['partyType']?.toString() ?? 'customer';
+      _partyNameController.text = args['partyName']?.toString() ?? '';
+      _mobileController.text = args['mobile']?.toString() ?? '';
+    }
+  }
+
   void togglePartyType(String type) {
-    partyType.value = type;
+    debugPrint('togglePartyType: $type');
+    _partyType.value = type;
   }
 
   void toggleGstinAddress() {
-    showGstinAddress.value = !showGstinAddress.value;
+    _showGstinAddress.value = !_showGstinAddress.value;
   }
 
   Future<void> addParty() async {
-    if (formKey.currentState?.validate() ?? false) {
-      isLoading.value = true;
+    if (!_formKey.currentState!.validate()) return;
+    _isLoading.value = true;
 
-      try {
-        if (!Get.isRegistered<HomeController>()) {
-          throw Exception('HomeController not found');
-        }
+    try {
+      final party = await _partyRepository.createParty(
+        businessId: Get.find<NavigationController>().businessId,
+        partyName: _partyNameController.text.trim(),
+        type: partyType == 'customer' ? 'customer' : 'supplier',
+        phoneNumber: _mobileController.text.trim(),
+        address: _addressController.text.trim().isNotEmpty
+            ? _addressController.text.trim()
+            : null,
+      );
+      _clearForm();
 
+      await Get.toNamed(
+        Routes.partiesDetails,
+        arguments: {'partyId': party.id, 'partyType': party.type},
+      );
+
+      if (Get.isRegistered<HomeController>()) {
         final homeController = Get.find<HomeController>();
-        if (homeController.selectedBusinessId.value.isEmpty) {
-          throw Exception('No business selected');
-        }
-
-        await _partyRepository.createParty(
-          businessId: homeController.selectedBusinessId.value,
-          partyName: partyNameController.text.trim(),
-          type: partyType.value == 'Customer' ? 'customer' : 'supplier',
-          phoneNumber: mobileController.text.trim().isNotEmpty
-              ? mobileController.text.trim()
-              : null,
-          address: addressController.text.trim().isNotEmpty
-              ? addressController.text.trim()
-              : null,
-        );
-
-        await homeController.loadPartiesFromDatabase();
-
-        _clearForm();
-
-        Get.until((route) => route.isFirst);
-
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (Get.isSnackbarOpen == false) {
-            Get.snackbar(
-              'Success',
-              '${partyType.value} added successfully',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.green.shade100,
-              colorText: Colors.green.shade900,
-              duration: const Duration(seconds: 2),
-            );
-          }
-        });
-      } catch (e) {
-        final errorMessage = e.toString().replaceAll('Exception: ', '');
-        Get.snackbar(
-          'Error',
-          errorMessage.isNotEmpty
-              ? errorMessage
-              : 'Failed to add ${partyType.value}. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-          duration: const Duration(seconds: 4),
-        );
-      } finally {
-        isLoading.value = false;
+        homeController.refreshData();
       }
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (Get.isSnackbarOpen == false) {
+          SnacksBar.showSnackbar(
+            title: 'Success',
+            message: '$partyType added successfully',
+            type: SnacksBarType.SUCCESS,
+          );
+        }
+      });
+    } catch (e) {
+      final errorMessage = e.toString().replaceAll('Exception: ', '');
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: errorMessage.isNotEmpty
+            ? errorMessage
+            : 'Failed to add $partyType. Please try again.',
+        type: SnacksBarType.ERROR,
+      );
+    } finally {
+      _isLoading.value = false;
     }
   }
 
@@ -145,9 +128,9 @@ class AddPartyController extends GetxController {
   }
 
   void _clearForm() {
-    partyNameController.clear();
-    mobileController.clear();
-    addressController.clear();
-    showGstinAddress.value = false;
+    _partyNameController.clear();
+    _mobileController.clear();
+    _addressController.clear();
+    _showGstinAddress.value = false;
   }
 }

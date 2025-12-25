@@ -1,34 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/profile_controller.dart';
+import '../controllers/parties_profile_controller.dart';
 import '../app/utils/app_colors.dart';
 import 'widgets/widgets.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class PartiesProfileScreen extends StatelessWidget {
+  const PartiesProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ProfileController>();
+    final controller = Get.find<PartiesProfileController>();
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(controller),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildProfileSection(controller),
-            _buildDetailsSection(controller, context),
-            _buildSettingsSection(controller, context),
-            _buildDeleteButton(controller),
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
+      body: Obx(() {
+        if (controller.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildProfileSection(controller),
+              _buildDetailsSection(controller, context),
+              _buildSettingsSection(controller, context),
+              _buildDeleteButton(controller),
+              const SizedBox(height: 32),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(ProfileController controller) {
+  PreferredSizeWidget _buildAppBar(PartiesProfileController controller) {
     return AppBar(
       backgroundColor: AppColors.primaryDark,
       elevation: 0,
@@ -38,7 +43,9 @@ class ProfileScreen extends StatelessWidget {
       ),
       title: Obx(
         () => Text(
-          controller.isCustomer.value ? 'Customer Profile' : 'Supplier Profile',
+          controller.partyType == 'customer'
+              ? 'Customer Profile'
+              : 'Supplier Profile',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -49,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileSection(ProfileController controller) {
+  Widget _buildProfileSection(PartiesProfileController controller) {
     return Container(
       padding: .all(24),
       child: Column(
@@ -60,10 +67,10 @@ class ProfileScreen extends StatelessWidget {
                 () => CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.grey.shade300,
-                  backgroundImage: controller.profileImageFile.value != null
-                      ? FileImage(controller.profileImageFile.value!)
+                  backgroundImage: controller.profileImageFile != null
+                      ? FileImage(controller.profileImageFile!)
                       : null,
-                  child: controller.profileImageFile.value == null
+                  child: controller.profileImageFile == null
                       ? Icon(
                           Icons.person,
                           size: 50,
@@ -96,65 +103,66 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          GestureDetector(
-            onTap: controller.addPhoto,
-            child: Text(
-              'Add photo',
-              style: TextStyle(
-                color: AppColors.primaryDark,
-                fontSize: 14,
-                fontWeight: .w500,
+          if (controller.profileImageFile == null)
+            GestureDetector(
+              onTap: controller.addPhoto,
+              child: Text(
+                'Add photo',
+                style: TextStyle(
+                  color: AppColors.primaryDark,
+                  fontSize: 14,
+                  fontWeight: .w500,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildDetailsSection(
-    ProfileController controller,
+    PartiesProfileController controller,
     BuildContext context,
   ) {
     return Padding(
       padding: .symmetric(horizontal: 16),
       child: Column(
         children: [
-          _buildDetailItem(
-            icon: Icons.person_outline,
-            label: 'Name',
-            value: controller.customerName.value,
-            onTap: () => _showEditDialog(
-              context,
-              'Edit Name',
-              controller.customerName.value,
-              (value) => controller.updateName(value),
+          Obx(
+            () => _buildDetailItem(
+              icon: Icons.person_outline,
+              label: 'Name',
+              value: controller.partyName,
+              onTap: () => _showEditDialog(
+                context,
+                'Edit Name',
+                controller.partyName,
+                (value) => controller.updateName(value),
+              ),
             ),
           ),
-          _buildDetailItem(
-            icon: Icons.phone_outlined,
-            label: 'Mobile Number',
-            value: controller.customerPhone.value,
-            onTap: () => _showEditDialog(
-              context,
-              'Edit Mobile Number',
-              controller.customerPhone.value,
-              (value) => controller.updatePhone(value),
+          Obx(
+            () => _buildDetailItem(
+              icon: Icons.phone_outlined,
+              label: 'Mobile Number',
+              value: controller.partyPhoneNumber,
+              onTap: () => _showEditDialog(
+                context,
+                'Edit Mobile Number',
+                controller.partyPhoneNumber,
+                (value) => controller.updatePhone(value),
+              ),
             ),
           ),
           Obx(
             () => _buildDetailItem(
               icon: Icons.location_on_outlined,
               label: 'Address',
-              value: controller.address.value.isEmpty
-                  ? null
-                  : controller.address.value,
+              value: controller.address.isEmpty ? null : controller.address,
               onTap: () => _showEditDialog(
                 context,
-                controller.address.value.isEmpty
-                    ? 'Add Address'
-                    : 'Edit Address',
-                controller.address.value,
+                controller.address.isEmpty ? 'Add Address' : 'Edit Address',
+                controller.address,
                 (value) => controller.updateAddress(value),
                 maxLines: 3,
               ),
@@ -163,7 +171,7 @@ class ProfileScreen extends StatelessWidget {
           Obx(
             () => _buildDetailItem(
               icon: Icons.swap_horiz,
-              label: controller.isCustomer.value
+              label: controller.partyType == 'customer'
                   ? 'Change to Supplier'
                   : 'Change to Customer',
               value: null,
@@ -190,7 +198,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildSettingsSection(
-    ProfileController controller,
+    PartiesProfileController controller,
     BuildContext context,
   ) {
     return Padding(
@@ -202,7 +210,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Obx(
             () => Text(
-              controller.isCustomer.value
+              controller.partyType == 'customer'
                   ? 'Customer Settings'
                   : 'Supplier Settings',
               style: TextStyle(
@@ -220,7 +228,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSmsSettingsItem(ProfileController controller) {
+  Widget _buildSmsSettingsItem(PartiesProfileController controller) {
     return Container(
       padding: .symmetric(vertical: 16),
       decoration: BoxDecoration(
@@ -245,7 +253,7 @@ class ProfileScreen extends StatelessWidget {
                     Expanded(
                       child: Obx(
                         () => Text(
-                          controller.isCustomer.value
+                          controller.partyType == 'customer'
                               ? 'Customer SMS Settings'
                               : 'Supplier SMS Settings',
                           style: const TextStyle(
@@ -268,7 +276,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           Obx(
             () => CustomSwitch(
-              value: controller.smsEnabled.value,
+              value: controller.smsEnabled,
               onChanged: (_) => controller.toggleSmsEnabled(),
               activeColor: AppColors.success,
             ),
@@ -279,7 +287,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildSmsLanguageItem(
-    ProfileController controller,
+    PartiesProfileController controller,
     BuildContext context,
   ) {
     return Container(
@@ -314,8 +322,8 @@ class ProfileScreen extends StatelessWidget {
                   () => Row(
                     children: [
                       CustomRadio<String>(
-                        value: 'English',
-                        groupValue: controller.smsLanguage.value,
+                        value: 'english',
+                        groupValue: controller.smsLanguage,
                         onChanged: (value) {
                           if (value != null) {
                             controller.setSmsLanguage(value);
@@ -326,8 +334,8 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 24),
                       CustomRadio<String>(
-                        value: 'Hindi',
-                        groupValue: controller.smsLanguage.value,
+                        value: 'hindi',
+                        groupValue: controller.smsLanguage,
                         onChanged: (value) {
                           if (value != null) {
                             controller.setSmsLanguage(value);
@@ -347,7 +355,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDeleteButton(ProfileController controller) {
+  Widget _buildDeleteButton(PartiesProfileController controller) {
     return Padding(
       padding: .all(16),
       child: Container(
@@ -366,7 +374,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Obx(
                 () => Text(
-                  controller.isCustomer.value
+                  controller.partyType == 'customer'
                       ? 'DELETE CUSTOMER'
                       : 'DELETE SUPPLIER',
                   style: const TextStyle(

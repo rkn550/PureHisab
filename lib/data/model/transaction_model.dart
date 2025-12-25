@@ -2,19 +2,14 @@ class TransactionModel {
   final String id;
   final String businessId;
   final String partyId;
-
   final double amount;
 
-  /// gave | got
   final String direction;
-
   final int date;
   final String? description;
-  final String? photoUrl;
-
+  final String? transactionPhotoUrl;
   final bool isDeleted;
   final bool isSynced;
-
   final int createdAt;
   final int updatedAt;
   final int? firebaseUpdatedAt;
@@ -29,13 +24,12 @@ class TransactionModel {
     required this.createdAt,
     required this.updatedAt,
     this.description,
-    this.photoUrl,
+    this.transactionPhotoUrl,
     this.isDeleted = false,
     this.isSynced = false,
     this.firebaseUpdatedAt,
   });
 
-  /// SQLite → Object
   factory TransactionModel.fromMap(Map<String, dynamic> map) {
     return TransactionModel(
       id: map['id'],
@@ -45,7 +39,7 @@ class TransactionModel {
       direction: map['direction'],
       date: map['date'],
       description: map['description'],
-      photoUrl: map['photo_url'],
+      transactionPhotoUrl: map['transaction_photo_url'],
       isDeleted: map['is_deleted'] == 1,
       isSynced: map['is_synced'] == 1,
       createdAt: map['created_at'],
@@ -54,7 +48,6 @@ class TransactionModel {
     );
   }
 
-  /// Object → SQLite
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -64,7 +57,7 @@ class TransactionModel {
       'direction': direction,
       'date': date,
       'description': description,
-      'photo_url': photoUrl,
+      'transaction_photo_url': transactionPhotoUrl,
       'is_deleted': isDeleted ? 1 : 0,
       'is_synced': isSynced ? 1 : 0,
       'created_at': createdAt,
@@ -73,17 +66,47 @@ class TransactionModel {
     };
   }
 
-  /// Object → Firebase
   Map<String, dynamic> toFirebase() {
     return {
       'amount': amount,
       'direction': direction,
       'date': date,
       'description': description,
-      'photoUrl': photoUrl,
+      'transactionPhotoUrl': transactionPhotoUrl,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'isDeleted': isDeleted,
     };
+  }
+
+  TransactionModel copyWith({
+    double? amount,
+    String? direction,
+    int? date,
+    String? description,
+    String? transactionPhotoUrl,
+    bool? isDeleted,
+    bool? isSynced,
+    int? updatedAt,
+    int? firebaseUpdatedAt,
+    bool clearTransactionPhotoUrl = false,
+  }) {
+    return TransactionModel(
+      id: id,
+      businessId: businessId,
+      partyId: partyId,
+      amount: amount ?? this.amount,
+      direction: direction ?? this.direction,
+      date: date ?? this.date,
+      description: description ?? this.description,
+      transactionPhotoUrl: clearTransactionPhotoUrl
+          ? null
+          : (transactionPhotoUrl ?? this.transactionPhotoUrl),
+      isDeleted: isDeleted ?? this.isDeleted,
+      isSynced: isSynced ?? this.isSynced,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      firebaseUpdatedAt: firebaseUpdatedAt ?? this.firebaseUpdatedAt,
+    );
   }
 }

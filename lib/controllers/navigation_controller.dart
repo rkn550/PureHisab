@@ -1,94 +1,96 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'business_profile_controller.dart';
-import 'home_controller.dart';
-import 'analytics_controller.dart';
+import 'package:purehisab/data/model/business_model.dart';
+import 'package:purehisab/data/services/business_repo.dart';
+import 'package:purehisab/data/services/party_repo.dart';
+import 'package:purehisab/screens/main_navigation_screen.dart';
 
 class NavigationController extends GetxController {
-  final RxInt currentIndex = 0.obs;
-  final RxString phoneNumber = ''.obs;
-  final RxString userName = ''.obs;
-  final RxString userEmail = ''.obs;
+  final BusinessRepository _businessRepository = Get.find<BusinessRepository>();
+  final PartyRepository _partyRepository = Get.find<PartyRepository>();
 
-  Worker? _currentIndexWorker;
+  final RxInt _currentIndex = 0.obs;
+  int get currentIndex => _currentIndex.value;
+
+  final RxList<BusinessModel> _businesses = <BusinessModel>[].obs;
+  List<BusinessModel> get businesses => _businesses;
+
+  final RxString _businessId = ''.obs;
+  String get businessId => _businessId.value;
+  set businessId(String value) => _businessId.value = value;
+  RxString get businessIdRx => _businessId;
+
+  final RxMap<String, int> _customerCounts = <String, int>{}.obs;
+  int getCustomerCount(String businessId) => _customerCounts[businessId] ?? 0;
 
   @override
   void onInit() {
     super.onInit();
-    _getArguments();
+    loadBusinessesFromDatabase();
+  }
 
-    _currentIndexWorker = ever(currentIndex, (index) {
-      if (index == 2) {
-        _loadSelectedBusinessProfile();
-      } else if (index == 0) {
-        // Load analytics immediately when tab is selected
-        Future.microtask(() {
-          if (Get.isRegistered<AnalyticsController>()) {
-            Get.find<AnalyticsController>().refreshAnalytics();
-          }
-        });
+  void setInitialTab(int index) {
+    if (index >= 0 && index <= 2) _currentIndex.value = index;
+  }
+
+  Future<void> loadBusinessesFromDatabase() async {
+    final businesses = await _businessRepository.getBusinesses();
+    _businesses.assignAll(businesses);
+    if (businesses.isNotEmpty) {
+      if (Get.isBottomSheetOpen == true) {
+        Get.back();
       }
-    });
-
-    // Load analytics immediately if initial tab is 0
-    if (currentIndex.value == 0) {
-      Future.microtask(() {
-        if (Get.isRegistered<AnalyticsController>()) {
-          Get.find<AnalyticsController>().refreshAnalytics();
+      await loadCustomerCounts();
+      if (_businessId.value.isEmpty) {
+        _businessId.value = businesses.first.id;
+      }
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Get.isBottomSheetOpen != true) {
+          _showCreateBusinessBottomSheet();
         }
       });
     }
   }
 
-  void _getArguments() {
-    final args = Get.arguments;
-    if (args != null && args is Map<String, dynamic>) {
-      if (args.containsKey('initialTab')) {
-        currentIndex.value = args['initialTab'] as int? ?? 0;
-      }
+  void _showCreateBusinessBottomSheet() {
+    if (Get.isBottomSheetOpen == true) return;
 
-      if (args.containsKey('phoneNumber')) {
-        phoneNumber.value = args['phoneNumber'] as String? ?? '';
-      }
-      if (args.containsKey('userName')) {
-        userName.value = args['userName'] as String? ?? '';
-      }
-      if (args.containsKey('userEmail')) {
-        userEmail.value = args['userEmail'] as String? ?? '';
-      }
+    Get.bottomSheet(
+      const CreateBusinessBottomSheet(),
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+    );
+  }
+
+  Future<void> loadCustomerCounts() async {
+    for (var business in _businesses) await customerCount(business.id);
+  }
+
+  Future<void> customerCount(String businessId) async {
+    try {
+      final parties = await _partyRepository.getPartiesByType(
+        businessId: businessId,
+        type: 'customer',
+      );
+      _customerCounts[businessId] = parties.length;
+    } catch (e) {
+      _customerCounts[businessId] = 0;
     }
   }
 
-  void changeTab(int index) {
-    currentIndex.value = index;
-  }
+  Future<void> openBusinessListBottomSheet() async {
+    if (Get.isBottomSheetOpen == true) return;
 
-  void _loadSelectedBusinessProfile() {
-    if (Get.isRegistered<HomeController>()) {
-      try {
-        final homeController = Get.find<HomeController>();
-        for (var account in homeController.accountsList) {
-          if (account['isSelected'] == true) {
-            final businessId = account['id']?.toString();
-            if (businessId != null && businessId.isNotEmpty) {
-              if (Get.isRegistered<BusinessProfileController>()) {
-                final businessProfileController =
-                    Get.find<BusinessProfileController>();
-                businessProfileController.loadBusinessById(businessId);
-              }
-              return;
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Error loading selected business profile: $e');
-      }
-    }
-  }
-
-  @override
-  void onClose() {
-    _currentIndexWorker?.dispose();
-    super.onClose();
+    await loadCustomerCounts();
+    await Get.bottomSheet(
+      const BusinessListBottomSheet(),
+      isScrollControlled: true,
+      barrierColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+    );
   }
 }

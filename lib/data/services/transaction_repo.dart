@@ -17,7 +17,7 @@ class TransactionRepository extends GetxService {
     required String direction,
     required int date,
     String? description,
-    String? photoUrl,
+    String? transactionPhotoUrl,
   }) async {
     try {
       final currentUser = _auth.currentUser;
@@ -36,7 +36,7 @@ class TransactionRepository extends GetxService {
         direction: direction,
         date: date,
         description: description,
-        photoUrl: photoUrl,
+        transactionPhotoUrl: transactionPhotoUrl,
         createdAt: now,
         updatedAt: now,
       );
@@ -61,7 +61,9 @@ class TransactionRepository extends GetxService {
     }
   }
 
-  Future<List<TransactionModel>> getTransactionsByParty(String partyId) async {
+  Future<List<TransactionModel>> getTransactionsByPartyId(
+    String partyId,
+  ) async {
     final db = await _dbHelper.database;
 
     final result = await db.query(
@@ -141,7 +143,7 @@ extension TransactionModelCopyWith on TransactionModel {
     String? direction,
     int? date,
     String? description,
-    String? photoUrl,
+    String? transactionPhotoUrl,
     bool? isDeleted,
     bool? isSynced,
     int? updatedAt,
@@ -155,7 +157,7 @@ extension TransactionModelCopyWith on TransactionModel {
       direction: direction ?? this.direction,
       date: date ?? this.date,
       description: description ?? this.description,
-      photoUrl: photoUrl ?? this.photoUrl,
+      transactionPhotoUrl: transactionPhotoUrl ?? this.transactionPhotoUrl,
       isDeleted: isDeleted ?? this.isDeleted,
       isSynced: isSynced ?? this.isSynced,
       createdAt: createdAt,

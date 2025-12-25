@@ -66,7 +66,6 @@ class AddPartyScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-
                     Expanded(
                       child: CustomTextField(
                         controller: controller.mobileController,
@@ -95,20 +94,20 @@ class AddPartyScreen extends StatelessWidget {
                       _buildRadioOption(
                         controller,
                         'Customer',
-                        controller.partyType.value == 'Customer',
+                        controller.partyType == 'customer',
+                        () => controller.togglePartyType('customer'),
                       ),
-
                       _buildRadioOption(
                         controller,
                         'Supplier',
-                        controller.partyType.value == 'Supplier',
+                        controller.partyType == 'supplier',
+                        () => controller.togglePartyType('supplier'),
                       ),
                     ],
                   ),
                 ),
-
                 Obx(
-                  () => controller.showGstinAddress.value
+                  () => controller.showGstinAddress
                       ? _buildGstinAddressSection(controller)
                       : InkWell(
                           onTap: () => controller.toggleGstinAddress(),
@@ -125,11 +124,11 @@ class AddPartyScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 Obx(
                   () => PrimaryButton(
-                    text: 'ADD ${controller.partyType.value.toUpperCase()}',
-                    onPressed: controller.isLoading.value
+                    text: 'ADD ${controller.partyType.toUpperCase()}',
+                    onPressed: controller.isLoading
                         ? null
                         : () => controller.addParty(),
-                    isLoading: controller.isLoading.value,
+                    isLoading: controller.isLoading,
                     height: 50,
                     fontSize: 16,
                     backgroundColor: AppColors.primary,
@@ -147,12 +146,13 @@ class AddPartyScreen extends StatelessWidget {
     AddPartyController controller,
     String label,
     bool isSelected,
+    VoidCallback onPressed,
   ) {
     return Row(
       mainAxisAlignment: .center,
       children: [
         IconButton(
-          onPressed: () => controller.togglePartyType(label),
+          onPressed: onPressed,
           icon: Icon(
             isSelected
                 ? Icons.radio_button_checked

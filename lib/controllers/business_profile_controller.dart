@@ -1,26 +1,32 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:purehisab/app/utils/snacks_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:purehisab/data/services/business_repo.dart';
 import 'package:purehisab/data/services/app_lock_service.dart';
-import '../app/utils/app_colors.dart';
-import 'home_controller.dart';
+import 'package:purehisab/controllers/navigation_controller.dart';
 
 class BusinessProfileController extends GetxController {
   BusinessRepository get _businessRepository => Get.find<BusinessRepository>();
   AppLockService get _appLockService => Get.find<AppLockService>();
 
-  final nameController = TextEditingController();
-  final formKey = GlobalKey<FormState>();
-  final RxBool isLoading = false.obs;
+  final RxBool _isLoading = false.obs;
+  bool get isLoading => _isLoading.value;
 
-  final RxString businessId = ''.obs;
-  final RxString businessName = ''.obs;
-  final RxString ownerName = ''.obs;
-  final RxString businessPhone = ''.obs;
+  final RxString _businessId = ''.obs;
+  String get businessId => _businessId.value;
+
+  final RxString _businessName = ''.obs;
+  String get businessName => _businessName.value;
+
+  final RxString _ownerName = ''.obs;
+  String get ownerName => _ownerName.value;
+
+  final RxString _businessPhone = ''.obs;
+  String get businessPhone => _businessPhone.value;
+
   final Rx<File?> profileImageFile = Rx<File?>(null);
 
   final RxBool settingsExpanded = false.obs;
@@ -28,747 +34,121 @@ class BusinessProfileController extends GetxController {
   final RxBool aboutExpanded = false.obs;
   final RxBool helpSupportExpanded = false.obs;
 
-  Worker? _homeControllerWorker;
-
   @override
   void onInit() {
     super.onInit();
-    _loadBusinessData();
+    _loadBusinessFromNavigationController();
     _loadAppLockState();
-    _setupHomeControllerListener();
+    _setupBusinessIdListener();
   }
 
-  @override
-  void onReady() {
-    super.onReady();
-    // Refresh business data when screen is ready to ensure latest data is shown
+  void _setupBusinessIdListener() {
     Future.delayed(const Duration(milliseconds: 100), () {
-      if (businessId.value.isNotEmpty) {
-        _loadBusinessFromDatabase(businessId.value);
-      } else {
-        // If businessId is empty, try to load from HomeController
-        _loadBusinessData();
-      }
-    });
-  }
-
-  void _setupHomeControllerListener() {
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (Get.isRegistered<HomeController>()) {
-        try {
-          final homeController = Get.find<HomeController>();
-          _homeControllerWorker = ever(homeController.selectedBusinessId, (
-            String newBusinessId,
-          ) {
-            if (newBusinessId.isNotEmpty && newBusinessId != businessId.value) {
-              loadBusinessById(newBusinessId);
-            }
-          });
-
-          if (homeController.selectedBusinessId.value.isNotEmpty &&
-              businessId.value.isEmpty) {
-            loadBusinessById(homeController.selectedBusinessId.value);
+      if (Get.isRegistered<NavigationController>()) {
+        final navController = Get.find<NavigationController>();
+        ever(navController.businessIdRx, (String newBusinessId) {
+          if (newBusinessId.isNotEmpty && newBusinessId != _businessId.value) {
+            _businessId.value = newBusinessId;
+            loadBusinessFromDatabase(newBusinessId);
           }
-        } catch (e) {
-          // HomeController might not be ready yet, ignore
+        });
+        if (navController.businessId.isNotEmpty &&
+            navController.businessId != _businessId.value) {
+          _businessId.value = navController.businessId;
+          loadBusinessFromDatabase(navController.businessId);
         }
       }
     });
+  }
+
+  void _loadBusinessFromNavigationController() {
+    if (Get.isRegistered<NavigationController>()) {
+      final navController = Get.find<NavigationController>();
+      final selectedBusinessId = navController.businessId;
+      if (selectedBusinessId.isNotEmpty) {
+        _businessId.value = selectedBusinessId;
+        loadBusinessFromDatabase(selectedBusinessId);
+      } else if (navController.businesses.isNotEmpty) {
+        final firstBusinessId = navController.businesses.first.id;
+        _businessId.value = firstBusinessId;
+        navController.businessId = firstBusinessId;
+        loadBusinessFromDatabase(firstBusinessId);
+      }
+    }
+  }
+
+  void refreshBusinessData() {
+    if (Get.isRegistered<NavigationController>()) {
+      final navController = Get.find<NavigationController>();
+      final selectedBusinessId = navController.businessId;
+      if (selectedBusinessId.isNotEmpty) {
+        if (selectedBusinessId != _businessId.value) {
+          _businessId.value = selectedBusinessId;
+          loadBusinessFromDatabase(selectedBusinessId);
+        }
+      }
+    }
   }
 
   Future<void> _loadAppLockState() async {
     appLockEnabled.value = await _appLockService.isLockEnabled();
   }
 
-  @override
-  void onClose() {
-    _homeControllerWorker?.dispose();
+  Future<void> loadBusinessFromDatabase(String id) async {
+    if (id.isEmpty) {
+      return;
+    }
+
+    _businessId.value = id;
     try {
-      nameController.dispose();
-    } catch (e) {
-      // Controller might already be disposed, ignore
-    }
-    super.onClose();
-  }
+      _isLoading.value = true;
 
-  void _loadBusinessData() async {
-    final args = Get.arguments;
-
-    String? businessIdToLoad;
-
-    if (args != null && args is Map<String, dynamic>) {
-      businessIdToLoad = args['businessId']?.toString();
-    }
-
-    if (businessIdToLoad == null || businessIdToLoad.isEmpty) {
-      if (Get.isRegistered<HomeController>()) {
-        try {
-          final homeController = Get.find<HomeController>();
-          businessIdToLoad = homeController.selectedBusinessId.value;
-
-          if (businessIdToLoad.isEmpty) {
-            for (int i = 0; i < 10; i++) {
-              await Future.delayed(const Duration(milliseconds: 100));
-              businessIdToLoad = homeController.selectedBusinessId.value;
-              if (businessIdToLoad.isNotEmpty) {
-                break;
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint('Error loading business data: $e');
-        }
-      }
-    }
-
-    if (businessIdToLoad != null && businessIdToLoad.isNotEmpty) {
-      await _loadBusinessFromDatabase(businessIdToLoad);
-    } else {
-      resetFormForCreate();
-    }
-  }
-
-  void resetFormForCreate() {
-    nameController.clear();
-    businessName.value = '';
-    ownerName.value = '';
-    businessPhone.value = '';
-    businessId.value = '';
-    profileImageFile.value = null;
-    formKey.currentState?.reset();
-  }
-
-  Future<void> loadBusinessById(String id) async {
-    if (id.isEmpty) return;
-    await _loadBusinessFromDatabase(id);
-  }
-
-  Future<void> _loadBusinessFromDatabase(String id) async {
-    try {
-      isLoading.value = true;
       final business = await _businessRepository.getBusinessById(id);
       if (business != null) {
-        businessId.value = business.id;
-        businessName.value = business.businessName;
-        ownerName.value = business.ownerName ?? '';
-        businessPhone.value = business.phoneNumber ?? '';
+        _businessName.value = business.businessName;
+        _ownerName.value = business.ownerName ?? '';
+        _businessPhone.value = business.phoneNumber ?? '';
+
+        if (business.businessPhotoUrl != null &&
+            business.businessPhotoUrl!.isNotEmpty) {
+          final imageFile = File(business.businessPhotoUrl!);
+          if (await imageFile.exists()) {
+            profileImageFile.value = imageFile;
+          } else {
+            profileImageFile.value = null;
+          }
+        } else {
+          profileImageFile.value = null;
+        }
       } else {
-        Get.snackbar(
-          'Error',
-          'Business not found',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
+        SnacksBar.showSnackbar(
+          title: 'Error',
+          message: 'Business not found',
+          type: SnacksBarType.ERROR,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to load business data: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to load business data: ${e.toString()}',
+        type: SnacksBarType.ERROR,
       );
     } finally {
-      isLoading.value = false;
+      _isLoading.value = false;
     }
   }
 
-  void updateBusinessName(String name) {
-    businessName.value = name;
-  }
-
-  void updateOwnerName(String name) {
-    ownerName.value = name;
-  }
-
-  void toggleSettingsExpanded() {
-    settingsExpanded.value = !settingsExpanded.value;
-  }
-
-  Future<void> toggleAppLock() async {
-    if (appLockEnabled.value) {
-      await _disableAppLock();
-    } else {
-      await _enableAppLock();
-    }
-  }
-
-  Future<void> _enableAppLock() async {
-    final hasPin = await _appLockService.hasPin();
-    if (!hasPin) {
-      final pin = await _showPinSetupDialog('Set PIN');
-      if (pin == null || pin.length != 4) {
-        Get.snackbar(
-          'Error',
-          'PIN is required to enable app lock',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade50,
-          colorText: Colors.red.shade900,
-        );
-        return;
-      }
-      await _appLockService.setPin(pin);
-    }
-
-    await _appLockService.setLockEnabled(true);
-    appLockEnabled.value = true;
-    Get.snackbar(
-      'Success',
-      'App lock enabled',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.shade50,
-      colorText: Colors.green.shade900,
-      duration: const Duration(seconds: 2),
-    );
-  }
-
-  Future<void> _disableAppLock() async {
-    final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('Disable App Lock'),
-        content: const Text('Are you sure you want to disable app lock?'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('Disable'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await _appLockService.setLockEnabled(false);
-      appLockEnabled.value = false;
-      Get.snackbar(
-        'Success',
-        'App lock disabled',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade50,
-        colorText: Colors.green.shade900,
-        duration: const Duration(seconds: 2),
-      );
-    }
-  }
-
-  Future<void> manageAppLock() async {
-    await Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: .circular(20)),
-        child: Padding(
-          padding: .all(24),
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              const Text(
-                'Manage App Lock',
-                style: TextStyle(fontSize: 20, fontWeight: .bold),
-              ),
-              const SizedBox(height: 24),
-              ListTile(
-                contentPadding: .zero,
-                leading: const Icon(
-                  Icons.lock_outline,
-                  color: AppColors.primary,
-                ),
-                title: const Text('Change PIN'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () async {
-                  Get.back();
-                  await _changePin();
-                },
-              ),
-              const Divider(),
-              FutureBuilder<bool>(
-                future: _appLockService.isBiometricAvailable(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData && snapshot.data == true) {
-                    return ListTile(
-                      contentPadding: .zero,
-                      leading: const Icon(
-                        Icons.fingerprint,
-                        color: AppColors.primary,
-                      ),
-                      title: const Text('Test Biometric'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () async {
-                        Get.back();
-                        final authenticated = await _appLockService
-                            .authenticateWithBiometrics();
-                        Get.snackbar(
-                          authenticated ? 'Success' : 'Failed',
-                          authenticated
-                              ? 'Biometric authentication successful'
-                              : 'Biometric authentication failed',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: authenticated
-                              ? Colors.green.shade50
-                              : Colors.red.shade50,
-                          colorText: authenticated
-                              ? Colors.green.shade900
-                              : Colors.red.shade900,
-                        );
-                      },
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: .end,
-                children: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    child: const Text('Close'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _changePin() async {
-    final currentPin = await _showPinVerificationDialog('Enter current PIN');
-    if (currentPin == null) return;
-
-    final isValid = await _appLockService.verifyPin(currentPin);
-    if (!isValid) {
-      Get.snackbar(
-        'Error',
-        'Incorrect PIN. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-      );
-      return;
-    }
-
-    final newPin = await _showPinSetupDialog('Enter new PIN');
-    if (newPin == null || newPin.length != 4) {
-      Get.snackbar(
-        'Error',
-        'Please enter a valid 4-digit PIN',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-      );
-      return;
-    }
-
-    final confirmPin = await _showPinSetupDialog('Confirm new PIN');
-    if (confirmPin != newPin) {
-      Get.snackbar(
-        'Error',
-        'PINs do not match. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-      );
-      return;
-    }
-
-    await _appLockService.setPin(newPin);
-    Get.snackbar(
-      'Success',
-      'PIN changed successfully',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.shade50,
-      colorText: Colors.green.shade900,
-      duration: const Duration(seconds: 2),
-    );
-  }
-
-  Future<String?> _showPinVerificationDialog(String title) async {
-    String? pin;
-    await Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: .circular(20)),
-        child: Padding(
-          padding: .all(24),
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 20, fontWeight: .bold),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                keyboardType: TextInputType.number,
-                maxLength: 4,
-                obscureText: true,
-                textAlign: TextAlign.center,
-                autofocus: true,
-                style: const TextStyle(fontSize: 24, letterSpacing: 8),
-                decoration: const InputDecoration(
-                  hintText: '0000',
-                  counterText: '',
-                ),
-                onChanged: (value) {
-                  pin = value;
-                },
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: .end,
-                children: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (pin != null && pin!.length == 4) {
-                        Get.back();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Verify'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    return pin;
-  }
-
-  Future<String?> _showPinSetupDialog(String title) async {
-    String? pin;
-    await Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(borderRadius: .circular(20)),
-        child: Padding(
-          padding: .all(24),
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 20, fontWeight: .bold),
-              ),
-              const SizedBox(height: 16),
-              const Text('Enter a 4-digit PIN', textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              TextField(
-                keyboardType: TextInputType.number,
-                maxLength: 4,
-                obscureText: true,
-                textAlign: TextAlign.center,
-                autofocus: true,
-                style: const TextStyle(fontSize: 24, letterSpacing: 8),
-                decoration: const InputDecoration(
-                  hintText: '0000',
-                  counterText: '',
-                ),
-                onChanged: (value) {
-                  pin = value;
-                },
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: .end,
-                children: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (pin != null && pin!.length == 4) {
-                        Get.back();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Set PIN'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    return pin;
-  }
-
-  void toggleAboutExpanded() {
-    aboutExpanded.value = !aboutExpanded.value;
-  }
-
-  void toggleHelpSupportExpanded() {
-    helpSupportExpanded.value = !helpSupportExpanded.value;
-  }
-
-  Future<void> createAccount() async {
-    if (formKey.currentState?.validate() ?? false) {
-      final name = nameController.text.trim();
-      if (name.isEmpty) {
-        Get.snackbar(
-          'Error',
-          'Please enter a name',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-        );
-        return;
-      }
-
-      isLoading.value = true;
-
-      try {
-        final business = await _businessRepository.createBusiness(
-          businessName: name,
-          ownerName: null,
-          photoUrl: null,
-        );
-
-        if (business.id.isEmpty) {
-          throw Exception('Business creation failed: Invalid business ID');
-        }
-
-        // Reset form after successful creation
-        resetFormForCreate();
-
-        // Navigate back first to avoid widget rebuild conflicts
-        Get.back();
-
-        // Wait for navigation to complete, then update state
-        await Future.delayed(const Duration(milliseconds: 100));
-
-        // Get HomeController and add new account
-        if (Get.isRegistered<HomeController>()) {
-          final homeController = Get.find<HomeController>();
-          await homeController.addNewAccountFromBusiness(business);
-
-          // Refresh business profile data if screen is open
-          if (businessId.value == business.id || businessId.value.isEmpty) {
-            // Load the newly created business data
-            await Future.delayed(const Duration(milliseconds: 300));
-            await _loadBusinessFromDatabase(business.id);
-          }
-        }
-
-        // Show success message after state update
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (Get.isSnackbarOpen == false) {
-            Get.snackbar(
-              'Success',
-              'Business account created successfully',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.green.shade100,
-              colorText: Colors.green.shade900,
-              duration: const Duration(seconds: 2),
-            );
-          }
-        });
-      } catch (e) {
-        final errorMessage = e.toString().replaceAll('Exception: ', '');
-        Get.snackbar(
-          'Error',
-          errorMessage.isNotEmpty
-              ? errorMessage
-              : 'Failed to create account. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-          duration: const Duration(seconds: 4),
-        );
-      } finally {
-        isLoading.value = false;
-      }
-    }
-  }
-
-  /// Update business profile
-  Future<void> updateBusinessProfile() async {
-    if (businessId.value.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Business ID not found',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
-      return;
-    }
-
-    isLoading.value = true;
-
-    try {
-      final business = await _businessRepository.getBusinessById(
-        businessId.value,
-      );
-      if (business == null) {
-        throw Exception('Business not found');
-      }
-
-      final updatedBusiness = business.copyWith(
-        ownerName: ownerName.value.isNotEmpty ? ownerName.value : null,
-      );
-
-      await _businessRepository.updateBusiness(updatedBusiness);
-
-      await _loadBusinessFromDatabase(businessId.value);
-
-      if (Get.isRegistered<HomeController>()) {
-        final homeController = Get.find<HomeController>();
-        await homeController.refreshBusinesses();
-      }
-
-      Get.snackbar(
-        'Success',
-        'Business profile updated successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
-        duration: const Duration(seconds: 2),
-      );
-    } catch (e) {
-      final errorMessage = e.toString().replaceAll('Exception: ', '');
-      Get.snackbar(
-        'Error',
-        errorMessage.isNotEmpty
-            ? errorMessage
-            : 'Failed to update business profile. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  /// Validate business name
-  String? validateName(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter a name';
-    }
-    if (value.trim().length < 2) {
-      return 'Name must be at least 2 characters';
-    }
-    return null;
-  }
-
-  Future<void> addPhoto() async {
+  Future<void> pickImageFromCamera() async {
     final ImagePicker picker = ImagePicker();
-
-    Get.bottomSheet(
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const .only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        padding: .symmetric(vertical: 20),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: .only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: .circular(2),
-                ),
-              ),
-              const Padding(
-                padding: .symmetric(horizontal: 24, vertical: 8),
-                child: Text(
-                  'Select Photo',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: .bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: Icon(Icons.camera_alt, color: AppColors.primaryDark),
-                title: const Text('Take Photo'),
-                onTap: () async {
-                  Get.back();
-                  await _pickImageFromCamera(picker);
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.photo_library,
-                  color: AppColors.primaryDark,
-                ),
-                title: const Text('Choose from Gallery'),
-                onTap: () async {
-                  Get.back();
-                  await _pickImageFromGallery(picker);
-                },
-              ),
-              Obx(
-                () => profileImageFile.value != null
-                    ? ListTile(
-                        leading: Icon(Icons.delete, color: Colors.red),
-                        title: const Text('Remove Photo'),
-                        onTap: () {
-                          Get.back();
-                          profileImageFile.value = null;
-                          Get.snackbar(
-                            'Success',
-                            'Photo removed',
-                            snackPosition: SnackPosition.BOTTOM,
-                            duration: const Duration(seconds: 2),
-                          );
-                        },
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-      isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-    );
-  }
-
-  Future<void> _pickImageFromCamera(ImagePicker picker) async {
     try {
       final cameraStatus = await Permission.camera.status;
       if (!cameraStatus.isGranted) {
         final result = await Permission.camera.request();
         if (!result.isGranted) {
-          Get.snackbar(
-            'Permission Denied',
-            'Camera permission is required to take photos',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.orange.shade50,
-            colorText: Colors.orange.shade900,
-            duration: const Duration(seconds: 3),
+          SnacksBar.showSnackbar(
+            title: 'Permission Denied',
+            message: 'Camera permission is required to take photos',
+            type: SnacksBarType.ERROR,
           );
           return;
         }
@@ -781,29 +161,50 @@ class BusinessProfileController extends GetxController {
         maxHeight: 800,
       );
       if (image != null) {
-        profileImageFile.value = File(image.path);
-        Get.snackbar(
-          'Success',
-          'Photo added successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade50,
-          colorText: Colors.green.shade900,
-          duration: const Duration(seconds: 2),
-        );
+        try {
+          if (businessId.isEmpty) {
+            throw Exception('Business ID not found');
+          }
+
+          final business = await _businessRepository.getBusinessById(
+            businessId,
+          );
+          if (business == null) {
+            throw Exception('Business not found');
+          }
+
+          final updatedBusiness = business.copyWith(
+            businessPhotoUrl: image.path,
+          );
+
+          await _businessRepository.updateBusiness(updatedBusiness);
+
+          await loadBusinessFromDatabase(businessId);
+
+          SnacksBar.showSnackbar(
+            title: 'Success',
+            message: 'Photo added successfully',
+            type: SnacksBarType.SUCCESS,
+          );
+        } catch (e) {
+          SnacksBar.showSnackbar(
+            title: 'Error',
+            message: 'Failed to save photo: ${e.toString()}',
+            type: SnacksBarType.ERROR,
+          );
+        }
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to take photo. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to take photo. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }
 
-  Future<void> _pickImageFromGallery(ImagePicker picker) async {
+  Future<void> pickImageFromGallery() async {
+    final ImagePicker picker = ImagePicker();
     try {
       PermissionStatus? photoStatus;
 
@@ -829,13 +230,10 @@ class BusinessProfileController extends GetxController {
       if (photoStatus != null &&
           !photoStatus.isGranted &&
           photoStatus.isPermanentlyDenied) {
-        Get.snackbar(
-          'Permission Denied',
-          'Please enable photo library permission in settings',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade50,
-          colorText: Colors.orange.shade900,
-          duration: const Duration(seconds: 3),
+        SnacksBar.showSnackbar(
+          title: 'Permission Denied',
+          message: 'Please enable photo library permission in settings',
+          type: SnacksBarType.ERROR,
         );
         return;
       }
@@ -847,26 +245,245 @@ class BusinessProfileController extends GetxController {
         maxHeight: 800,
       );
       if (image != null) {
-        profileImageFile.value = File(image.path);
-        Get.snackbar(
-          'Success',
-          'Photo added successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade50,
-          colorText: Colors.green.shade900,
-          duration: const Duration(seconds: 2),
-        );
+        try {
+          if (businessId.isEmpty) {
+            throw Exception('Business ID not found');
+          }
+
+          final business = await _businessRepository.getBusinessById(
+            businessId,
+          );
+          if (business == null) {
+            throw Exception('Business not found');
+          }
+
+          final updatedBusiness = business.copyWith(
+            businessPhotoUrl: image.path,
+          );
+
+          await _businessRepository.updateBusiness(updatedBusiness);
+
+          await loadBusinessFromDatabase(businessId);
+
+          SnacksBar.showSnackbar(
+            title: 'Success',
+            message: 'Photo added successfully',
+            type: SnacksBarType.SUCCESS,
+          );
+        } catch (e) {
+          SnacksBar.showSnackbar(
+            title: 'Error',
+            message: 'Failed to save photo: ${e.toString()}',
+            type: SnacksBarType.ERROR,
+          );
+        }
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to pick photo. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to pick photo. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
+  }
+
+  Future<void> removePhoto() async {
+    try {
+      if (businessId.isEmpty) {
+        throw Exception('Business ID not found');
+      }
+
+      final business = await _businessRepository.getBusinessById(businessId);
+      if (business == null) {
+        throw Exception('Business not found');
+      }
+
+      final updatedBusiness = business.copyWith(businessPhotoUrl: null);
+
+      await _businessRepository.updateBusiness(updatedBusiness);
+      profileImageFile.value = null;
+
+      await loadBusinessFromDatabase(businessId);
+
+      SnacksBar.showSnackbar(
+        title: 'Success',
+        message: 'Photo removed',
+        type: SnacksBarType.SUCCESS,
+      );
+    } catch (e) {
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to remove photo: ${e.toString()}',
+        type: SnacksBarType.ERROR,
+      );
+    }
+  }
+
+  Future<void> updateOwnerName(String ownerName) async {
+    try {
+      if (businessId.isEmpty) {
+        SnacksBar.showSnackbar(
+          title: 'Error',
+          message: 'Business ID not found',
+          type: SnacksBarType.ERROR,
+        );
+        return;
+      }
+
+      final business = await _businessRepository.getBusinessById(businessId);
+      if (business == null) {
+        SnacksBar.showSnackbar(
+          title: 'Error',
+          message: 'Business not found',
+          type: SnacksBarType.ERROR,
+        );
+        return;
+      }
+
+      final updatedBusiness = business.copyWith(ownerName: ownerName);
+      await _businessRepository.updateBusiness(updatedBusiness);
+
+      await loadBusinessFromDatabase(businessId);
+
+      SnacksBar.showSnackbar(
+        title: 'Success',
+        message: 'Owner name updated',
+        type: SnacksBarType.SUCCESS,
+      );
+    } catch (e) {
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to update owner name: ${e.toString()}',
+        type: SnacksBarType.ERROR,
+      );
+    }
+  }
+
+  void toggleSettingsExpanded() {
+    settingsExpanded.value = !settingsExpanded.value;
+  }
+
+  Future<void> toggleAppLock() async {
+    if (appLockEnabled.value) {
+      await _disableAppLock();
+    } else {
+      await _enableAppLock();
+    }
+  }
+
+  Future<String?> Function(String)? showPinSetupDialog;
+  Future<String?> Function(String)? showPinVerificationDialog;
+  Future<bool?> Function()? showDisableAppLockDialog;
+  void Function()? showManageAppLockDialog;
+  void Function()? showPhotoSelectionBottomSheet;
+
+  Future<void> _enableAppLock() async {
+    final hasPin = await _appLockService.hasPin();
+    if (!hasPin) {
+      if (showPinSetupDialog == null) return;
+      final pin = await showPinSetupDialog!('Set PIN');
+      if (pin == null || pin.length != 4) {
+        SnacksBar.showSnackbar(
+          title: 'Error',
+          message: 'PIN is required to enable app lock',
+          type: SnacksBarType.ERROR,
+        );
+        return;
+      }
+      await _appLockService.setPin(pin);
+    }
+
+    await _appLockService.setLockEnabled(true);
+    appLockEnabled.value = true;
+    SnacksBar.showSnackbar(
+      title: 'Success',
+      message: 'App lock enabled',
+      type: SnacksBarType.SUCCESS,
+    );
+  }
+
+  Future<void> _disableAppLock() async {
+    if (showDisableAppLockDialog == null) return;
+    final confirmed = await showDisableAppLockDialog!();
+
+    if (confirmed == true) {
+      await _appLockService.setLockEnabled(false);
+      appLockEnabled.value = false;
+      SnacksBar.showSnackbar(
+        title: 'Success',
+        message: 'App lock disabled',
+        type: SnacksBarType.SUCCESS,
+      );
+    }
+  }
+
+  Future<void> manageAppLock() async {
+    showManageAppLockDialog?.call();
+  }
+
+  Future<void> changePin() async {
+    if (showPinVerificationDialog == null || showPinSetupDialog == null) return;
+
+    final currentPin = await showPinVerificationDialog!('Enter current PIN');
+    if (currentPin == null) return;
+
+    final isValid = await _appLockService.verifyPin(currentPin);
+    if (!isValid) {
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Incorrect PIN. Please try again.',
+        type: SnacksBarType.ERROR,
+      );
+      return;
+    }
+    final newPin = await showPinSetupDialog!('Enter new PIN');
+    if (newPin == null || newPin.length != 4) {
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Please enter a valid 4-digit PIN',
+        type: SnacksBarType.ERROR,
+      );
+      return;
+    }
+
+    final confirmPin = await showPinSetupDialog!('Confirm new PIN');
+    if (confirmPin != newPin) {
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'PINs do not match. Please try again.',
+        type: SnacksBarType.ERROR,
+      );
+      return;
+    }
+
+    await _appLockService.setPin(newPin);
+    SnacksBar.showSnackbar(
+      title: 'Success',
+      message: 'PIN changed successfully',
+      type: SnacksBarType.SUCCESS,
+    );
+  }
+
+  void toggleAboutExpanded() {
+    aboutExpanded.value = !aboutExpanded.value;
+  }
+
+  void toggleHelpSupportExpanded() {
+    helpSupportExpanded.value = !helpSupportExpanded.value;
+  }
+
+  String? validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter a name';
+    }
+    if (value.trim().length < 2) {
+      return 'Name must be at least 2 characters';
+    }
+    return null;
+  }
+
+  void addPhoto() {
+    showPhotoSelectionBottomSheet?.call();
   }
 
   static const String supportPhoneNumber = '+919155776919';
@@ -881,23 +498,17 @@ class BusinessProfileController extends GetxController {
       if (await canLaunchUrl(whatsappUrl)) {
         await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
       } else {
-        Get.snackbar(
-          'Error',
-          'WhatsApp is not installed on your device',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade50,
-          colorText: Colors.orange.shade900,
-          duration: const Duration(seconds: 3),
+        SnacksBar.showSnackbar(
+          title: 'Error',
+          message: 'WhatsApp is not installed on your device',
+          type: SnacksBarType.ERROR,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to open WhatsApp. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to open WhatsApp. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }
@@ -911,23 +522,19 @@ class BusinessProfileController extends GetxController {
       );
 
       if (!launched) {
-        Get.snackbar(
-          'Error',
-          'Unable to open email app. Please check if an email app is installed.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade50,
-          colorText: Colors.orange.shade900,
-          duration: const Duration(seconds: 3),
+        SnacksBar.showSnackbar(
+          title: 'Error',
+          message:
+              'Unable to open email app. Please check if an email app is installed.',
+          type: SnacksBarType.ERROR,
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to open email app. Please make sure an email app is installed.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message:
+            'Failed to open email app. Please make sure an email app is installed.',
+        type: SnacksBarType.ERROR,
       );
     }
   }

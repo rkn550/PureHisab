@@ -1,122 +1,114 @@
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:purehisab/controllers/navigation_controller.dart';
 import 'package:purehisab/data/services/party_repo.dart';
 import 'package:purehisab/data/services/transaction_repo.dart';
 import 'package:purehisab/data/model/party_model.dart';
-import 'package:purehisab/controllers/home_controller.dart';
 
 class AnalyticsController extends GetxController {
   PartyRepository get _partyRepository => Get.find<PartyRepository>();
   TransactionRepository get _transactionRepository =>
       Get.find<TransactionRepository>();
+  final _isLoading = false.obs;
+  bool get isLoading => _isLoading.value;
 
-  final RxDouble totalBalance = 0.0.obs;
-  final RxDouble totalToGive = 0.0.obs;
-  final RxDouble totalToGet = 0.0.obs;
-  final RxInt totalTransactions = 0.obs;
-  final RxInt totalCustomers = 0.obs;
-  final RxInt totalSuppliers = 0.obs;
+  final RxString _businessId = ''.obs;
+  String get businessId => _businessId.value;
 
-  final RxDouble thisMonthIncome = 0.0.obs;
-  final RxDouble thisMonthExpense = 0.0.obs;
-  final RxDouble thisMonthToGive = 0.0.obs;
-  final RxDouble thisMonthToGet = 0.0.obs;
-  final RxInt thisMonthTransactions = 0.obs;
+  final RxDouble _totalBalance = 0.0.obs;
+  final RxDouble _totalToGive = 0.0.obs;
+  final RxDouble _totalToGet = 0.0.obs;
+  final RxInt _totalTransactions = 0.obs;
+  double get totalBalance => _totalBalance.value;
+  double get totalToGive => _totalToGive.value;
+  double get totalToGet => _totalToGet.value;
+  int get totalTransactions => _totalTransactions.value;
 
-  final RxDouble thisWeekIncome = 0.0.obs;
-  final RxDouble thisWeekExpense = 0.0.obs;
-  final RxInt thisWeekTransactions = 0.obs;
+  final RxInt _totalCustomers = 0.obs;
+  final RxInt _totalSuppliers = 0.obs;
+  int get totalCustomers => _totalCustomers.value;
+  int get totalSuppliers => _totalSuppliers.value;
 
-  final RxList<Map<String, dynamic>> topCustomers =
+  final RxDouble _thisMonthIncome = 0.0.obs;
+  final RxDouble _thisMonthExpense = 0.0.obs;
+  final RxDouble _thisMonthToGive = 0.0.obs;
+  final RxDouble _thisMonthToGet = 0.0.obs;
+  final RxInt _thisMonthTransactions = 0.obs;
+  double get thisMonthIncome => _thisMonthIncome.value;
+  double get thisMonthExpense => _thisMonthExpense.value;
+  double get thisMonthToGive => _thisMonthToGive.value;
+  double get thisMonthToGet => _thisMonthToGet.value;
+  int get thisMonthTransactions => _thisMonthTransactions.value;
+
+  final RxDouble _thisWeekIncome = 0.0.obs;
+  final RxDouble _thisWeekExpense = 0.0.obs;
+  final RxInt _thisWeekTransactions = 0.obs;
+  double get thisWeekIncome => _thisWeekIncome.value;
+  double get thisWeekExpense => _thisWeekExpense.value;
+  int get thisWeekTransactions => _thisWeekTransactions.value;
+
+  final RxList<Map<String, dynamic>> _topCustomers =
       <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> topSuppliers =
+  List<Map<String, dynamic>> get topCustomers => _topCustomers;
+  final RxList<Map<String, dynamic>> _topSuppliers =
       <Map<String, dynamic>>[].obs;
-
-  Worker? _homeControllerWorker;
-  bool _isLoading = false;
+  List<Map<String, dynamic>> get topSuppliers => _topSuppliers;
 
   @override
   void onInit() {
     super.onInit();
-    // Start loading data immediately when controller is initialized
-    _setupHomeControllerListener();
-    // Load data immediately if HomeController is ready
-    Future.microtask(() {
-      if (Get.isRegistered<HomeController>()) {
-        final homeController = Get.find<HomeController>();
-        if (homeController.selectedBusinessId.value.isNotEmpty) {
-          _loadAnalyticsData();
-        }
-      }
-    });
+    _setupBusinessIdListener();
   }
 
-  @override
-  void onReady() {
-    super.onReady();
-    // Refresh data when screen is ready to ensure latest data is shown
+  void _setupBusinessIdListener() {
     Future.delayed(const Duration(milliseconds: 100), () {
-      if (Get.isRegistered<HomeController>()) {
-        final homeController = Get.find<HomeController>();
-        if (homeController.selectedBusinessId.value.isNotEmpty) {
-          _loadAnalyticsData();
-        }
-      }
-    });
-  }
-
-  void _setupHomeControllerListener() {
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (Get.isRegistered<HomeController>()) {
-        final homeController = Get.find<HomeController>();
-        _homeControllerWorker = ever(homeController.selectedBusinessId, (_) {
-          if (homeController.selectedBusinessId.value.isNotEmpty) {
-            _loadAnalyticsData();
+      if (Get.isRegistered<NavigationController>()) {
+        final navController = Get.find<NavigationController>();
+        ever(navController.businessIdRx, (String newBusinessId) {
+          if (newBusinessId.isNotEmpty && newBusinessId != _businessId.value) {
+            _businessId.value = newBusinessId;
+            _loadAnalyticsData(newBusinessId);
           }
         });
+        if (navController.businessId.isNotEmpty &&
+            navController.businessId != _businessId.value) {
+          _businessId.value = navController.businessId;
+          _loadAnalyticsData(navController.businessId);
+        }
       }
     });
   }
 
-  @override
-  void onClose() {
-    _homeControllerWorker?.dispose();
-    super.onClose();
+  Future<void> reloadAnalyticsData() async {
+    await _loadAnalyticsData(_businessId.value);
+    _calculateThisMonthData(
+      await _transactionRepository.getTransactionsByBusiness(_businessId.value),
+    );
+    _calculateThisWeekData(
+      await _transactionRepository.getTransactionsByBusiness(_businessId.value),
+    );
+    _calculateTopParties(
+      await _partyRepository.getPartiesByBusiness(_businessId.value),
+      await _partyRepository.getPartiesByBusiness(_businessId.value),
+      await _transactionRepository.getTransactionsByBusiness(_businessId.value),
+    );
   }
 
-  Future<void> refreshAnalytics() async {
-    await _loadAnalyticsData();
-  }
-
-  Future<void> _loadAnalyticsData() async {
-    if (_isLoading) return;
-    if (!Get.isRegistered<HomeController>()) {
-      return;
-    }
-
+  Future<void> _loadAnalyticsData(String businessId) async {
+    if (businessId.isEmpty) return;
+    _businessId.value = businessId;
+    _isLoading.value = true;
     try {
-      _isLoading = true;
-      final homeController = Get.find<HomeController>();
-      if (homeController.selectedBusinessId.value.isEmpty) {
-        _isLoading = false;
-        return;
-      }
-
-      final businessId = homeController.selectedBusinessId.value;
-
-      // Load data in parallel where possible
       final parties = await _partyRepository.getPartiesByBusiness(businessId);
       final transactions = await _transactionRepository
           .getTransactionsByBusiness(businessId);
 
-      // Process data in batches to avoid blocking main thread
       await Future.microtask(() {
         final customers = parties.where((p) => p.type == 'customer').toList();
         final suppliers = parties.where((p) => p.type == 'supplier').toList();
 
-        totalCustomers.value = customers.length;
-        totalSuppliers.value = suppliers.length;
-        totalTransactions.value = transactions.length;
+        _totalCustomers.value = customers.length;
+        _totalSuppliers.value = suppliers.length;
+        _totalTransactions.value = transactions.length;
 
         final partyBalances = <String, double>{};
 
@@ -138,12 +130,11 @@ class AnalyticsController extends GetxController {
           }
         }
 
-        totalToGive.value = totalGive;
-        totalToGet.value = totalGet;
-        totalBalance.value = totalGet - totalGive;
+        _totalToGive.value = totalGive;
+        _totalToGet.value = totalGet;
+        _totalBalance.value = totalGet - totalGive;
       });
 
-      // Calculate stats in separate microtasks to avoid blocking
       await Future.microtask(() => _calculateThisMonthData(transactions));
       await Future.microtask(() => _calculateThisWeekData(transactions));
       await Future.microtask(() {
@@ -152,10 +143,8 @@ class AnalyticsController extends GetxController {
         _calculateTopParties(customers, suppliers, transactions);
       });
     } catch (e) {
-      // Log error but don't crash
-      debugPrint('Error loading analytics data: $e');
     } finally {
-      _isLoading = false;
+      _isLoading.value = false;
     }
   }
 
@@ -183,22 +172,21 @@ class AnalyticsController extends GetxController {
           transactionCount++;
         }
       } catch (e) {
-        // Skip invalid transaction
         continue;
       }
     }
 
-    thisMonthIncome.value = income;
-    thisMonthExpense.value = expense;
-    thisMonthTransactions.value = transactionCount;
+    _thisMonthIncome.value = income;
+    _thisMonthExpense.value = expense;
+    _thisMonthTransactions.value = transactionCount;
 
     final netBalance = income - expense;
     if (netBalance > 0) {
-      thisMonthToGet.value = netBalance;
-      thisMonthToGive.value = 0.0;
+      _thisMonthToGet.value = netBalance;
+      _thisMonthToGive.value = 0.0;
     } else {
-      thisMonthToGive.value = netBalance.abs();
-      thisMonthToGet.value = 0.0;
+      _thisMonthToGive.value = netBalance.abs();
+      _thisMonthToGet.value = 0.0;
     }
   }
 
@@ -243,18 +231,16 @@ class AnalyticsController extends GetxController {
           transactionCount++;
         }
       } catch (e) {
-        // Skip invalid transaction
         continue;
       }
     }
 
-    thisWeekIncome.value = income;
-    thisWeekExpense.value = expense;
-    thisWeekTransactions.value = transactionCount;
+    _thisWeekIncome.value = income;
+    _thisWeekExpense.value = expense;
+    _thisWeekTransactions.value = transactionCount;
   }
 
   void _calculateTopParties(List customers, List suppliers, List transactions) {
-    // Use Maps for O(1) lookup instead of firstWhere O(n)
     final customerMap = <String, PartyModel>{};
     final supplierMap = <String, PartyModel>{};
 
@@ -314,8 +300,8 @@ class AnalyticsController extends GetxController {
       (a, b) => (b['amount'] as num).compareTo(a['amount'] as num),
     );
 
-    topCustomers.value = topCustomersList.take(5).toList();
-    topSuppliers.value = topSuppliersList.take(5).toList();
+    _topCustomers.value = topCustomersList.take(5).toList();
+    _topSuppliers.value = topSuppliersList.take(5).toList();
   }
 
   String formatAmount(double amount) {

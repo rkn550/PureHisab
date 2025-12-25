@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -6,6 +5,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:purehisab/data/services/party_repo.dart';
 import 'package:purehisab/data/services/business_repo.dart';
 import 'package:purehisab/data/services/transaction_repo.dart';
+import 'package:purehisab/app/routes/app_pages.dart';
 
 class ReminderNotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _notifications =
@@ -21,7 +21,6 @@ class ReminderNotificationService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    // Initialize asynchronously to avoid blocking app startup
     Future.delayed(const Duration(milliseconds: 500), () {
       _initializeNotifications();
     });
@@ -34,22 +33,17 @@ class ReminderNotificationService extends GetxService {
       tz.initializeTimeZones();
       tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
     } catch (e) {
-      debugPrint('Error initializing timezone: $e');
-      // Fallback to UTC if timezone initialization fails
       try {
         tz.setLocalLocation(tz.UTC);
       } catch (e2) {
-        debugPrint('Error setting UTC timezone: $e2');
         return;
       }
     }
 
-    // Android initialization settings
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
 
-    // iOS initialization settings
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -73,15 +67,11 @@ class ReminderNotificationService extends GetxService {
       await _requestPermissions();
 
       _isInitialized = true;
-    } catch (e) {
-      debugPrint('Error initializing notifications: $e');
-      // Don't block app startup if notifications fail to initialize
-    }
+    } catch (e) {}
   }
 
   Future<void> _requestPermissions() async {
     try {
-      // Android 13+ requires notification permission
       final androidPlugin = _notifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
@@ -90,7 +80,6 @@ class ReminderNotificationService extends GetxService {
         await androidPlugin.requestNotificationsPermission();
       }
 
-      // iOS permissions
       final iosPlugin = _notifications
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
@@ -102,15 +91,17 @@ class ReminderNotificationService extends GetxService {
           sound: true,
         );
       }
-    } catch (e) {
-      debugPrint('Error requesting notification permissions: $e');
-    }
+    } catch (e) {}
   }
 
   void _onNotificationTapped(NotificationResponse response) {
-    // Handle notification tap - can navigate to customer detail screen
-    // For now, just log it
-    debugPrint('Notification tapped: ${response.payload}');
+    final partyId = response.payload;
+
+    if (partyId != null && partyId.isNotEmpty) {
+      try {
+        Get.toNamed(Routes.partiesDetails, arguments: {'partyId': partyId});
+      } catch (e) {}
+    }
   }
 
   Future<void> scheduleReminderNotification({
@@ -119,27 +110,24 @@ class ReminderNotificationService extends GetxService {
     required String partyName,
     required DateTime reminderDate,
     required double amount,
-    required String type, // 'give' or 'get'
+    required String type,
   }) async {
     if (!_isInitialized) {
       await _initializeNotifications();
     }
-
-    // Cancel existing notification for this party if any
     await cancelReminderNotification(notificationId);
-
-    // Schedule notification for reminder date at 9 AM
     final scheduledDate = tz.TZDateTime(
       tz.local,
       reminderDate.year,
       reminderDate.month,
       reminderDate.day,
-      9, // 9 AM
+      9,
       0,
     );
 
-    // Don't schedule if date is in the past
-    if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
+    final now = tz.TZDateTime.now(tz.local);
+
+    if (scheduledDate.isBefore(now)) {
       return;
     }
 
@@ -149,7 +137,6 @@ class ReminderNotificationService extends GetxService {
     final body =
         'You have a $messageType of ₹ $amountText scheduled for today.';
 
-    // Android notification details
     const androidDetails = AndroidNotificationDetails(
       'reminder_channel',
       'Collection Reminders',
@@ -159,66 +146,65 @@ class ReminderNotificationService extends GetxService {
       showWhen: true,
     );
 
-    // iOS notification details
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
     );
 
-    // Notification details
     const notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
-    // Schedule notification
-    await _notifications.zonedSchedule(
-      notificationId,
-      title,
-      body,
-      scheduledDate,
-      notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: partyId,
-    );
+    try {
+      await _notifications.zonedSchedule(
+        notificationId,
+        title,
+        body,
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: partyId,
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> cancelReminderNotification(int notificationId) async {
-    await _notifications.cancel(notificationId);
+    try {
+      await _notifications.cancel(notificationId);
+    } catch (e) {}
   }
 
   Future<void> cancelAllReminders() async {
-    await _notifications.cancelAll();
+    try {
+      await _notifications.cancelAll();
+    } catch (e) {}
   }
 
-  // Check and schedule all reminders from database
   Future<void> checkAndScheduleAllReminders() async {
     if (!_isInitialized) {
       await _initializeNotifications();
     }
 
     if (!_isInitialized) {
-      debugPrint('Notifications not initialized, skipping reminder scheduling');
       return;
     }
 
     try {
-      // Check if repositories are available
       if (!Get.isRegistered<BusinessRepository>() ||
           !Get.isRegistered<PartyRepository>() ||
           !Get.isRegistered<TransactionRepository>()) {
-        debugPrint('Repositories not available, skipping reminder scheduling');
         return;
       }
 
-      // Get all businesses for current user
       final businesses = await _businessRepository.getBusinesses();
 
       for (var business in businesses) {
-        // Get all parties for this business
         final parties = await _partyRepository.getPartiesByBusiness(
           business.id,
         );
@@ -229,12 +215,11 @@ class ReminderNotificationService extends GetxService {
               party.reminderDate!,
             );
 
-            // Calculate amount from transactions
             double amount = 0.0;
             String type = 'give';
             try {
               final transactions = await _transactionRepository
-                  .getTransactionsByParty(party.id);
+                  .getTransactionsByPartyId(party.id);
               double give = 0.0;
               double get = 0.0;
 
@@ -254,30 +239,26 @@ class ReminderNotificationService extends GetxService {
                 amount = netBalance.abs();
                 type = 'give';
               }
-            } catch (e) {
-              debugPrint('Error calculating amount for reminder: $e');
-            }
+            } catch (e) {}
 
-            // Only schedule if amount > 0
             if (amount > 0) {
-              // Use party ID hash as notification ID
               final notificationId = party.id.hashCode.abs() % 2147483647;
 
-              await scheduleReminderNotification(
-                notificationId: notificationId,
-                partyId: party.id,
-                partyName: party.partyName,
-                reminderDate: reminderDate,
-                amount: amount,
-                type: type,
-              );
+              try {
+                await scheduleReminderNotification(
+                  notificationId: notificationId,
+                  partyId: party.id,
+                  partyName: party.partyName,
+                  reminderDate: reminderDate,
+                  amount: amount,
+                  type: type,
+                );
+              } catch (e) {}
             }
           }
         }
       }
-    } catch (e) {
-      debugPrint('Error scheduling reminders: $e');
-    }
+    } catch (e) {}
   }
 
   String _formatAmount(double amount) {
@@ -290,5 +271,17 @@ class ReminderNotificationService extends GetxService {
       (match) => '${match.group(0)},',
     );
     return formatted.split('').reversed.join();
+  }
+
+  Future<void> debugPendingNotifications() async {
+    try {
+      final androidPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      if (androidPlugin != null) {
+        await androidPlugin.pendingNotificationRequests();
+      }
+    } catch (e) {}
   }
 }
