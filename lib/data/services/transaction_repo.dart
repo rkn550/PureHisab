@@ -135,6 +135,20 @@ class TransactionRepository extends GetxService {
       whereArgs: [transactionId],
     );
   }
+
+  Future<void> deleteTransactionsByPartyId(String partyId) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'transactions',
+      {
+        'is_deleted': 1,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        'is_synced': 0,
+      },
+      where: 'party_id = ? AND is_deleted = 0',
+      whereArgs: [partyId],
+    );
+  }
 }
 
 extension TransactionModelCopyWith on TransactionModel {

@@ -79,18 +79,23 @@ class AnalyticsController extends GetxController {
   }
 
   Future<void> reloadAnalyticsData() async {
+    if (_businessId.value.isEmpty) {
+      if (Get.isRegistered<NavigationController>()) {
+        final navController = Get.find<NavigationController>();
+        if (navController.businessId.isNotEmpty) {
+          _businessId.value = navController.businessId;
+        }
+      }
+    }
+
+    if (_businessId.value.isEmpty) return;
+
     await _loadAnalyticsData(_businessId.value);
-    _calculateThisMonthData(
-      await _transactionRepository.getTransactionsByBusiness(_businessId.value),
-    );
-    _calculateThisWeekData(
-      await _transactionRepository.getTransactionsByBusiness(_businessId.value),
-    );
-    _calculateTopParties(
-      await _partyRepository.getPartiesByBusiness(_businessId.value),
-      await _partyRepository.getPartiesByBusiness(_businessId.value),
-      await _transactionRepository.getTransactionsByBusiness(_businessId.value),
-    );
+  }
+
+  Future<void> reloadAnalyticsDataWithBusinessId(String businessId) async {
+    if (businessId.isEmpty) return;
+    await _loadAnalyticsData(businessId);
   }
 
   Future<void> _loadAnalyticsData(String businessId) async {

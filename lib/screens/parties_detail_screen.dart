@@ -12,29 +12,37 @@ class PartiesDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<PartiesDetailController>();
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: _buildAppBar(controller),
-      body: Obx(() {
-        if (controller.isLoading) {
-          return const Center(child: CustomLoadingIndicator());
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Get.offAllNamed(Routes.home);
         }
-        return Column(
-          children: [
-            _buildSummaryCard(controller),
-            _buildActionButtons(controller),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await controller.reloadPartyData();
-                },
-                child: _buildTransactionHistory(controller),
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: _buildAppBar(controller),
+        body: Obx(() {
+          if (controller.isLoading) {
+            return const Center(child: CustomLoadingIndicator());
+          }
+          return Column(
+            children: [
+              _buildSummaryCard(controller),
+              _buildActionButtons(controller),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await controller.reloadPartyData();
+                  },
+                  child: _buildTransactionHistory(controller),
+                ),
               ),
-            ),
-          ],
-        );
-      }),
-      bottomNavigationBar: _buildBottomActionButtons(controller),
+            ],
+          );
+        }),
+        bottomNavigationBar: _buildBottomActionButtons(controller),
+      ),
     );
   }
 
@@ -44,7 +52,7 @@ class PartiesDetailScreen extends StatelessWidget {
       elevation: 0,
       leading: CustomIconButton(
         icon: Icons.arrow_back,
-        onPressed: () => Get.back(),
+        onPressed: () => Get.offAllNamed(Routes.home),
         iconColor: Colors.white,
         size: 48,
         backgroundColor: Colors.transparent,
@@ -57,7 +65,7 @@ class PartiesDetailScreen extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
+                shape: .circle,
               ),
               child: Center(
                 child: Text(
@@ -76,7 +84,7 @@ class PartiesDetailScreen extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: .start,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
                 children: [
                   Row(
                     children: [
@@ -88,7 +96,7 @@ class PartiesDetailScreen extends StatelessWidget {
                             fontSize: 16,
                             fontWeight: .w500,
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          overflow: .ellipsis,
                         ),
                       ),
                       const SizedBox(width: 8),

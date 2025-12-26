@@ -10,67 +10,72 @@ class AppLockScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<AppLockController>();
 
-    return Scaffold(
-      backgroundColor: AppColors.primaryDark,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: .all(24),
-            child: Column(
-              mainAxisAlignment: .center,
-              children: [
-                const SizedBox(height: 60),
-                Container(
-                  padding: .all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        // Prevent back navigation when app is locked
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.primaryDark,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: .all(24),
+              child: Column(
+                mainAxisAlignment: .center,
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: .all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.lock_rounded,
+                      size: 50,
+                      color: Colors.white,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.lock_rounded,
-                    size: 64,
-                    color: Colors.white,
+                  const Text(
+                    'App Locked',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: .bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                const Text(
-                  'App Locked',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: .bold,
+                  const SizedBox(height: 8),
+                  Text(
+                    'Enter PIN to unlock',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Enter PIN to unlock',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 48),
-                Obx(() => _buildPinDots(controller)),
-                Obx(
-                  () => controller.errorMessage.value.isNotEmpty
-                      ? Column(
-                          children: [
-                            const SizedBox(height: 16),
-                            Text(
-                              controller.errorMessage.value,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 14,
+                  const SizedBox(height: 30),
+                  Obx(() => _buildPinDots(controller)),
+                  Obx(
+                    () => controller.errorMessage.value.isNotEmpty
+                        ? Column(
+                            children: [
+                              const SizedBox(height: 16),
+                              Text(
+                                controller.errorMessage.value,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 14,
+                                ),
                               ),
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                const SizedBox(height: 48),
-                _buildKeypad(controller),
-                const SizedBox(height: 40),
-              ],
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 30),
+                  _buildKeypad(controller),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -104,17 +109,15 @@ class AppLockScreen extends StatelessWidget {
 
   Widget _buildKeypad(AppLockController controller) {
     return Column(
+      spacing: 16,
       children: [
         _buildKeypadRow(controller, ['1', '2', '3']),
-        const SizedBox(height: 16),
         _buildKeypadRow(controller, ['4', '5', '6']),
-        const SizedBox(height: 16),
         _buildKeypadRow(controller, ['7', '8', '9']),
-        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: .center,
           children: [
-            const SizedBox(width: 80),
+            const SizedBox(width: 70),
             _buildKeypadButton(
               controller,
               '0',
@@ -156,8 +159,8 @@ class AppLockScreen extends StatelessWidget {
           onTap: controller.isAuthenticating.value ? null : onTap,
           borderRadius: .circular(40),
           child: Container(
-            width: 80,
-            height: 80,
+            width: 70,
+            height: 70,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.1),
@@ -192,8 +195,8 @@ class AppLockScreen extends StatelessWidget {
               : controller.onBackspace,
           borderRadius: .circular(40),
           child: Container(
-            width: 80,
-            height: 80,
+            width: 70,
+            height: 70,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.1),

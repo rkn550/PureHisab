@@ -1,15 +1,21 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:purehisab/app/routes/app_pages.dart';
 import 'package:purehisab/app/utils/snacks_bar.dart';
 import 'package:purehisab/data/services/party_repo.dart';
 import 'package:purehisab/controllers/parties_detail_controller.dart';
-import '../app/utils/app_colors.dart';
+import 'package:purehisab/data/services/transaction_repo.dart';
+import 'package:purehisab/controllers/analytics_controller.dart';
+import '../screens/widgets/change_type_bottom_sheet.dart';
+import '../screens/widgets/delete_party_bottom_sheet.dart';
+import '../screens/widgets/select_photo_bottom_sheet.dart';
 
 class PartiesProfileController extends GetxController {
   PartyRepository get _partyRepository => Get.find<PartyRepository>();
+  TransactionRepository get _transactionRepository =>
+      Get.find<TransactionRepository>();
   final RxBool _isLoading = false.obs;
   final RxString _partyId = ''.obs;
   final RxString _partyName = ''.obs;
@@ -215,7 +221,7 @@ class PartiesProfileController extends GetxController {
     if (partyId.isEmpty) return;
 
     Get.bottomSheet(
-      _ChangeTypeBottomSheet(
+      ChangeTypeBottomSheet(
         partyName: partyName,
         partyPhoneNumber: partyPhoneNumber,
         partyType: partyType,
@@ -258,128 +264,51 @@ class PartiesProfileController extends GetxController {
     if (partyId.isEmpty) return;
 
     Get.bottomSheet(
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const .only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        padding: .only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(Get.context!).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: .start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: .only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: .circular(2),
-                ),
-              ),
-            ),
-            Text(
-              'Delete $partyName?',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: .bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'This will delete the ${partyType == 'customer' ? 'customer' : 'supplier'} from your book.',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey.shade700,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Get.back(),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: AppColors.primaryDark,
-                        width: 1.5,
-                      ),
-                      foregroundColor: AppColors.primaryDark,
-                      padding: .symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: .circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'CANCEL',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: .w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        _isLoading.value = true;
-                        await _partyRepository.deleteParty(partyId);
-                        Get.back();
-                        Get.back();
-                        SnacksBar.showSnackbar(
-                          title: partyType == 'customer'
-                              ? 'Customer Deleted'
-                              : 'Supplier Deleted',
-                          message: '$partyName has been deleted',
-                          type: SnacksBarType.SUCCESS,
-                        );
-                      } catch (e) {
-                        SnacksBar.showSnackbar(
-                          title: 'Error',
-                          message: 'Failed to delete',
-                          type: SnacksBarType.ERROR,
-                        );
-                      } finally {
-                        _isLoading.value = false;
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryDark,
-                      foregroundColor: Colors.white,
-                      padding: .symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: .circular(10),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'CONFIRM',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: .w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+      DeletePartyBottomSheet(
+        partyName: partyName,
+        partyType: partyType,
+        onConfirm: () async {
+          try {
+            _isLoading.value = true;
+
+            // Get party to retrieve businessId before deletion
+            final party = await _partyRepository.getPartyById(partyId);
+            final businessId = party?.businessId ?? '';
+
+            await _partyRepository.deleteParty(partyId);
+            await _transactionRepository.deleteTransactionsByPartyId(partyId);
+
+            // Refresh analytics data if controller is registered
+            if (Get.isRegistered<AnalyticsController>()) {
+              final analyticsController = Get.find<AnalyticsController>();
+              if (businessId.isNotEmpty) {
+                await analyticsController.reloadAnalyticsDataWithBusinessId(
+                  businessId,
+                );
+              } else {
+                await analyticsController.reloadAnalyticsData();
+              }
+            }
+
+            Get.back();
+            Get.offAllNamed(Routes.home);
+            SnacksBar.showSnackbar(
+              title: partyType == 'customer'
+                  ? 'Customer Deleted'
+                  : 'Supplier Deleted',
+              message: '$partyName has been deleted',
+              type: SnacksBarType.SUCCESS,
+            );
+          } catch (e) {
+            SnacksBar.showSnackbar(
+              title: 'Error',
+              message: 'Failed to delete',
+              type: SnacksBarType.ERROR,
+            );
+          } finally {
+            _isLoading.value = false;
+          }
+        },
       ),
       isScrollControlled: true,
       isDismissible: false,
@@ -391,101 +320,42 @@ class PartiesProfileController extends GetxController {
     final ImagePicker picker = ImagePicker();
 
     Get.bottomSheet(
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const .only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        padding: .symmetric(vertical: 20),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: .only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: .circular(2),
-                ),
-              ),
-              const Padding(
-                padding: .symmetric(horizontal: 24, vertical: 8),
-                child: Text(
-                  'Select Photo',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: .bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: Icon(Icons.camera_alt, color: AppColors.primaryDark),
-                title: const Text('Take Photo'),
-                onTap: () async {
-                  Get.back(); // Close bottom sheet
-                  await _pickImageFromCamera(picker);
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.photo_library,
-                  color: AppColors.primaryDark,
-                ),
-                title: const Text('Choose from Gallery'),
-                onTap: () async {
-                  Get.back(); // Close bottom sheet
-                  await _pickImageFromGallery(picker);
-                },
-              ),
-              Obx(
-                () => _profileImageFile.value != null
-                    ? ListTile(
-                        leading: Icon(Icons.delete, color: Colors.red),
-                        title: const Text('Remove Photo'),
-                        onTap: () async {
-                          Get.back();
+      Obx(
+        () => SelectPhotoBottomSheet(
+          hasPhoto: _profileImageFile.value != null,
+          onTakePhoto: () => _pickImageFromCamera(picker),
+          onChooseFromGallery: () => _pickImageFromGallery(picker),
+          onRemovePhoto: _profileImageFile.value != null
+              ? () async {
+                  if (partyId.isNotEmpty) {
+                    try {
+                      final party = await _partyRepository.getPartyById(
+                        partyId,
+                      );
+                      if (party != null) {
+                        await _partyRepository.updateParty(
+                          party.copyWith(clearPartyPhotoUrl: true),
+                        );
 
-                          if (partyId.isNotEmpty) {
-                            try {
-                              final party = await _partyRepository.getPartyById(
-                                partyId,
-                              );
-                              if (party != null) {
-                                await _partyRepository.updateParty(
-                                  party.copyWith(clearPartyPhotoUrl: true),
-                                );
+                        await _loadProfileData();
+                      }
+                    } catch (e) {
+                      SnacksBar.showSnackbar(
+                        title: 'Error',
+                        message: 'Failed to remove photo',
+                        type: SnacksBarType.ERROR,
+                      );
+                    }
+                  }
 
-                                await _loadProfileData();
-                              }
-                            } catch (e) {
-                              SnacksBar.showSnackbar(
-                                title: 'Error',
-                                message: 'Failed to remove photo',
-                                type: SnacksBarType.ERROR,
-                              );
-                            }
-                          }
-
-                          _profileImageFile.value = null;
-                          SnacksBar.showSnackbar(
-                            title: 'Success',
-                            message: 'Photo removed',
-                            type: SnacksBarType.SUCCESS,
-                          );
-                        },
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+                  _profileImageFile.value = null;
+                  SnacksBar.showSnackbar(
+                    title: 'Success',
+                    message: 'Photo removed',
+                    type: SnacksBarType.SUCCESS,
+                  );
+                }
+              : null,
         ),
       ),
       isScrollControlled: true,
@@ -632,151 +502,5 @@ class PartiesProfileController extends GetxController {
         type: SnacksBarType.ERROR,
       );
     }
-  }
-}
-
-class _ChangeTypeBottomSheet extends StatelessWidget {
-  final String partyName;
-  final String partyPhoneNumber;
-  final String partyType;
-  final String? photoUrl;
-  final VoidCallback onConfirm;
-
-  const _ChangeTypeBottomSheet({
-    required this.partyName,
-    required this.partyPhoneNumber,
-    required this.partyType,
-    required this.photoUrl,
-    required this.onConfirm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final newType = partyType == 'customer' ? 'supplier' : 'customer';
-    final currentType = partyType == 'customer' ? 'customer' : 'supplier';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const .only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      padding: .only(
-        left: 28,
-        right: 28,
-        top: 28,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 28,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: .start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: .only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: .circular(2),
-              ),
-            ),
-          ),
-          Text(
-            'Change $partyName to $newType?',
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: .bold,
-              color: Colors.black87,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 28),
-          Row(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.secondary,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    partyName.isNotEmpty ? partyName[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: .bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Text(
-                      partyName,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: .w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      partyPhoneNumber.isNotEmpty
-                          ? partyPhoneNumber
-                          : 'No phone number',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey.shade600,
-                        fontWeight: .w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'All entries of $partyName will be safely transferred from $currentType to $newType section',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade700,
-              height: 1.5,
-              fontWeight: .w400,
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onConfirm,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-                foregroundColor: Colors.white,
-                padding: .symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: .circular(10)),
-                elevation: 0,
-              ),
-              child: const Text(
-                'CHANGE',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: .w700,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:purehisab/screens/business_profile_screen.dart';
 import '../controllers/navigation_controller.dart';
@@ -21,46 +22,91 @@ class MainNavigationScreen extends StatelessWidget {
       controller.setInitialTab(initialTab ?? 1);
     });
 
-    return Scaffold(
-      appBar: _ReactiveAppBar(),
-      body: Obx(
-        () => IndexedStack(
-          index: controller.currentIndex,
-          children: const [
-            AnalyticsScreen(),
-            HomeScreen(),
-            BusinessProfileScreen(),
-          ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _showExitConfirmationDialog(context);
+        }
+      },
+      child: Scaffold(
+        appBar: _ReactiveAppBar(),
+        body: Obx(
+          () => IndexedStack(
+            index: controller.currentIndex,
+            children: const [
+              AnalyticsScreen(),
+              HomeScreen(),
+              BusinessProfileScreen(),
+            ],
+          ),
+        ),
+        bottomNavigationBar: Obx(
+          () => BottomNavigationBar(
+            currentIndex: controller.currentIndex,
+            onTap: controller.setInitialTab,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.textSecondary,
+            selectedFontSize: 14,
+            unselectedFontSize: 12,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.analytics_outlined),
+                activeIcon: Icon(Icons.analytics),
+                label: 'Analytics',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+          ),
         ),
       ),
-      bottomNavigationBar: Obx(
-        () => BottomNavigationBar(
-          currentIndex: controller.currentIndex,
-          onTap: controller.setInitialTab,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.textSecondary,
-          selectedFontSize: 14,
-          unselectedFontSize: 12,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.analytics_outlined),
-              activeIcon: Icon(Icons.analytics),
-              label: 'Analytics',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
+    );
+  }
+
+  void _showExitConfirmationDialog(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Exit App',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
+        content: const Text(
+          'Are you sure you want to exit the app?',
+          style: TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+            ),
+          ),
+          const SizedBox(width: 4),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              SystemNavigator.pop();
+            },
+            child: const Text(
+              'Exit',
+              style: TextStyle(fontSize: 16, color: AppColors.primary),
+            ),
+          ),
+        ],
       ),
+      barrierDismissible: false,
     );
   }
 }
