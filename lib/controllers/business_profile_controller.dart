@@ -130,7 +130,7 @@ class BusinessProfileController extends GetxController {
     } catch (e) {
       SnacksBar.showSnackbar(
         title: 'Error',
-        message: 'Failed to load business data: ${e.toString()}',
+        message: 'Failed to load business data. Please try again.',
         type: SnacksBarType.ERROR,
       );
     } finally {
@@ -189,7 +189,7 @@ class BusinessProfileController extends GetxController {
         } catch (e) {
           SnacksBar.showSnackbar(
             title: 'Error',
-            message: 'Failed to save photo: ${e.toString()}',
+            message: 'Failed to save photo. Please try again.',
             type: SnacksBarType.ERROR,
           );
         }
@@ -273,7 +273,7 @@ class BusinessProfileController extends GetxController {
         } catch (e) {
           SnacksBar.showSnackbar(
             title: 'Error',
-            message: 'Failed to save photo: ${e.toString()}',
+            message: 'Failed to save photo. Please try again.',
             type: SnacksBarType.ERROR,
           );
         }
@@ -313,7 +313,7 @@ class BusinessProfileController extends GetxController {
     } catch (e) {
       SnacksBar.showSnackbar(
         title: 'Error',
-        message: 'Failed to remove photo: ${e.toString()}',
+        message: 'Failed to remove photo. Please try again.',
         type: SnacksBarType.ERROR,
       );
     }
@@ -353,7 +353,7 @@ class BusinessProfileController extends GetxController {
     } catch (e) {
       SnacksBar.showSnackbar(
         title: 'Error',
-        message: 'Failed to update owner name: ${e.toString()}',
+        message: 'Failed to update owner name. Please try again.',
         type: SnacksBarType.ERROR,
       );
     }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:purehisab/app/utils/snacks_bar.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../controllers/business_profile_controller.dart';
@@ -769,17 +770,11 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
         ),
       );
     } catch (e) {
-      // Show detailed error message for debugging
-      Get.snackbar(
-        'Error',
-        'Failed to share app. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade50,
-        colorText: Colors.red.shade900,
-        duration: const Duration(seconds: 3),
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to share app. Please try again.',
+        type: SnacksBarType.ERROR,
       );
-      // Print error for debugging
-      // Error logged silently
     }
   }
 

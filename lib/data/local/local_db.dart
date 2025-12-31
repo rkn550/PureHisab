@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:purehisab/app/flavour/flavour_manager.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
@@ -9,8 +10,8 @@ class DatabaseHelper {
   DatabaseHelper._internal();
   factory DatabaseHelper() => instance;
 
-  static const _dbName = 'purehisab.db';
-  static const _dbVersion = 2;
+  String get _dbName => FlavourManager.currentFlavour.dbName;
+  int get _dbVersion => FlavourManager.currentFlavour.dbVersion;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -31,7 +32,7 @@ class DatabaseHelper {
     } catch (e) {
       _isOpening = false;
       _database = null;
-      throw Exception('Failed to initialize database: $e');
+      throw Exception('Failed to initialize database. Please try again.');
     } finally {
       _isOpening = false;
     }
@@ -56,7 +57,9 @@ class DatabaseHelper {
       await database.rawQuery('PRAGMA journal_mode = WAL');
       return database;
     } catch (e) {
-      throw Exception('Failed to initialize database at path: $e');
+      throw Exception(
+        'Failed to initialize database at path. Please try again.',
+      );
     }
   }
 
@@ -66,8 +69,7 @@ class DatabaseHelper {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // example future migration
-      // await db.execute('ALTER TABLE businesses ADD COLUMN gst_number TEXT');
+      return;
     }
   }
 

@@ -45,8 +45,7 @@ class CreateBusinessController extends GetxController {
     } catch (e) {
       SnacksBar.showSnackbar(
         title: 'Error',
-        message:
-            'Failed to create business: ${e.toString().replaceAll('Exception: ', '')}',
+        message: 'Failed to create business. Please try again.',
         type: SnacksBarType.ERROR,
       );
     } finally {

@@ -87,7 +87,7 @@ class LoginEmailController extends GetxController {
     } catch (e) {
       SnacksBar.showSnackbar(
         title: 'Error',
-        message: e.toString().replaceAll('Exception: ', ''),
+        message: 'Failed to login. Please try again.',
         type: SnacksBarType.ERROR,
       );
     } finally {

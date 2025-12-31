@@ -18,15 +18,12 @@ class ContactListController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Delay to ensure screen is visible before showing dialog
     Future.delayed(const Duration(milliseconds: 300), () {
       checkAndRequestPermission();
     });
 
-    // Listen to search query changes
     _searchQueryWorker = ever(searchQuery, (_) => filterContacts());
 
-    // Sync controller with search query
     searchTextController.addListener(() {
       if (searchTextController.text != searchQuery.value) {
         updateSearchQuery(searchTextController.text);
@@ -45,24 +42,19 @@ class ContactListController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Check permission
       final status = await Permission.contacts.status;
 
       if (status.isGranted) {
-        // Permission already granted - load contacts
         await loadContacts();
       } else if (status.isDenied) {
-        // Permission not granted - show permission dialog
         hasPermission.value = false;
         isLoading.value = false;
         showPermissionDialog.value = true;
       } else if (status.isPermanentlyDenied) {
-        // Permission permanently denied - show settings dialog
         hasPermission.value = false;
         isLoading.value = false;
         showPermissionDialog.value = true;
       } else {
-        // Request permission
         final newStatus = await Permission.contacts.request();
         if (newStatus.isGranted) {
           await loadContacts();
@@ -73,7 +65,6 @@ class ContactListController extends GetxController {
         }
       }
     } catch (e) {
-      // Error logged silently
       hasPermission.value = false;
       isLoading.value = false;
     }
@@ -83,18 +74,15 @@ class ContactListController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Request full access to read contacts
       if (await FlutterContacts.requestPermission()) {
         hasPermission.value = true;
         showPermissionDialog.value = false;
 
-        // Fetch all contacts
         final allContacts = await FlutterContacts.getContacts(
           withProperties: true,
           withThumbnail: false,
         );
 
-        // Sort contacts by name
         allContacts.sort((a, b) {
           final nameA = a.displayName.toLowerCase();
           final nameB = b.displayName.toLowerCase();
@@ -108,7 +96,6 @@ class ContactListController extends GetxController {
         showPermissionDialog.value = true;
       }
     } catch (e) {
-      // Error logged silently
       hasPermission.value = false;
     } finally {
       isLoading.value = false;
@@ -120,11 +107,9 @@ class ContactListController extends GetxController {
     if (status.isGranted) {
       await loadContacts();
     } else if (status.isPermanentlyDenied) {
-      // Show settings dialog
       showPermissionDialog.value = false;
       _showSettingsDialog();
     } else {
-      // Permission denied - navigate to add party form
       final args = Get.arguments;
       Get.back();
       Get.toNamed('/add-party', arguments: args);
@@ -184,7 +169,6 @@ class ContactListController extends GetxController {
                       onPressed: () async {
                         Get.back();
                         await openAppSettings();
-                        // Check permission again after user returns
                         Future.delayed(const Duration(seconds: 1), () {
                           checkAndRequestPermission();
                         });
@@ -230,7 +214,6 @@ class ContactListController extends GetxController {
     }
   }
 
-  // Check if we have contacts but search returned empty
   bool get hasContacts => contacts.isNotEmpty;
   bool get hasSearchResults => filteredContacts.isNotEmpty;
 
@@ -239,15 +222,12 @@ class ContactListController extends GetxController {
     return contact.phones.first.number;
   }
 
-  // Get cleaned phone number (digits only) for form submission
   String getCleanedPhoneNumber(Contact contact) {
     if (contact.phones.isEmpty) return '';
-    // Remove all non-digit characters
     final cleaned = contact.phones.first.number.replaceAll(
       RegExp(r'[^\d]'),
       '',
     );
-    // Remove country code if present (e.g., +91)
     if (cleaned.length > 10 && cleaned.startsWith('91')) {
       return cleaned.substring(2);
     }

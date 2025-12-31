@@ -412,10 +412,10 @@ class TransactionEntryController extends GetxController {
         type: SnacksBarType.SUCCESS,
       );
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to save transaction: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+      SnacksBar.showSnackbar(
+        title: 'Error',
+        message: 'Failed to save transaction. Please try again.',
+        type: SnacksBarType.ERROR,
       );
     }
   }

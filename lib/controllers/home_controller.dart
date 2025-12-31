@@ -90,7 +90,7 @@ class HomeController extends GetxController {
     } catch (e) {
       SnacksBar.showSnackbar(
         title: 'Error',
-        message: 'Failed to load parties',
+        message: 'Failed to load parties. Please try again.',
         type: SnacksBarType.ERROR,
       );
     }

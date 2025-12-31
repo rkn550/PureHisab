@@ -30,7 +30,7 @@ class ForgotPasswordController extends GetxController {
     } catch (e) {
       SnacksBar.showSnackbar(
         title: 'Error',
-        message: e.toString().replaceAll('Exception: ', ''),
+        message: 'Failed to send password reset link. Please try again.',
         type: SnacksBarType.ERROR,
       );
     } finally {

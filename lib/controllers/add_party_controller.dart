@@ -93,12 +93,9 @@ class AddPartyController extends GetxController {
         }
       });
     } catch (e) {
-      final errorMessage = e.toString().replaceAll('Exception: ', '');
       SnacksBar.showSnackbar(
         title: 'Error',
-        message: errorMessage.isNotEmpty
-            ? errorMessage
-            : 'Failed to add $partyType. Please try again.',
+        message: 'Failed to add $partyType. Please try again.',
         type: SnacksBarType.ERROR,
       );
     } finally {

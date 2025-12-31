@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:purehisab/app/bindings/initial_binding.dart';
+import 'package:purehisab/app/flavour/flavour_manager.dart';
 
 import 'firebase_options.dart';
 import 'app/routes/app_pages.dart';
@@ -42,8 +43,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final flavour = FlavourManager.currentFlavour;
     return GetMaterialApp(
-      title: 'PureHisab',
+      title: flavour.appName,
       debugShowCheckedModeBanner: false,
 
       initialBinding: InitialBinding(),
